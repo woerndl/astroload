@@ -1,8 +1,8 @@
 import { isAdmin } from './isAdmin'
-import { isAuthenticated } from './isAuthenticated'
+import { readPublishedOrDraft } from './readPublishedOrDraft'
 
 export const contentAccess = {
-  read: isAuthenticated,
+  read: readPublishedOrDraft,
   create: isAdmin,
   update: isAdmin,
   delete: isAdmin,

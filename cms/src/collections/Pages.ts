@@ -1,6 +1,9 @@
 import type { PageCollectionConfig } from '@jhb.software/payload-pages-plugin'
 
 import { contentAccess } from '../access/contentAccess'
+import { FormBlock } from '../blocks/FormBlock'
+import { ImageBlock } from '../blocks/ImageBlock'
+import { RichTextBlock } from '../blocks/RichTextBlock'
 
 export const Pages: PageCollectionConfig = {
   slug: 'pages',
@@ -29,6 +32,11 @@ export const Pages: PageCollectionConfig = {
       type: 'text',
       required: true,
       localized: true,
+    },
+    {
+      name: 'sections',
+      type: 'blocks',
+      blocks: [RichTextBlock, ImageBlock, FormBlock],
     },
   ],
 }

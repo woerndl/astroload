@@ -1,6 +1,8 @@
 import type { PageCollectionConfig } from '@jhb.software/payload-pages-plugin'
+import { BlocksFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 
 import { contentAccess } from '../access/contentAccess'
+import { ImageBlock } from '../blocks/ImageBlock'
 
 export const Posts: PageCollectionConfig = {
   slug: 'posts',
@@ -19,6 +21,7 @@ export const Posts: PageCollectionConfig = {
       sharedDocument: true,
     },
   },
+  // bio is heavy and localized, so leave it out of post-list author populates.
   defaultPopulate: {
     title: true,
     path: true,
@@ -70,6 +73,12 @@ export const Posts: PageCollectionConfig = {
       type: 'richText',
       required: true,
       localized: true,
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          BlocksFeature({ blocks: [ImageBlock] }),
+        ],
+      }),
     },
   ],
 }

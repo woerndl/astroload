@@ -14,10 +14,19 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - `docker-compose.yml` for local Postgres (dev only).
 - Turbopack workspace-root fix in `cms/next.config.ts` so Turbopack resolves `next/package.json` from `cms/src/app` under the pnpm-workspace layout.
 - ESLint flat-config for `cms/` using `eslint-config-next` subpath exports.
-- CMS auth surface. Users collection with `firstName`, `lastName`, and `roles` (editor and admin, `saveToJWT`). ApiKeys collection with `useAPIKey`, `disableLocalStrategy`, and a `type` discriminator: `read-only` for published-content reads, `preview` for drafts and published reads. Admin-only access on both collections.
+- Users collection with `firstName`, `lastName`, and `roles` (editor and admin, `saveToJWT`). Read and update via `isSelfOrAdmin`, create and delete via `isAdmin`.
+- ApiKeys collection with `useAPIKey`, `disableLocalStrategy`, and a `type` discriminator: `read-only` for published reads, `preview` for drafts and published. Admin-only access.
 - Access helpers under `cms/src/access/`: `isAdmin`, `isAuthenticated`, `isSelfOrAdmin`, `isReadOnlyKey`, `isPreviewKey`. `field/isAdmin` for field-level access.
-- Boot-time check at `cms/src/env.ts` that requires `PAYLOAD_SECRET` and `DATABASE_URI`, throwing with a consolidated error if either is missing.
+- Boot-time check at `cms/src/env.ts` that requires `PAYLOAD_SECRET`, `DATABASE_URI`, and `WEBSITE_URL`, throwing with a consolidated error if any are missing.
 - CMS content surface. Pages, Posts, Authors, Redirects collections via `@jhb.software/payload-pages-plugin`. Drafts on Pages, Posts, Authors. `Posts` and `Authors` use a shared parent Pages doc per collection. `name` on Authors stays non-localized.
 - Globals: `Header`, `Footer`, `Labels`, `SiteSettings`. Public read, admin update. SiteSettings carries default SEO triple, a Plausible domain placeholder, and a `robots.allowIndexing` flag (default off).
 - Localization: `de` and `en`, `defaultLocale: 'de'`, `fallback: true`. Localized fields across content collections and globals.
-- Media collection extended with named image sizes (`sm`, `md`, `lg`, `og` 1200x630), `mimeTypes: ['image/*']`, `adminThumbnail: 'sm'`, localized `alt` and optional localized `caption`. Writes are admin-only.
+- Media collection with named image sizes (`xs`, `sm`, `md`, `lg`, `og` 1200x630), `mimeTypes: ['image/*']`, `adminThumbnail: 'xs'`, localized `alt` and optional localized `caption`. Writes are admin-only.
+- Page-builder blocks under `cms/src/blocks/`: `RichTextBlock`, `ImageBlock`, `FormBlock`. `Pages.sections` accepts all three. `Posts.content` is a per-field Lexical editor with `BlocksFeature([ImageBlock])` for inline images.
+- `seoPlugin` adds `meta` (title, description, image) to Pages and Posts. `generateTitle` falls back to `doc.title`, `generateURL` resolves against `WEBSITE_URL`.
+- `formBuilderPlugin` registers `forms` and `form-submissions` collections with default field set.
+- Conditional `s3Storage` env-gated on `S3_BUCKET` plus credentials. `disablePayloadAccessControl: true` and `acl: 'public-read'` on media so file URLs serve directly from the bucket.
+- Conditional `resendAdapter` env-gated on `RESEND_API_KEY` and `RESEND_FROM_ADDRESS`. Without those, email is logged to console.
+- Access helper `readPublishedOrDraft` in `cms/src/access/`. Read-only API keys see only published. Users and preview keys see drafts and published. Wired into `contentAccess` for Pages, Posts, Authors. Redirects detached from `contentAccess` and uses `isAuthenticated` for read.
+- Top-level `csrf: [WEBSITE_URL]` to pair with `cors: [WEBSITE_URL]` for cookie-authenticated mutations from the frontend origin.
+- Optional plugin env vars in `cms/.env.example`: `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `RESEND_FROM_NAME`, `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`. Default S3 example targets Hetzner Object Storage (`nbg1`).
