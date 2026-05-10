@@ -1,6 +1,6 @@
-# Local Postgres for the astroload starter — local dev only.
-# Do NOT use these credentials in production; this file is a developer convenience.
-# CMS and Astro run natively via `pnpm --filter @astroload/cms dev` / `pnpm --filter @astroload/web dev`.
+# Local Postgres for the astroload starter. Dev only, never production.
+# CMS and Astro run natively via `pnpm --filter @astroload/cms dev` and
+# `pnpm --filter @astroload/web dev`.
 services:
   postgres:
     image: postgres:17-alpine

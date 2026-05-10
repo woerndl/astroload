@@ -4,9 +4,9 @@ Astro 6 + Payload 3 + Postgres starter.
 
 ## Stack
 
-- **Frontend:** Astro 6
-- **CMS:** Payload 3 (`@payloadcms/db-postgres`)
-- **Database:** Postgres (local via `docker-compose`)
+- Frontend: Astro 6
+- CMS: Payload 3 (`@payloadcms/db-postgres`)
+- Database: Postgres (local via `docker-compose`)
 
 ## Layout
 
