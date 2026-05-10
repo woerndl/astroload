@@ -7,6 +7,16 @@
  */
 
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "Breadcrumbs".
+ */
+export type Breadcrumbs = {
+  slug: string;
+  path: string;
+  label: string;
+  id?: string | null;
+}[];
+/**
  * Supported timezones in IANA format.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -63,14 +73,18 @@ export type SupportedTimezones =
 
 export interface Config {
   auth: {
-    users: UserAuthOperations;
     'api-keys': ApiKeyAuthOperations;
+    users: UserAuthOperations;
   };
   blocks: {};
   collections: {
-    users: User;
-    'api-keys': ApiKey;
+    pages: Page;
+    posts: Post;
+    authors: Author;
     media: Media;
+    'api-keys': ApiKey;
+    redirects: Redirect;
+    users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,9 +92,13 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>;
-    'api-keys': ApiKeysSelect<false> | ApiKeysSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
+    authors: AuthorsSelect<false> | AuthorsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'api-keys': ApiKeysSelect<false> | ApiKeysSelect<true>;
+    redirects: RedirectsSelect<false> | RedirectsSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -89,17 +107,45 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
-  locale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('de' | 'en') | ('de' | 'en')[];
+  globals: {
+    header: Header;
+    footer: Footer;
+    labels: Labels;
+    'site-settings': SiteSetting;
+  };
+  globalsSelect: {
+    header: HeaderSelect<false> | HeaderSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
+    labels: LabelsSelect<false> | LabelsSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+  };
+  locale: 'de' | 'en';
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User | ApiKey;
+  user: ApiKey | User;
   jobs: {
     tasks: unknown;
     workflows: unknown;
+  };
+}
+export interface ApiKeyAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
   };
 }
 export interface UserAuthOperations {
@@ -120,23 +166,177 @@ export interface UserAuthOperations {
     password: string;
   };
 }
-export interface ApiKeyAuthOperations {
-  forgotPassword: {
-    email: string;
-    password: string;
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  isRootPage?: boolean | null;
+  slug: string;
+  parent?: (number | null) | Page;
+  path: string;
+  breadcrumbs: Breadcrumbs;
+  title: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  slug: string;
+  parent: number | Page;
+  path: string;
+  breadcrumbs: Breadcrumbs;
+  authors: (number | Author)[];
+  publishedAt?: string | null;
+  title: string;
+  excerpt: string;
+  image: number | Media;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
   };
-  login: {
-    email: string;
-    password: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors".
+ */
+export interface Author {
+  id: number;
+  slug: string;
+  parent: number | Page;
+  path: string;
+  breadcrumbs: Breadcrumbs;
+  name: string;
+  role?: string | null;
+  photo?: (number | null) | Media;
+  bio?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  caption?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    xs?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    sm?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    md?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    lg?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    og?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
   };
-  registerFirstUser: {
-    email: string;
-    password: string;
-  };
-  unlock: {
-    email: string;
-    password: string;
-  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-keys".
+ */
+export interface ApiKey {
+  id: number;
+  name: string;
+  type: 'read-only' | 'preview';
+  updatedAt: string;
+  createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  collection: 'api-keys';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "redirects".
+ */
+export interface Redirect {
+  id: number;
+  sourcePath: string;
+  destinationPath: string;
+  type: 'permanent' | 'temporary';
+  reason?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -168,40 +368,6 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "api-keys".
- */
-export interface ApiKey {
-  id: number;
-  name: string;
-  type: 'read-only' | 'preview';
-  updatedAt: string;
-  createdAt: string;
-  enableAPIKey?: boolean | null;
-  apiKey?: string | null;
-  apiKeyIndex?: string | null;
-  collection: 'api-keys';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -225,26 +391,42 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: 'users';
-        value: number | User;
+        relationTo: 'pages';
+        value: number | Page;
       } | null)
     | ({
-        relationTo: 'api-keys';
-        value: number | ApiKey;
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'authors';
+        value: number | Author;
       } | null)
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'api-keys';
+        value: number | ApiKey;
+      } | null)
+    | ({
+        relationTo: 'redirects';
+        value: number | Redirect;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: number | User;
       } | null);
   globalSlug?: string | null;
   user:
     | {
-        relationTo: 'users';
-        value: number | User;
-      }
-    | {
         relationTo: 'api-keys';
         value: number | ApiKey;
+      }
+    | {
+        relationTo: 'users';
+        value: number | User;
       };
   updatedAt: string;
   createdAt: string;
@@ -257,12 +439,12 @@ export interface PayloadPreference {
   id: number;
   user:
     | {
-        relationTo: 'users';
-        value: number | User;
-      }
-    | {
         relationTo: 'api-keys';
         value: number | ApiKey;
+      }
+    | {
+        relationTo: 'users';
+        value: number | User;
       };
   key?: string | null;
   value?:
@@ -290,6 +472,165 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  isRootPage?: T;
+  slug?: T;
+  parent?: T;
+  path?: T;
+  breadcrumbs?: T | BreadcrumbsSelect<T>;
+  title?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "Breadcrumbs_select".
+ */
+export interface BreadcrumbsSelect<T extends boolean = true> {
+  slug?: T;
+  path?: T;
+  label?: T;
+  id?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  slug?: T;
+  parent?: T;
+  path?: T;
+  breadcrumbs?: T | BreadcrumbsSelect<T>;
+  authors?: T;
+  publishedAt?: T;
+  title?: T;
+  excerpt?: T;
+  image?: T;
+  content?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors_select".
+ */
+export interface AuthorsSelect<T extends boolean = true> {
+  slug?: T;
+  parent?: T;
+  path?: T;
+  breadcrumbs?: T | BreadcrumbsSelect<T>;
+  name?: T;
+  role?: T;
+  photo?: T;
+  bio?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  caption?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        xs?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        sm?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        md?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        lg?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        og?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "api-keys_select".
+ */
+export interface ApiKeysSelect<T extends boolean = true> {
+  name?: T;
+  type?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "redirects_select".
+ */
+export interface RedirectsSelect<T extends boolean = true> {
+  sourcePath?: T;
+  destinationPath?: T;
+  type?: T;
+  reason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
@@ -312,37 +653,6 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "api-keys_select".
- */
-export interface ApiKeysSelect<T extends boolean = true> {
-  name?: T;
-  type?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  enableAPIKey?: T;
-  apiKey?: T;
-  apiKeyIndex?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media_select".
- */
-export interface MediaSelect<T extends boolean = true> {
-  alt?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -383,6 +693,210 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: number;
+  links?:
+    | {
+        page:
+          | {
+              relationTo: 'pages';
+              value: number | Page;
+            }
+          | {
+              relationTo: 'posts';
+              value: number | Post;
+            }
+          | {
+              relationTo: 'authors';
+              value: number | Author;
+            };
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  columns?:
+    | {
+        heading: string;
+        links?:
+          | {
+              page:
+                | {
+                    relationTo: 'pages';
+                    value: number | Page;
+                  }
+                | {
+                    relationTo: 'posts';
+                    value: number | Post;
+                  }
+                | {
+                    relationTo: 'authors';
+                    value: number | Author;
+                  };
+              label: string;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  copyright?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "labels".
+ */
+export interface Labels {
+  id: number;
+  global: {
+    readMore: string;
+    learnMore: string;
+    openMenu: string;
+    closeMenu: string;
+  };
+  posts: {
+    writtenBy: string;
+    lastUpdatedAt: string;
+  };
+  notFound: {
+    title: string;
+    description: string;
+    homePageButton: string;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  siteName: string;
+  defaultSeo?: {
+    titleSuffix?: string | null;
+    description?: string | null;
+    image?: (number | null) | Media;
+  };
+  /**
+   * Domain registered in Plausible. Leave blank to disable analytics.
+   */
+  plausibleDomain?: string | null;
+  robots?: {
+    /**
+     * Off in dev/staging by default. Turn on once the site is ready for search engines.
+     */
+    allowIndexing?: boolean | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header_select".
+ */
+export interface HeaderSelect<T extends boolean = true> {
+  links?:
+    | T
+    | {
+        page?: T;
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  columns?:
+    | T
+    | {
+        heading?: T;
+        links?:
+          | T
+          | {
+              page?: T;
+              label?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  copyright?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "labels_select".
+ */
+export interface LabelsSelect<T extends boolean = true> {
+  global?:
+    | T
+    | {
+        readMore?: T;
+        learnMore?: T;
+        openMenu?: T;
+        closeMenu?: T;
+      };
+  posts?:
+    | T
+    | {
+        writtenBy?: T;
+        lastUpdatedAt?: T;
+      };
+  notFound?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        homePageButton?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  siteName?: T;
+  defaultSeo?:
+    | T
+    | {
+        titleSuffix?: T;
+        description?: T;
+        image?: T;
+      };
+  plausibleDomain?: T;
+  robots?:
+    | T
+    | {
+        allowIndexing?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

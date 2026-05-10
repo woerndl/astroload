@@ -17,3 +17,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - CMS auth surface. Users collection with `firstName`, `lastName`, and `roles` (editor and admin, `saveToJWT`). ApiKeys collection with `useAPIKey`, `disableLocalStrategy`, and a `type` discriminator: `read-only` for published-content reads, `preview` for drafts and published reads. Admin-only access on both collections.
 - Access helpers under `cms/src/access/`: `isAdmin`, `isAuthenticated`, `isSelfOrAdmin`, `isReadOnlyKey`, `isPreviewKey`. `field/isAdmin` for field-level access.
 - Boot-time check at `cms/src/env.ts` that requires `PAYLOAD_SECRET` and `DATABASE_URI`, throwing with a consolidated error if either is missing.
+- CMS content surface. Pages, Posts, Authors, Redirects collections via `@jhb.software/payload-pages-plugin`. Drafts on Pages, Posts, Authors. `Posts` and `Authors` use a shared parent Pages doc per collection. `name` on Authors stays non-localized.
+- Globals: `Header`, `Footer`, `Labels`, `SiteSettings`. Public read, admin update. SiteSettings carries default SEO triple, a Plausible domain placeholder, and a `robots.allowIndexing` flag (default off).
+- Localization: `de` and `en`, `defaultLocale: 'de'`, `fallback: true`. Localized fields across content collections and globals.
+- Media collection extended with named image sizes (`sm`, `md`, `lg`, `og` 1200x630), `mimeTypes: ['image/*']`, `adminThumbnail: 'sm'`, localized `alt` and optional localized `caption`. Writes are admin-only.
