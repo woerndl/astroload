@@ -1,0 +1,23 @@
+# Local Postgres for the astroload starter — local dev only.
+# Do NOT use these credentials in production; this file is a developer convenience.
+# CMS and Astro run natively via `pnpm --filter @astroload/cms dev` / `pnpm --filter @astroload/web dev`.
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: astroload
+      POSTGRES_PASSWORD: astroload
+      POSTGRES_DB: astroload
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U astroload -d astroload']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
