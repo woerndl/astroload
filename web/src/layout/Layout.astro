@@ -2,19 +2,22 @@
 import { ClientRouter } from 'astro:transitions'
 
 import { getGlobalData } from '../cms/getGlobalData'
-import type { Locale } from '../cms/types'
+import type { Locale, PreviewContext } from '../cms/types'
 import Footer from '../components/Footer.astro'
 import Header from '../components/Header.astro'
+import LivePreviewListener from '../components/LivePreviewListener.astro'
+import PreviewToolbar from '../components/PreviewToolbar.astro'
 import '../styles/app.css'
 
 interface Props {
   title: string
   description?: string
   lang: Locale
+  preview?: PreviewContext
 }
 
-const { title, description, lang } = Astro.props
-const { header, footer } = await getGlobalData({ locale: lang, preview: false })
+const { title, description, lang, preview } = Astro.props
+const { header, footer, labels } = await getGlobalData({ locale: lang, preview: false })
 ---
 
 <!doctype html>
@@ -28,10 +31,12 @@ const { header, footer } = await getGlobalData({ locale: lang, preview: false })
     <ClientRouter />
   </head>
   <body class="bg-white text-gray-900 antialiased">
+    {preview && <PreviewToolbar collection={preview.collection} id={preview.id} labels={labels.preview} />}
     <Header header={header} lang={lang} />
     <main class="mx-auto max-w-3xl px-4 py-12">
       <slot />
     </main>
     <Footer footer={footer} />
+    {preview && <LivePreviewListener />}
   </body>
 </html>

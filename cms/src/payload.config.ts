@@ -78,8 +78,12 @@ export default buildConfig({
   sharp,
   plugins: [
     payloadPagesPlugin({
-      generatePageURL: ({ path: pagePath, preview }) =>
-        pagePath ? new URL(`${preview ? '/preview' : ''}${pagePath}`, env.WEBSITE_URL).toString() : null,
+      generatePageURL: ({ path: pagePath, preview }) => {
+        if (!pagePath) return null
+        const url = new URL(`${preview ? '/preview' : ''}${pagePath}`, env.WEBSITE_URL)
+        if (preview) url.searchParams.set('previewSecret', env.PREVIEW_SECRET)
+        return url.toString()
+      },
     }),
     seoPlugin({
       collections: ['pages', 'posts'],

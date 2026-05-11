@@ -6,15 +6,28 @@ import { FormBlock } from '../blocks/FormBlock'
 import { ImageBlock } from '../blocks/ImageBlock'
 import { PostsListBlock } from '../blocks/PostsListBlock'
 import { RichTextBlock } from '../blocks/RichTextBlock'
+import {
+  triggerDeployAfterChange,
+  triggerDeployAfterDelete,
+} from '../hooks/triggerDeploy'
+import { livePreviewBreakpoints } from '../shared'
 
 export const Pages: PageCollectionConfig = {
   slug: 'pages',
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'path', 'updatedAt', '_status'],
+    livePreview: { breakpoints: [...livePreviewBreakpoints] },
   },
   versions: {
-    drafts: true,
+    drafts: {
+      autosave: { interval: 1500 },
+      schedulePublish: false,
+    },
+  },
+  hooks: {
+    afterChange: [triggerDeployAfterChange],
+    afterDelete: [triggerDeployAfterDelete],
   },
   access: contentAccess,
   page: {

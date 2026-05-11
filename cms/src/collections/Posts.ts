@@ -3,15 +3,28 @@ import { BlocksFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 
 import { contentAccess } from '../access/contentAccess'
 import { ImageBlock } from '../blocks/ImageBlock'
+import {
+  triggerDeployAfterChange,
+  triggerDeployAfterDelete,
+} from '../hooks/triggerDeploy'
+import { livePreviewBreakpoints } from '../shared'
 
 export const Posts: PageCollectionConfig = {
   slug: 'posts',
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'path', 'updatedAt', '_status'],
+    livePreview: { breakpoints: [...livePreviewBreakpoints] },
   },
   versions: {
-    drafts: true,
+    drafts: {
+      autosave: { interval: 1500 },
+      schedulePublish: false,
+    },
+  },
+  hooks: {
+    afterChange: [triggerDeployAfterChange],
+    afterDelete: [triggerDeployAfterDelete],
   },
   access: contentAccess,
   page: {

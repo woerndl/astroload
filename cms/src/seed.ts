@@ -522,6 +522,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         description: 'Die angeforderte Seite existiert nicht.',
         homePageButton: 'Zur Startseite',
       },
+      preview: {
+        editingDraft: 'Entwurf bearbeiten',
+        openInAdmin: 'In Admin öffnen',
+      },
     },
   })
   await payload.updateGlobal({
@@ -542,6 +546,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         title: 'Page not found',
         description: 'The page you requested does not exist.',
         homePageButton: 'Back to home',
+      },
+      preview: {
+        editingDraft: 'Editing draft',
+        openInAdmin: 'Open in admin',
       },
     },
   })

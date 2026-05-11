@@ -1,0 +1,22 @@
+<script>
+  import { isDocumentEvent, ready } from '@payloadcms/live-preview'
+  import { CMS_URL } from 'astro:env/client'
+
+  function sendReady() {
+    ready({ serverURL: CMS_URL })
+  }
+
+  function onMessage(event: MessageEvent) {
+    if (isDocumentEvent(event, CMS_URL)) {
+      window.location.reload()
+    }
+  }
+
+  window.addEventListener('message', onMessage)
+
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', sendReady, { once: true })
+  } else {
+    sendReady()
+  }
+</script>

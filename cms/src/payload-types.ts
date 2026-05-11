@@ -1297,6 +1297,10 @@ export interface Labels {
     description: string;
     homePageButton: string;
   };
+  preview: {
+    editingDraft: string;
+    openInAdmin: string;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1389,6 +1393,12 @@ export interface LabelsSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         homePageButton?: T;
+      };
+  preview?:
+    | T
+    | {
+        editingDraft?: T;
+        openInAdmin?: T;
       };
   updatedAt?: T;
   createdAt?: T;

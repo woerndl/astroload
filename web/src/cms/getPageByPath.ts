@@ -1,4 +1,5 @@
-import type { Author, Page, Post } from '@astroload/cms/src/payload-types'
+import { PayloadSDKError, type PayloadSDK } from '@payloadcms/sdk'
+import type { Author, Config, Page, Post } from '@astroload/cms/src/payload-types'
 
 import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
@@ -10,20 +11,22 @@ export type PageByPathResult =
 
 export async function getPageByPath(
   fullPath: string,
-  options?: { preview?: boolean },
+  options?: { preview?: boolean; sdk?: PayloadSDK<Config> },
 ): Promise<PageByPathResult | null> {
   const preview = options?.preview ?? false
+  const sdk = options?.sdk ?? payloadSDK
   const query = new URLSearchParams({ path: fullPath, preview: String(preview) })
 
-  const response = await payloadSDK.request({
-    method: 'GET',
-    path: `/page-by-path?${query.toString()}`,
-    init: { headers: cacheHeader(!preview) },
-  })
-
-  if (response.status === 404) return null
-  if (!response.ok) {
-    throw new Error(`page-by-path fetch failed: ${response.status} ${response.statusText}`)
+  let response: Response
+  try {
+    response = await sdk.request({
+      method: 'GET',
+      path: `/page-by-path?${query.toString()}`,
+      init: { headers: cacheHeader(!preview) },
+    })
+  } catch (err) {
+    if (err instanceof PayloadSDKError && err.status === 404) return null
+    throw err
   }
 
   return (await response.json()) as PageByPathResult

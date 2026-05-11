@@ -13,6 +13,7 @@ export default defineConfig({
     schema: {
       PAYLOAD_READ_KEY: envField.string({ context: 'server', access: 'secret' }),
       PAYLOAD_PREVIEW_KEY: envField.string({ context: 'server', access: 'secret' }),
+      PREVIEW_SECRET: envField.string({ context: 'server', access: 'secret' }),
       CMS_URL: envField.string({
         context: 'client',
         access: 'public',

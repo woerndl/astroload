@@ -1,0 +1,42 @@
+---
+import { timingSafeEqual } from 'node:crypto'
+
+import { PREVIEW_SECRET } from 'astro:env/server'
+
+import { getPageByPath } from '../../../cms/getPageByPath'
+import { previewPayloadSDK } from '../../../cms/previewSdk'
+import { isLocale } from '../../../cms/types'
+import CollectionLayout from '../../../layout/collections/CollectionLayout.astro'
+
+export const prerender = false
+
+const expectedSecret = Buffer.from(PREVIEW_SECRET)
+
+function isValidSecret(supplied: string | null): boolean {
+  if (!supplied) return false
+  const a = Buffer.from(supplied)
+  if (a.length !== expectedSecret.length) return false
+  return timingSafeEqual(a, expectedSecret)
+}
+
+const supplied = Astro.url.searchParams.get('previewSecret')
+if (!isValidSecret(supplied)) {
+  return new Response('Forbidden', { status: 403 })
+}
+
+const { lang, path } = Astro.params
+if (!isLocale(lang)) {
+  return new Response(null, { status: 404 })
+}
+
+const fullPath = path ? `/${lang}/${path}` : `/${lang}`
+const result = await getPageByPath(fullPath, { preview: true, sdk: previewPayloadSDK })
+if (!result) {
+  return new Response(null, { status: 404 })
+}
+
+Astro.response.headers.set('Cache-Control', 'no-store')
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+---
+
+<CollectionLayout result={result} lang={lang} preview={true} />

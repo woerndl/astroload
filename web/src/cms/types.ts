@@ -3,3 +3,8 @@ import { isLocale, type Locale, type PageCollectionSlug } from '@astroload/cms/s
 
 export { isLocale, type Locale, type PageCollectionSlug }
 export type PageData = Page | Post | Author
+
+export interface PreviewContext {
+  collection: PageCollectionSlug
+  id: string | number
+}

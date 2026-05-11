@@ -1,20 +1,21 @@
 ---
 import type { Page } from '@astroload/cms/src/payload-types'
 
-import type { Locale } from '../../cms/types'
+import type { Locale, PreviewContext } from '../../cms/types'
 import SectionBlock from '../../components/SectionBlock.astro'
 import Layout from '../Layout.astro'
 
 interface Props {
   data: Page
   lang: Locale
+  preview?: PreviewContext
 }
 
-const { data, lang } = Astro.props
+const { data, lang, preview } = Astro.props
 const sections = data.sections ?? []
 ---
 
-<Layout title={data.title} lang={lang}>
+<Layout title={data.title} lang={lang} preview={preview}>
   <article>
     <h1 class="text-3xl font-semibold">{data.title}</h1>
     <div class="mt-8 space-y-6">

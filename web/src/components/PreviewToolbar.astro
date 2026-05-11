@@ -1,0 +1,31 @@
+---
+import type { Labels } from '@astroload/cms/src/payload-types'
+import { CMS_URL } from 'astro:env/client'
+
+import type { PreviewContext } from '../cms/types'
+
+interface Props extends PreviewContext {
+  labels: Labels['preview']
+}
+
+const { collection, id, labels } = Astro.props
+
+const insideIframe = Astro.request.headers.get('sec-fetch-dest') === 'iframe'
+const adminHref = new URL(`/admin/collections/${collection}/${id}`, CMS_URL).toString()
+---
+
+{
+  !insideIframe && (
+    <div
+      class="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 shadow"
+      role="status"
+    >
+      <span>{labels.editingDraft}</span>
+      <a href={adminHref} class="font-medium underline hover:no-underline">
+        {labels.openInAdmin}
+      </a>
+    </div>
+  )
+}
+</content>
+</invoke>

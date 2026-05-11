@@ -16,6 +16,7 @@
     "@astrojs/node": "10.1.0",
     "@astroload/cms": "workspace:*",
     "@jhb.software/astro-payload-richtext-lexical": "0.3.2",
+    "@payloadcms/live-preview": "3.84.1",
     "@payloadcms/sdk": "3.84.1",
     "@tailwindcss/vite": "4.3.0",
     "astro": "^6.3.1",

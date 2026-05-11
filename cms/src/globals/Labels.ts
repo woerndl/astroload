@@ -1,6 +1,7 @@
 import type { GlobalConfig, TextField } from 'payload'
 
 import { isAdmin } from '../access/isAdmin'
+import { triggerDeployGlobalAfterChange } from '../hooks/triggerDeploy'
 
 const labelField = (name: string, label?: string): TextField => ({
   name,
@@ -17,6 +18,9 @@ export const Labels: GlobalConfig = {
   access: {
     read: () => true,
     update: isAdmin,
+  },
+  hooks: {
+    afterChange: [triggerDeployGlobalAfterChange],
   },
   fields: [
     {
@@ -43,6 +47,12 @@ export const Labels: GlobalConfig = {
         labelField('description'),
         labelField('homePageButton'),
       ],
+    },
+    {
+      name: 'preview',
+      type: 'group',
+      label: 'Live preview toolbar',
+      fields: [labelField('editingDraft'), labelField('openInAdmin')],
     },
   ],
 }

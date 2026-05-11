@@ -1,15 +1,28 @@
 import type { PageCollectionConfig } from '@jhb.software/payload-pages-plugin'
 
 import { contentAccess } from '../access/contentAccess'
+import {
+  triggerDeployAfterChange,
+  triggerDeployAfterDelete,
+} from '../hooks/triggerDeploy'
+import { livePreviewBreakpoints } from '../shared'
 
 export const Authors: PageCollectionConfig = {
   slug: 'authors',
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'path', 'updatedAt', '_status'],
+    livePreview: { breakpoints: [...livePreviewBreakpoints] },
   },
   versions: {
-    drafts: true,
+    drafts: {
+      autosave: { interval: 1500 },
+      schedulePublish: false,
+    },
+  },
+  hooks: {
+    afterChange: [triggerDeployAfterChange],
+    afterDelete: [triggerDeployAfterDelete],
   },
   access: contentAccess,
   page: {

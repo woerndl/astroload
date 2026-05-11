@@ -9,17 +9,19 @@ import PostLayout from './PostLayout.astro'
 interface Props {
   result: PageByPathResult
   lang: Locale
+  preview?: boolean
 }
 
-const { result, lang } = Astro.props
+const { result, lang, preview = false } = Astro.props
+const previewCtx = preview ? { collection: result.collection, id: result.data.id } : undefined
 ---
 
 {
   result.collection === 'pages' ? (
-    <PageLayout data={result.data} lang={lang} />
+    <PageLayout data={result.data} lang={lang} preview={previewCtx} />
   ) : result.collection === 'posts' ? (
-    <PostLayout data={result.data} lang={lang} />
+    <PostLayout data={result.data} lang={lang} preview={previewCtx} />
   ) : (
-    <AuthorLayout data={result.data} lang={lang} />
+    <AuthorLayout data={result.data} lang={lang} preview={previewCtx} />
   )
 }

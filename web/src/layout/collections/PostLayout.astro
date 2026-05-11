@@ -1,7 +1,7 @@
 ---
 import type { Author, Post } from '@astroload/cms/src/payload-types'
 
-import type { Locale } from '../../cms/types'
+import type { Locale, PreviewContext } from '../../cms/types'
 import Img from '../../components/Img.astro'
 import LexicalContent from '../../components/lexical/LexicalContent.astro'
 import Layout from '../Layout.astro'
@@ -9,9 +9,10 @@ import Layout from '../Layout.astro'
 interface Props {
   data: Post
   lang: Locale
+  preview?: PreviewContext
 }
 
-const { data, lang } = Astro.props
+const { data, lang, preview } = Astro.props
 
 const cover = typeof data.image === 'object' && data.image !== null ? data.image : null
 const authors = (data.authors ?? []).filter(
@@ -22,7 +23,7 @@ const publishedAt = data.publishedAt
   : null
 ---
 
-<Layout title={data.title} description={data.excerpt} lang={lang}>
+<Layout title={data.title} description={data.excerpt} lang={lang} preview={preview}>
   <article>
     <header class="mb-8">
       <h1 class="text-3xl font-semibold">{data.title}</h1>
