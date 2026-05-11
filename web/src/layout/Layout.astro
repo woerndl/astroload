@@ -1,23 +1,33 @@
 ---
+import type { Media } from '@astroload/cms/src/payload-types'
 import { ClientRouter } from 'astro:transitions'
 
 import { getGlobalData } from '../cms/getGlobalData'
-import type { Locale, PreviewContext } from '../cms/types'
+import type { PageByPathResult } from '../cms/getPageByPath'
+import type { Locale, LocalePaths, PreviewContext } from '../cms/types'
 import Footer from '../components/Footer.astro'
 import Header from '../components/Header.astro'
+import JsonLd from '../components/JsonLd.astro'
 import LivePreviewListener from '../components/LivePreviewListener.astro'
 import PreviewToolbar from '../components/PreviewToolbar.astro'
+import SEOMetadata from '../components/SEOMetadata.astro'
 import '../styles/app.css'
 
 interface Props {
   title: string
   description?: string
+  image?: Media | null
+  result?: PageByPathResult
   lang: Locale
+  paths?: LocalePaths
   preview?: PreviewContext
 }
 
-const { title, description, lang, preview } = Astro.props
-const { header, footer, labels } = await getGlobalData({ locale: lang, preview: false })
+const { title, description, image, result, lang, paths, preview } = Astro.props
+const { header, footer, labels, siteSettings } = await getGlobalData({
+  locale: lang,
+  preview: Boolean(preview),
+})
 ---
 
 <!doctype html>
@@ -26,13 +36,28 @@ const { header, footer, labels } = await getGlobalData({ locale: lang, preview: 
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title}</title>
-    {description && <meta name="description" content={description} />}
+    <SEOMetadata
+      lang={lang}
+      collection={result?.collection}
+      paths={paths}
+      title={title}
+      description={description}
+      image={image}
+      siteSettings={siteSettings}
+    />
+    {result && (
+      <JsonLd
+        result={result}
+        lang={lang}
+        pathname={Astro.url.pathname}
+        siteSettings={siteSettings}
+      />
+    )}
     <ClientRouter />
   </head>
   <body class="bg-white text-gray-900 antialiased">
     {preview && <PreviewToolbar collection={preview.collection} id={preview.id} labels={labels.preview} />}
-    <Header header={header} lang={lang} />
+    <Header header={header} lang={lang} paths={paths} />
     <main class="mx-auto max-w-3xl px-4 py-12">
       <slot />
     </main>

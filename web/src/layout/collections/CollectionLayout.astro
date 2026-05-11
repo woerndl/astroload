@@ -1,6 +1,6 @@
 ---
 import type { PageByPathResult } from '../../cms/getPageByPath'
-import type { Locale } from '../../cms/types'
+import type { Locale, LocalePaths } from '../../cms/types'
 
 import AuthorLayout from './AuthorLayout.astro'
 import PageLayout from './PageLayout.astro'
@@ -8,20 +8,21 @@ import PostLayout from './PostLayout.astro'
 
 interface Props {
   result: PageByPathResult
+  paths?: LocalePaths
   lang: Locale
   preview?: boolean
 }
 
-const { result, lang, preview = false } = Astro.props
+const { result, paths, lang, preview = false } = Astro.props
 const previewCtx = preview ? { collection: result.collection, id: result.data.id } : undefined
 ---
 
 {
   result.collection === 'pages' ? (
-    <PageLayout data={result.data} lang={lang} preview={previewCtx} />
+    <PageLayout data={result.data} lang={lang} paths={paths} preview={previewCtx} />
   ) : result.collection === 'posts' ? (
-    <PostLayout data={result.data} lang={lang} preview={previewCtx} />
+    <PostLayout data={result.data} lang={lang} paths={paths} preview={previewCtx} />
   ) : (
-    <AuthorLayout data={result.data} lang={lang} preview={previewCtx} />
+    <AuthorLayout data={result.data} lang={lang} paths={paths} preview={previewCtx} />
   )
 }

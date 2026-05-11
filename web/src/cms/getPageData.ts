@@ -7,9 +7,8 @@ export async function getPageData(
   id: string | number,
   locale: Locale,
   options?: { preview?: boolean },
-): Promise<PageData> {
+): Promise<PageData | null> {
   const preview = options?.preview ?? false
-
   const result = await payloadSDK.find(
     {
       collection,
@@ -22,14 +21,8 @@ export async function getPageData(
       limit: 1,
       pagination: false,
     },
-    {
-      headers: cacheHeader(!preview),
-    },
+    { headers: cacheHeader(!preview) },
   )
 
-  if (result.totalDocs === 0) {
-    throw new Error(`Page not found: collection=${String(collection)} id=${String(id)}`)
-  }
-
-  return result.docs[0] as unknown as PageData
+  return (result.docs[0] as PageData | undefined) ?? null
 }

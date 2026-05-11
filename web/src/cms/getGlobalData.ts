@@ -1,4 +1,4 @@
-import type { Footer, Header, Labels } from '@astroload/cms/src/payload-types'
+import type { Footer, Header, Labels, SiteSetting } from '@astroload/cms/src/payload-types'
 
 import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
@@ -8,6 +8,7 @@ export interface GlobalData {
   footer: Footer
   header: Header
   labels: Labels
+  siteSettings: SiteSetting
 }
 
 export async function getGlobalData({
@@ -29,7 +30,7 @@ export async function getGlobalData({
   }
 
   const data = (await response.json()) as GlobalData
-  if (!data.header || !data.footer || !data.labels) {
+  if (!data.header || !data.footer || !data.labels || !data.siteSettings) {
     throw new Error('global-data response is incomplete')
   }
   return data

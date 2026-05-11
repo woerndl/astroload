@@ -50,16 +50,14 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
     )
 
     for (const [i, result] of results.entries()) {
-      const match = (result.docs as Array<{ path?: string }>).find(
+      const collection = pageCollectionsSlugs[i]!
+      const match = (result.docs as Array<{ id: string | number; path?: string }>).find(
         (doc) => doc.path === fullPath,
       )
-      if (match) {
-        const body: PageByPathBody = {
-          collection: pageCollectionsSlugs[i]!,
-          data: match,
-        }
-        return Response.json(body, { headers: { 'Cache-Control': 'no-cache' } })
-      }
+      if (!match) continue
+
+      const body: PageByPathBody = { collection, data: match }
+      return Response.json(body, { headers: { 'Cache-Control': 'no-cache' } })
     }
 
     return new Response(null, { status: 404 })

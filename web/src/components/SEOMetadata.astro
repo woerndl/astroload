@@ -1,0 +1,78 @@
+---
+import type { Media, SiteSetting } from '@astroload/cms/src/payload-types'
+
+import { DEFAULT_LOCALE, LOCALES } from '@astroload/cms/src/shared'
+import { isPopulated, type Locale, type LocalePaths, type PageCollectionSlug } from '../cms/types'
+import { absoluteCmsURL, absoluteSiteURL } from '../cms/urls'
+
+interface Props {
+  lang: Locale
+  collection?: PageCollectionSlug
+  paths?: LocalePaths
+  title: string
+  description?: string
+  image?: Media | null
+  siteSettings: SiteSetting
+}
+
+const OG_LOCALE: Record<Locale, string> = { de: 'de_DE', en: 'en_US' }
+
+const { lang, collection, paths, title, description, image, siteSettings } = Astro.props
+
+const suffix = siteSettings.defaultSeo?.titleSuffix ?? ''
+const fullTitle = title ? `${title}${suffix}` : siteSettings.siteName
+
+const finalDescription = description ?? siteSettings.defaultSeo?.description ?? undefined
+
+const defaultImage = isPopulated<Media>(siteSettings.defaultSeo?.image) ? siteSettings.defaultSeo.image : null
+const ogMedia = image ?? defaultImage
+const ogVariant = ogMedia?.sizes?.og
+const ogUrlPath = ogVariant?.url ?? ogMedia?.url ?? null
+const ogImageURL = ogUrlPath ? absoluteCmsURL(ogUrlPath) : null
+const ogImageWidth = ogVariant?.width ?? ogMedia?.width ?? null
+const ogImageHeight = ogVariant?.height ?? ogMedia?.height ?? null
+const ogImageAlt = ogMedia?.alt ?? title
+
+const canonicalPath = paths?.[lang]
+const canonicalURL = absoluteSiteURL(canonicalPath ?? Astro.url.pathname)
+
+const ogType = collection === 'posts' ? 'article' : 'website'
+const ogLocale = OG_LOCALE[lang]
+
+const allowIndexing = siteSettings.robots?.allowIndexing === true
+---
+
+<title>{fullTitle}</title>
+{finalDescription && <meta name="description" content={finalDescription} />}
+<link rel="canonical" href={canonicalURL} />
+{!allowIndexing && <meta name="robots" content="noindex, nofollow" />}
+
+{paths &&
+  LOCALES.map((code) => {
+    const altPath = paths[code]
+    if (!altPath) return null
+    return <link rel="alternate" hreflang={code} href={absoluteSiteURL(altPath)} />
+  })}
+{paths?.[DEFAULT_LOCALE] && (
+  <link rel="alternate" hreflang="x-default" href={absoluteSiteURL(paths[DEFAULT_LOCALE]!)} />
+)}
+
+<meta property="og:type" content={ogType} />
+<meta property="og:title" content={fullTitle} />
+{finalDescription && <meta property="og:description" content={finalDescription} />}
+<meta property="og:url" content={canonicalURL} />
+<meta property="og:site_name" content={siteSettings.siteName} />
+<meta property="og:locale" content={ogLocale} />
+{ogImageURL && (
+  <>
+    <meta property="og:image" content={ogImageURL} />
+    {ogImageWidth && <meta property="og:image:width" content={String(ogImageWidth)} />}
+    {ogImageHeight && <meta property="og:image:height" content={String(ogImageHeight)} />}
+    <meta property="og:image:alt" content={ogImageAlt} />
+  </>
+)}
+
+<meta name="twitter:card" content={ogImageURL ? 'summary_large_image' : 'summary'} />
+<meta name="twitter:title" content={fullTitle} />
+{finalDescription && <meta name="twitter:description" content={finalDescription} />}
+{ogImageURL && <meta name="twitter:image" content={ogImageURL} />}

@@ -1,7 +1,8 @@
 ---
 import type { Author } from '@astroload/cms/src/payload-types'
 
-import type { Locale, PreviewContext } from '../../cms/types'
+import { resolveSeo } from '../../cms/resolveSeo'
+import { isPopulated, type Locale, type LocalePaths, type PreviewContext } from '../../cms/types'
 import Img from '../../components/Img.astro'
 import LexicalContent from '../../components/lexical/LexicalContent.astro'
 import Layout from '../Layout.astro'
@@ -9,15 +10,25 @@ import Layout from '../Layout.astro'
 interface Props {
   data: Author
   lang: Locale
+  paths?: LocalePaths
   preview?: PreviewContext
 }
 
-const { data, lang, preview } = Astro.props
+const { data, lang, paths, preview } = Astro.props
 
-const photo = typeof data.photo === 'object' && data.photo !== null ? data.photo : null
+const photo = isPopulated(data.photo) ? data.photo : null
+const seo = resolveSeo(data)
 ---
 
-<Layout title={data.name} lang={lang} preview={preview}>
+<Layout
+  title={seo.title}
+  description={seo.description}
+  image={seo.image ?? photo}
+  result={{ collection: 'authors', data }}
+  lang={lang}
+  paths={paths}
+  preview={preview}
+>
   <article>
     <header class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
       {photo && <Img image={photo} size="sm" class="h-24 w-24 rounded-full object-cover" />}

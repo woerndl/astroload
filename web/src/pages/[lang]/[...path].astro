@@ -3,8 +3,8 @@ import type { InferGetStaticPropsType } from 'astro'
 
 import { getPageByPath, type PageByPathResult } from '../../cms/getPageByPath'
 import { getPageData } from '../../cms/getPageData'
-import { getStaticPaths as getCmsStaticPaths } from '../../cms/getStaticPaths'
-import { isLocale } from '../../cms/types'
+import { getStaticPaths as getCmsStaticPaths, getStaticPathItems } from '../../cms/getStaticPaths'
+import { isLocale, type LocalePaths } from '../../cms/types'
 import CollectionLayout from '../../layout/collections/CollectionLayout.astro'
 
 export const prerender = !import.meta.env.DEV
@@ -20,16 +20,26 @@ if (!isLocale(lang)) {
   return new Response(null, { status: 404 })
 }
 const locale = lang
-const { id, collection } = Astro.props as Partial<Props>
+const { id, collection, paths } = Astro.props as Partial<Props>
 
 let result: PageByPathResult | null = null
+let resolvedPaths: LocalePaths | undefined = paths
 
 if (id && collection) {
   const data = await getPageData(collection, id, locale)
-  result = { collection, data } as PageByPathResult
+  if (data) {
+    result = { collection, data } as PageByPathResult
+  }
 } else {
   const fullPath = path ? `/${lang}/${path}` : `/${lang}`
-  result = await getPageByPath(fullPath)
+  const found = await getPageByPath(fullPath)
+  if (found) {
+    result = found
+    const items = await getStaticPathItems()
+    resolvedPaths = items.find(
+      (it) => it.collection === found.collection && it.id === found.data.id,
+    )?.paths
+  }
 }
 
 if (!result) {
@@ -37,4 +47,4 @@ if (!result) {
 }
 ---
 
-<CollectionLayout result={result} lang={locale} />
+<CollectionLayout result={result} paths={resolvedPaths} lang={locale} />

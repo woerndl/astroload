@@ -4,12 +4,16 @@ export type Locale = Config['locale']
 
 export const LOCALES: readonly Locale[] = ['de', 'en']
 
+export const DEFAULT_LOCALE: Locale = 'en'
+
 export const isLocale = (value: unknown): value is Locale =>
   typeof value === 'string' && (LOCALES as readonly string[]).includes(value)
 
 export const pageCollectionsSlugs = ['pages', 'posts', 'authors'] as const
 
 export type PageCollectionSlug = (typeof pageCollectionsSlugs)[number]
+
+export type LocalePaths = Partial<Record<Locale, string>>
 
 export const livePreviewBreakpoints = [
   { name: 'mobile', label: 'Mobile', width: 390, height: 844 },

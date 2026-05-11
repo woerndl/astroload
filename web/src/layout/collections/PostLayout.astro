@@ -1,7 +1,8 @@
 ---
 import type { Author, Post } from '@astroload/cms/src/payload-types'
 
-import type { Locale, PreviewContext } from '../../cms/types'
+import { resolveSeo } from '../../cms/resolveSeo'
+import { isPopulated, type Locale, type LocalePaths, type PreviewContext } from '../../cms/types'
 import Img from '../../components/Img.astro'
 import LexicalContent from '../../components/lexical/LexicalContent.astro'
 import Layout from '../Layout.astro'
@@ -9,21 +10,29 @@ import Layout from '../Layout.astro'
 interface Props {
   data: Post
   lang: Locale
+  paths?: LocalePaths
   preview?: PreviewContext
 }
 
-const { data, lang, preview } = Astro.props
+const { data, lang, paths, preview } = Astro.props
 
-const cover = typeof data.image === 'object' && data.image !== null ? data.image : null
-const authors = (data.authors ?? []).filter(
-  (a): a is Author => typeof a === 'object' && a !== null,
-)
+const cover = isPopulated(data.image) ? data.image : null
+const authors = (data.authors ?? []).filter((a): a is Author => isPopulated(a))
 const publishedAt = data.publishedAt
   ? new Date(data.publishedAt).toLocaleDateString(lang)
   : null
+const seo = resolveSeo(data)
 ---
 
-<Layout title={data.title} description={data.excerpt} lang={lang} preview={preview}>
+<Layout
+  title={seo.title}
+  description={seo.description}
+  image={seo.image ?? cover}
+  result={{ collection: 'posts', data }}
+  lang={lang}
+  paths={paths}
+  preview={preview}
+>
   <article>
     <header class="mb-8">
       <h1 class="text-3xl font-semibold">{data.title}</h1>

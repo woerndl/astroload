@@ -6,14 +6,19 @@ export interface StaticPathItem {
   collection: PageCollectionSlug
   id: string | number
   paths: Partial<Record<Locale, string>>
+  updatedAt: string
 }
 
 export interface StaticPageParams {
   params: { lang: string; path: string | undefined }
-  props: { id: string | number; collection: PageCollectionSlug }
+  props: {
+    id: string | number
+    collection: PageCollectionSlug
+    paths: Partial<Record<Locale, string>>
+  }
 }
 
-export async function getStaticPaths(): Promise<StaticPageParams[]> {
+export async function getStaticPathItems(): Promise<StaticPathItem[]> {
   const response = await payloadSDK.request({
     method: 'GET',
     path: '/static-paths',
@@ -24,7 +29,11 @@ export async function getStaticPaths(): Promise<StaticPageParams[]> {
     throw new Error(`static-paths fetch failed: ${response.status} ${response.statusText}`)
   }
 
-  const items = (await response.json()) as StaticPathItem[]
+  return (await response.json()) as StaticPathItem[]
+}
+
+export async function getStaticPaths(): Promise<StaticPageParams[]> {
+  const items = await getStaticPathItems()
   const out: StaticPageParams[] = []
 
   for (const item of items) {
@@ -36,7 +45,7 @@ export async function getStaticPaths(): Promise<StaticPageParams[]> {
         : fullPath
       out.push({
         params: { lang, path: trimmed },
-        props: { id: item.id, collection: item.collection },
+        props: { id: item.id, collection: item.collection, paths: item.paths },
       })
     }
   }

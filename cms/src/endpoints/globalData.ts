@@ -1,13 +1,14 @@
 import { createHash } from 'crypto'
 import { APIError, type PayloadRequest } from 'payload'
 
-import type { Footer, Header, Labels } from '../payload-types'
+import type { Footer, Header, Labels, SiteSetting } from '../payload-types'
 import { isLocale, LOCALES, pageCollectionsSlugs } from '../shared'
 
 export interface GlobalData {
   footer: Footer
   header: Header
   labels: Labels
+  siteSettings: SiteSetting
 }
 
 const PUBLIC_MAX_AGE_SECONDS = 60
@@ -29,13 +30,14 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
   )
 
   try {
-    const [header, footer, labels] = await Promise.all([
+    const [header, footer, labels, siteSettings] = await Promise.all([
       req.payload.findGlobal({ slug: 'header', populate: populatePagePaths, ...baseOptions }),
       req.payload.findGlobal({ slug: 'footer', populate: populatePagePaths, ...baseOptions }),
       req.payload.findGlobal({ slug: 'labels', ...baseOptions }),
+      req.payload.findGlobal({ slug: 'site-settings', ...baseOptions }),
     ])
 
-    const body: GlobalData = { footer, header, labels }
+    const body: GlobalData = { footer, header, labels, siteSettings }
     const json = JSON.stringify(body)
     const etag = createHash('md5').update(json).digest('hex')
     const cacheControl = preview ? 'no-cache' : `public, max-age=${PUBLIC_MAX_AGE_SECONDS}`

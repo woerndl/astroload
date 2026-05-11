@@ -107,6 +107,9 @@ importers:
       astro:
         specifier: ^6.3.1
         version: 6.3.1(@types/node@24.12.3)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(sass@1.77.4)(tsx@4.21.0)(yaml@2.8.4)
+      astro-seo-schema:
+        specifier: ^6.0.0
+        version: 6.0.0(astro@6.3.1(@types/node@24.12.3)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(sass@1.77.4)(tsx@4.21.0)(yaml@2.8.4))(schema-dts@1.1.5)
       lru-cache:
         specifier: 11.3.6
         version: 11.3.6
@@ -117,6 +120,9 @@ importers:
       '@astrojs/check':
         specifier: ^0.9.9
         version: 0.9.9(prettier@3.8.3)(typescript@5.7.3)
+      schema-dts:
+        specifier: 1.1.5
+        version: 1.1.5
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -2467,6 +2473,12 @@ packages:
   ast-types-flow@0.0.8:
     resolution: {integrity: sha512-OH/2E5Fg20h2aPrbe+QL8JZQFko0YZaF+j4mnQ7BGhfavO7OpSLa8a0y9sBwomHdSbkhTS8TQNayBfnW5DwbvQ==}
 
+  astro-seo-schema@6.0.0:
+    resolution: {integrity: sha512-6Etg+9zu7XdlUa40BIZrZP3vd+lReeJ1rNgT8Jer+1bPyGdrA/itQwJOhIkX+t5PadVwTmpt6xZouDycrZys6w==}
+    peerDependencies:
+      astro: ^6.0.0
+      schema-dts: ^1.1.0
+
   astro@6.3.1:
     resolution: {integrity: sha512-atz6dmkE3Gu24bDgb7g2RE/BYnKqPYIHd6hTUM1UXvu/i7qNZOKLAqEHvgYpv9PQVcgWsXpk4/OOXZ0E/FzvSQ==}
     engines: {node: '>=22.12.0', npm: '>=9.6.5', pnpm: '>=7.1.0'}
@@ -4705,6 +4717,9 @@ packages:
 
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
+
+  schema-dts@1.1.5:
+    resolution: {integrity: sha512-RJr9EaCmsLzBX2NDiO5Z3ux2BVosNZN5jo0gWgsyKvxKIUL5R3swNvoorulAeL9kLB0iTSX7V6aokhla2m7xbg==}
 
   secure-json-parse@4.1.0:
     resolution: {integrity: sha512-l4KnYfEyqYJxDwlNVyRfO2E4NTHfMKAWdUuA8J0yve2Dz/E/PdBepY03RvyJpssIpRFwJoCD55wA+mEDs6ByWA==}
@@ -8349,6 +8364,11 @@ snapshots:
 
   ast-types-flow@0.0.8: {}
 
+  astro-seo-schema@6.0.0(astro@6.3.1(@types/node@24.12.3)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(sass@1.77.4)(tsx@4.21.0)(yaml@2.8.4))(schema-dts@1.1.5):
+    dependencies:
+      astro: 6.3.1(@types/node@24.12.3)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(sass@1.77.4)(tsx@4.21.0)(yaml@2.8.4)
+      schema-dts: 1.1.5
+
   astro@6.3.1(@types/node@24.12.3)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(sass@1.77.4)(tsx@4.21.0)(yaml@2.8.4):
     dependencies:
       '@astrojs/compiler': 4.0.0
@@ -11163,6 +11183,8 @@ snapshots:
   scheduler@0.25.0: {}
 
   scheduler@0.27.0: {}
+
+  schema-dts@1.1.5: {}
 
   secure-json-parse@4.1.0: {}
 

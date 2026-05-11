@@ -1,0 +1,111 @@
+---
+import type { Author, SiteSetting } from '@astroload/cms/src/payload-types'
+import { Schema } from 'astro-seo-schema'
+import type { Article, Graph, Organization, Person, Thing, WebPage, WebSite } from 'schema-dts'
+
+import type { PageByPathResult } from '../cms/getPageByPath'
+import { isPopulated, type Locale } from '../cms/types'
+import { absoluteCmsURL, absoluteSiteURL } from '../cms/urls'
+
+interface Props {
+  result: PageByPathResult
+  lang: Locale
+  pathname: string
+  siteSettings: SiteSetting
+}
+
+const { result, lang, pathname, siteSettings } = Astro.props
+
+const siteOrigin = new URL(absoluteSiteURL('/')).origin
+const homeURL = `${siteOrigin}/${lang}`
+const pageURL = absoluteSiteURL(pathname)
+
+const defaultImage = isPopulated(siteSettings.defaultSeo?.image) ? siteSettings.defaultSeo.image : null
+
+function mediaURL(media: { url?: string | null } | null | undefined): string | undefined {
+  if (!media?.url) return undefined
+  return absoluteCmsURL(media.url)
+}
+
+const isHome = pathname === `/${lang}` || pathname === `/${lang}/`
+
+const graph: Thing[] = []
+
+const organization: Organization = {
+  '@type': 'Organization',
+  name: siteSettings.siteName,
+  url: siteOrigin,
+}
+const logoURL = mediaURL(defaultImage)
+if (logoURL) organization.logo = logoURL
+
+const webSite: WebSite = {
+  '@type': 'WebSite',
+  name: siteSettings.siteName,
+  url: siteOrigin,
+  inLanguage: lang,
+}
+
+if (isHome) {
+  graph.push(webSite, organization)
+} else if (result.collection === 'posts') {
+  const post = result.data
+  const authors = (post.authors ?? []).filter((a): a is Author => isPopulated(a))
+  const cover = isPopulated(post.image) ? post.image : null
+  const article: Article = {
+    '@type': 'Article',
+    headline: post.title,
+    url: pageURL,
+    inLanguage: lang,
+    mainEntityOfPage: pageURL,
+    publisher: organization,
+  }
+  if (post.excerpt) article.description = post.excerpt
+  if (post.publishedAt) article.datePublished = post.publishedAt
+  if (post.updatedAt) article.dateModified = post.updatedAt
+  if (authors.length > 0) {
+    article.author = authors.map((a) => ({ '@type': 'Person', name: a.name }))
+  }
+  const ogVariant = cover?.sizes?.og
+  if (ogVariant?.url && ogVariant.width && ogVariant.height) {
+    article.image = {
+      '@type': 'ImageObject',
+      url: absoluteCmsURL(ogVariant.url),
+      width: `${ogVariant.width} px`,
+      height: `${ogVariant.height} px`,
+    }
+  } else {
+    const fallback = mediaURL(cover)
+    if (fallback) article.image = fallback
+  }
+  graph.push(article)
+} else if (result.collection === 'authors') {
+  const author = result.data
+  const photo = isPopulated(author.photo) ? author.photo : null
+  const person: Person = {
+    '@type': 'Person',
+    name: author.name,
+    url: pageURL,
+  }
+  if (author.role) person.jobTitle = author.role
+  const personImage = mediaURL(photo)
+  if (personImage) person.image = personImage
+  graph.push(person)
+} else {
+  const webPage: WebPage = {
+    '@type': 'WebPage',
+    name: result.data.title ?? siteSettings.siteName,
+    url: pageURL,
+    inLanguage: lang,
+    isPartOf: { '@type': 'WebSite', url: homeURL, name: siteSettings.siteName },
+  }
+  graph.push(webPage)
+}
+
+const payload: Graph = {
+  '@context': 'https://schema.org',
+  '@graph': graph,
+}
+---
+
+<Schema item={payload} />

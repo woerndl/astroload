@@ -1,21 +1,32 @@
 ---
 import type { Page } from '@astroload/cms/src/payload-types'
 
-import type { Locale, PreviewContext } from '../../cms/types'
+import { resolveSeo } from '../../cms/resolveSeo'
+import type { Locale, LocalePaths, PreviewContext } from '../../cms/types'
 import SectionBlock from '../../components/SectionBlock.astro'
 import Layout from '../Layout.astro'
 
 interface Props {
   data: Page
   lang: Locale
+  paths?: LocalePaths
   preview?: PreviewContext
 }
 
-const { data, lang, preview } = Astro.props
+const { data, lang, paths, preview } = Astro.props
 const sections = data.sections ?? []
+const seo = resolveSeo(data)
 ---
 
-<Layout title={data.title} lang={lang} preview={preview}>
+<Layout
+  title={seo.title}
+  description={seo.description}
+  image={seo.image}
+  result={{ collection: 'pages', data }}
+  lang={lang}
+  paths={paths}
+  preview={preview}
+>
   <article>
     <h1 class="text-3xl font-semibold">{data.title}</h1>
     <div class="mt-8 space-y-6">

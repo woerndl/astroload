@@ -86,11 +86,15 @@ export default buildConfig({
       },
     }),
     seoPlugin({
-      collections: ['pages', 'posts'],
+      collections: ['pages', 'posts', 'authors'],
       uploadsCollection: 'media',
       generateURL: ({ doc }) =>
         typeof doc?.path === 'string' ? new URL(doc.path, env.WEBSITE_URL).toString() : '',
-      generateTitle: ({ doc }) => (typeof doc?.title === 'string' ? doc.title : ''),
+      generateTitle: ({ doc }) => {
+        if (typeof doc?.title === 'string') return doc.title
+        if (typeof doc?.name === 'string') return doc.name
+        return ''
+      },
     }),
     formBuilderPlugin({}),
     ...(s3Configured

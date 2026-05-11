@@ -6,12 +6,14 @@ import { type Locale, type PageCollectionSlug, pageCollectionsSlugs } from '../s
 interface PathDoc {
   id: string | number
   path: Partial<Record<Locale, string>>
+  updatedAt: string
 }
 
 export interface StaticPathItem {
   collection: PageCollectionSlug
   id: string | number
   paths: Partial<Record<Locale, string>>
+  updatedAt: string
 }
 
 export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
@@ -27,7 +29,7 @@ export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
           depth: 0,
           limit: 0,
           locale: 'all',
-          select: { path: true },
+          select: { path: true, updatedAt: true },
           where: { _status: { equals: 'published' } },
           req,
         }),
@@ -38,7 +40,7 @@ export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
     for (const [i, collection] of pageCollectionsSlugs.entries()) {
       const docs = results[i]!.docs as PathDoc[]
       for (const doc of docs) {
-        items.push({ collection, id: doc.id, paths: doc.path })
+        items.push({ collection, id: doc.id, paths: doc.path, updatedAt: doc.updatedAt })
       }
     }
 
