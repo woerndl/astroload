@@ -237,7 +237,9 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         {
           blockType: 'form',
           form: contactForm.id,
-          introContent: richText('Schreib uns eine kurze Nachricht.'),
+          introContent: richText(
+            'Schreib uns eine Nachricht. Wir antworten innerhalb weniger Werktage.',
+          ),
         },
       ],
       _status: 'published',
@@ -255,7 +257,9 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
           id: contactDe.sections![0]!.id,
           blockType: 'form',
           form: contactForm.id,
-          introContent: richText('Drop us a short note.'),
+          introContent: richText(
+            'Send us a message. We reply within a few business days.',
+          ),
         },
       ],
     } as never,

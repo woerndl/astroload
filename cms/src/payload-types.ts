@@ -343,15 +343,6 @@ export interface Form {
             required?: boolean | null;
             id?: string | null;
             blockName?: string | null;
-            blockType: 'country';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
             blockType: 'email';
           }
         | {
@@ -401,15 +392,6 @@ export interface Form {
             id?: string | null;
             blockName?: string | null;
             blockType: 'select';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'state';
           }
         | {
             name: string;
@@ -1059,16 +1041,6 @@ export interface FormsSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
-        country?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
-              required?: T;
-              id?: T;
-              blockName?: T;
-            };
         email?:
           | T
           | {
@@ -1112,16 +1084,6 @@ export interface FormsSelect<T extends boolean = true> {
                     value?: T;
                     id?: T;
                   };
-              required?: T;
-              id?: T;
-              blockName?: T;
-            };
-        state?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
               required?: T;
               id?: T;
               blockName?: T;

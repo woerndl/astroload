@@ -1,15 +1,250 @@
 ---
-import type { FormBlock as FormBlockType } from '@astroload/cms/src/payload-types'
+import type { Form, FormBlock as FormBlockType } from '@astroload/cms/src/payload-types'
 
+import { isLocale, isPopulated, type Locale } from '../../cms/types'
+import { absoluteCmsURL } from '../../cms/urls'
 import LexicalContent from '../lexical/LexicalContent.astro'
 
 type Props = Omit<FormBlockType, 'blockType'>
 
 const { form, introContent } = Astro.props
-const populatedForm = typeof form === 'object' && form !== null ? form : null
+const populatedForm = isPopulated<Form>(form) ? form : null
+
+const lang: Locale = isLocale(Astro.currentLocale) ? Astro.currentLocale : 'en'
+
+const submitURL = absoluteCmsURL('/api/form-submissions')
+
+const STRINGS: Record<Locale, { sending: string; error: string }> = {
+  de: {
+    sending: 'Wird gesendet ...',
+    error: 'Senden fehlgeschlagen. Bitte versuche es erneut.',
+  },
+  en: {
+    sending: 'Sending ...',
+    error: 'Sending failed. Please try again.',
+  },
+}
+const strings = STRINGS[lang]
+
+const fields = populatedForm?.fields ?? []
+const submitLabel = populatedForm?.submitButtonLabel ?? 'Submit'
+const fieldBasis = (width?: number | null) => {
+  const clamped = Math.min(100, Math.max(1, width ?? 100))
+  return `flex: 1 1 calc(${clamped}% - 1rem); min-width: 12rem`
+}
+
+const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${name}`
 ---
 
 <section class="my-8">
-  {introContent && <LexicalContent content={introContent} class="mb-4" />}
-  {populatedForm && <h3 class="text-xl font-semibold">{populatedForm.title}</h3>}
+  {introContent && <LexicalContent content={introContent} class="mb-6 max-w-prose" />}
+
+  {populatedForm && (
+    <div data-form-root={populatedForm.id}>
+      <form
+        class="flex flex-wrap gap-4"
+        action={submitURL}
+        method="post"
+        data-form-id={populatedForm.id}
+        data-form-action={submitURL}
+        data-confirmation-type={populatedForm.confirmationType ?? 'message'}
+        data-redirect-url={populatedForm.redirect?.url ?? ''}
+        data-submit-label={submitLabel}
+        data-sending-label={strings.sending}
+        data-error-message={strings.error}
+      >
+        {fields.map((field) => {
+          if (field.blockType === 'message') {
+            return field.message ? (
+              <div class="basis-full">
+                <LexicalContent content={field.message} />
+              </div>
+            ) : null
+          }
+          const label = field.label ?? field.name
+          const required = field.required ?? false
+          const labelMark = required ? <span aria-hidden="true"> *</span> : null
+          const id = fieldId(field.name)
+          if (field.blockType === 'textarea') {
+            return (
+              <div style={fieldBasis(field.width)}>
+                <label class="block text-sm font-medium" for={id}>{label}{labelMark}</label>
+                <textarea
+                  id={id}
+                  name={field.name}
+                  required={required}
+                  rows={5}
+                  class="mt-1 block w-full rounded border border-neutral-300 p-2 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                >{field.defaultValue ?? ''}</textarea>
+              </div>
+            )
+          }
+          if (field.blockType === 'select') {
+            const options = field.options ?? []
+            const defaultValue = field.defaultValue ?? ''
+            return (
+              <div style={fieldBasis(field.width)}>
+                <label class="block text-sm font-medium" for={id}>{label}{labelMark}</label>
+                <select
+                  id={id}
+                  name={field.name}
+                  required={required}
+                  class="mt-1 block w-full rounded border border-neutral-300 p-2 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                >
+                  {field.placeholder && <option value="">{field.placeholder}</option>}
+                  {options.map((opt) => (
+                    <option value={opt.value} selected={opt.value === defaultValue}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+            )
+          }
+          if (field.blockType === 'checkbox') {
+            return (
+              <div style={fieldBasis(field.width)}>
+                <div class="inline-flex items-center gap-2">
+                  <input
+                    id={id}
+                    type="checkbox"
+                    name={field.name}
+                    required={required}
+                    checked={field.defaultValue ?? false}
+                    class="focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+                  />
+                  <label class="text-sm" for={id}>{label}{labelMark}</label>
+                </div>
+              </div>
+            )
+          }
+          const inputType =
+            field.blockType === 'email' ? 'email' : field.blockType === 'number' ? 'number' : 'text'
+          let defaultValue = ''
+          if (field.blockType === 'text' && field.defaultValue) {
+            defaultValue = field.defaultValue
+          } else if (field.blockType === 'number' && field.defaultValue != null) {
+            defaultValue = String(field.defaultValue)
+          }
+          return (
+            <div style={fieldBasis(field.width)}>
+              <label class="block text-sm font-medium" for={id}>{label}{labelMark}</label>
+              <input
+                id={id}
+                type={inputType}
+                name={field.name}
+                required={required}
+                value={defaultValue}
+                class="mt-1 block w-full rounded border border-neutral-300 p-2 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+              />
+            </div>
+          )
+        })}
+
+        <div class="form-extra">
+          <label for={fieldId('fax')}>Fax</label>
+          <input id={fieldId('fax')} type="text" name="fax" />
+        </div>
+
+        <div class="basis-full">
+          <button
+            type="submit"
+            class="rounded bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:opacity-60"
+          >{submitLabel}</button>
+          <p data-error class="mt-2 hidden text-sm text-red-600" role="alert"></p>
+        </div>
+      </form>
+
+      {populatedForm.confirmationMessage && (
+        <div data-confirmation class="hidden">
+          <LexicalContent content={populatedForm.confirmationMessage} />
+        </div>
+      )}
+    </div>
+  )}
 </section>
+
+<script>
+  function attach(form: HTMLFormElement) {
+    const action = form.dataset.formAction
+    const formId = form.dataset.formId
+    if (!action || !formId) return
+
+    const root = form.closest<HTMLElement>('[data-form-root]')
+    const errorEl = form.querySelector<HTMLElement>('[data-error]')
+    const button = form.querySelector<HTMLButtonElement>('button[type=submit]')
+    const confirmation = root?.querySelector<HTMLElement>('[data-confirmation]') ?? null
+
+    const submitLabel = form.dataset.submitLabel ?? 'Submit'
+    const sendingLabel = form.dataset.sendingLabel ?? 'Sending'
+    const errorMessage = form.dataset.errorMessage ?? 'Submission failed.'
+    const attachedAt = Date.now()
+
+    let inFlight = false
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault()
+      if (inFlight) return
+      inFlight = true
+      if (errorEl) {
+        errorEl.classList.add('hidden')
+        errorEl.textContent = ''
+      }
+      if (button) {
+        button.disabled = true
+        button.textContent = sendingLabel
+      }
+
+      const data = new FormData(form)
+      const submissionData = Array.from(data.entries()).map(([field, value]) => ({
+        field,
+        value: typeof value === 'string' ? value : '',
+      }))
+      submissionData.push({ field: '_rendered_at', value: String(attachedAt) })
+
+      try {
+        const response = await fetch(action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ form: Number(formId), submissionData }),
+        })
+        if (!response.ok) {
+          let detail = ''
+          try {
+            const body = await response.json()
+            if (body?.errors?.[0]?.message) detail = String(body.errors[0].message)
+          } catch {}
+          throw new Error(detail || `HTTP ${response.status}`)
+        }
+        if (form.dataset.confirmationType === 'redirect' && form.dataset.redirectUrl) {
+          window.location.href = form.dataset.redirectUrl
+          return
+        }
+        form.classList.add('hidden')
+        confirmation?.classList.remove('hidden')
+      } catch (err) {
+        if (errorEl) {
+          errorEl.textContent = err instanceof Error && err.message && !/^HTTP \d+$/.test(err.message)
+            ? err.message
+            : errorMessage
+          errorEl.classList.remove('hidden')
+        }
+      } finally {
+        inFlight = false
+        if (button) {
+          button.disabled = false
+          button.textContent = submitLabel
+        }
+      }
+    })
+  }
+
+  function attachAll() {
+    document.querySelectorAll<HTMLFormElement>('form[data-form-id]').forEach((form) => {
+      if (form.dataset.formInitialized === 'true') return
+      form.dataset.formInitialized = 'true'
+      attach(form)
+    })
+  }
+
+  attachAll()
+  document.addEventListener('astro:after-swap', attachAll)
+</script>

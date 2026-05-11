@@ -21,6 +21,7 @@ import { getGlobalData } from './endpoints/globalData'
 import { getPageByPath } from './endpoints/pageByPath'
 import { getStaticPaths } from './endpoints/staticPaths'
 import { env } from './env'
+import { spamGuard } from './hooks/spamGuard'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Labels } from './globals/Labels'
@@ -43,6 +44,7 @@ export default buildConfig({
   },
   collections: [Pages, Posts, Authors, Media, ApiKeys, Redirects, Users],
   globals: [Header, Footer, Labels, SiteSettings],
+  cors: [env.WEBSITE_URL],
   endpoints: [
     { path: '/global-data', method: 'get', handler: getGlobalData },
     { path: '/page-by-path', method: 'get', handler: getPageByPath },
@@ -96,7 +98,20 @@ export default buildConfig({
         return ''
       },
     }),
-    formBuilderPlugin({}),
+    formBuilderPlugin({
+      fields: {
+        country: false,
+        date: false,
+        payment: false,
+        state: false,
+        upload: false,
+      },
+      formSubmissionOverrides: {
+        hooks: {
+          beforeChange: [spamGuard],
+        },
+      },
+    }),
     ...(s3Configured
       ? [
           s3Storage({
