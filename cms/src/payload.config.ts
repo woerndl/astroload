@@ -17,6 +17,8 @@ import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
 import { Redirects } from './collections/Redirects'
 import { Users } from './collections/Users'
+import { getGlobalData } from './endpoints/globalData'
+import { getStaticPaths } from './endpoints/staticPaths'
 import { env } from './env'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
@@ -30,6 +32,8 @@ const s3Configured =
   !!process.env.S3_BUCKET && !!process.env.S3_ACCESS_KEY_ID && !!process.env.S3_SECRET_ACCESS_KEY
 const resendConfigured = !!process.env.RESEND_API_KEY && !!process.env.RESEND_FROM_ADDRESS
 
+export const pageCollectionsSlugs = ['pages', 'posts', 'authors'] as const
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -39,6 +43,10 @@ export default buildConfig({
   },
   collections: [Pages, Posts, Authors, Media, ApiKeys, Redirects, Users],
   globals: [Header, Footer, Labels, SiteSettings],
+  endpoints: [
+    { path: '/global-data', method: 'get', handler: getGlobalData },
+    { path: '/static-paths', method: 'get', handler: getStaticPaths },
+  ],
   cors: [env.WEBSITE_URL],
   csrf: [env.WEBSITE_URL],
   localization: {
