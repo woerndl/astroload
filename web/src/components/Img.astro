@@ -23,7 +23,7 @@ if (!url) {
   throw new Error(`Media ${image.id} has no url`)
 }
 
-const src = url.startsWith('http') ? url : `${CMS_URL}${url}`
+const src = new URL(url, CMS_URL).toString()
 ---
 
 <img

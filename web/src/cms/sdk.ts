@@ -7,7 +7,7 @@ import { createCachedFetch } from './sdk/cachedFetch'
 
 export function createPayloadSDK(apiKey: string): PayloadSDK<Config> {
   return new PayloadSDK<Config>({
-    baseURL: `${CMS_URL}/api`,
+    baseURL: new URL('/api', CMS_URL).toString(),
     baseInit: {
       headers: { Authorization: `api-keys API-Key ${apiKey}` },
     },

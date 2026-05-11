@@ -79,13 +79,13 @@ export default buildConfig({
   plugins: [
     payloadPagesPlugin({
       generatePageURL: ({ path: pagePath, preview }) =>
-        pagePath ? `${env.WEBSITE_URL}${preview ? '/preview' : ''}${pagePath}` : null,
+        pagePath ? new URL(`${preview ? '/preview' : ''}${pagePath}`, env.WEBSITE_URL).toString() : null,
     }),
     seoPlugin({
       collections: ['pages', 'posts'],
       uploadsCollection: 'media',
       generateURL: ({ doc }) =>
-        typeof doc?.path === 'string' ? `${env.WEBSITE_URL}${doc.path}` : '',
+        typeof doc?.path === 'string' ? new URL(doc.path, env.WEBSITE_URL).toString() : '',
       generateTitle: ({ doc }) => (typeof doc?.title === 'string' ? doc.title : ''),
     }),
     formBuilderPlugin({}),

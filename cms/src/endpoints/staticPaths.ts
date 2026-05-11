@@ -29,6 +29,7 @@ export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
           locale: 'all',
           select: { path: true },
           where: { _status: { equals: 'published' } },
+          req,
         }),
       ),
     )
@@ -41,18 +42,18 @@ export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
       }
     }
 
-    const etag = createHash('md5').update(JSON.stringify(items)).digest('hex')
-    const cacheControl = 'no-cache'
+    const body = JSON.stringify(items)
+    const etag = createHash('md5').update(body).digest('hex')
 
     if (req.headers.get('if-none-match') === etag) {
       return new Response(null, {
-        headers: { 'Cache-Control': cacheControl, ETag: etag },
+        headers: { 'Cache-Control': 'no-cache', ETag: etag },
         status: 304,
       })
     }
 
-    return Response.json(items, {
-      headers: { 'Cache-Control': cacheControl, ETag: etag },
+    return new Response(body, {
+      headers: { 'Cache-Control': 'no-cache', 'Content-Type': 'application/json', ETag: etag },
     })
   } catch (error) {
     req.payload.logger.error({ err: error }, 'staticPaths endpoint failed')

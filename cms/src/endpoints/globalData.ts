@@ -36,7 +36,8 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
     ])
 
     const body: GlobalData = { footer, header, labels }
-    const etag = createHash('md5').update(JSON.stringify(body)).digest('hex')
+    const json = JSON.stringify(body)
+    const etag = createHash('md5').update(json).digest('hex')
     const cacheControl = preview ? 'no-cache' : `public, max-age=${PUBLIC_MAX_AGE_SECONDS}`
 
     if (req.headers.get('if-none-match') === etag) {
@@ -46,8 +47,8 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
       })
     }
 
-    return Response.json(body, {
-      headers: { 'Cache-Control': cacheControl, ETag: etag },
+    return new Response(json, {
+      headers: { 'Cache-Control': cacheControl, 'Content-Type': 'application/json', ETag: etag },
     })
   } catch (error) {
     req.payload.logger.error({ err: error }, 'globalData endpoint failed')

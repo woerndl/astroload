@@ -5,21 +5,19 @@ import type { ImageBlock as ImageBlockType } from '@astroload/cms/src/payload-ty
 
 import ImageBlock from '../blocks/ImageBlock.astro'
 
-type Props = {
+interface Props {
   node: BlockNode | InlineBlockNode
   inline?: boolean
 }
 
 const { node } = Astro.props
-const fields = node.fields as { blockType: string } & Record<string, unknown>
+const { fields } = node
+
+if (fields.blockType !== 'image') {
+  throw new Error(`Lexical block "${fields.blockType}" not implemented`)
+}
+
+const imageFields = fields as unknown as ImageBlockType
 ---
 
-{
-  fields.blockType === 'image' ? (
-    <ImageBlock {...(fields as unknown as ImageBlockType)} />
-  ) : (
-    (() => {
-      throw new Error(`Lexical block "${fields.blockType}" not implemented`)
-    })()
-  )
-}
+<ImageBlock {...imageFields} />

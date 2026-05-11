@@ -21,14 +21,13 @@ export function createCachedFetch(baseFetch: typeof fetch): typeof fetch {
     const method = init?.method ?? 'GET'
     const useCache = new Headers(init?.headers).get(USE_CACHE_HEADER) === 'true'
 
-    // The SDK cache is for SSG builds. `astro dev` runs the same code paths
-    // but should always fetch fresh so CMS edits propagate without a restart.
+    // Disabled in dev so CMS edits propagate without an Astro restart.
     const shouldCache = useCache && method === 'GET' && !import.meta.env.DEV
 
     if (!shouldCache) return baseFetch(input, init)
 
     const key = createCacheKey(url, init)
-    const cached = cache.apiRequests.get(key)
+    const cached = cache.get(key)
     if (cached !== undefined) {
       return new Response(cached, {
         status: 200,
@@ -37,14 +36,9 @@ export function createCachedFetch(baseFetch: typeof fetch): typeof fetch {
     }
 
     const response = await baseFetch(input, init)
-    if (response.ok) {
-      try {
-        const text = await response.clone().text()
-        JSON.parse(text)
-        cache.apiRequests.set(key, text)
-      } catch {
-        // non-JSON body, skip caching
-      }
+    if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
+      const text = await response.clone().text()
+      cache.set(key, text)
     }
     return response
   }
