@@ -1,0 +1,34 @@
+---
+import type { Author } from '@astroload/cms/src/payload-types'
+
+import type { Locale } from '../../cms/types'
+import Img from '../../components/Img.astro'
+import LexicalContent from '../../components/lexical/LexicalContent.astro'
+import Layout from '../Layout.astro'
+
+interface Props {
+  data: Author
+  lang: Locale
+}
+
+const { data, lang } = Astro.props
+
+const photo = typeof data.photo === 'object' && data.photo !== null ? data.photo : null
+---
+
+<Layout title={data.name} lang={lang}>
+  <article>
+    <header class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+      {photo && <Img image={photo} size="sm" class="h-24 w-24 rounded-full object-cover" />}
+      <div>
+        <h1 class="text-3xl font-semibold">{data.name}</h1>
+        {data.role && <p class="mt-1 text-gray-600">{data.role}</p>}
+      </div>
+    </header>
+    {data.bio && (
+      <div class="mt-8">
+        <LexicalContent content={data.bio} />
+      </div>
+    )}
+  </article>
+</Layout>

@@ -30,7 +30,10 @@ export async function getStaticPaths(): Promise<StaticPageParams[]> {
   for (const item of items) {
     for (const [lang, fullPath] of Object.entries(item.paths)) {
       if (!fullPath) continue
-      const trimmed = fullPath.replace(new RegExp(`^/${lang}`), '') || undefined
+      const prefix = `/${lang}`
+      const trimmed = fullPath.startsWith(prefix)
+        ? fullPath.slice(prefix.length) || undefined
+        : fullPath
       out.push({
         params: { lang, path: trimmed },
         props: { id: item.id, collection: item.collection },

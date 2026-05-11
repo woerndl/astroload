@@ -1,5 +1,5 @@
-import type { Author, Config, Page, Post } from '@astroload/cms/src/payload-types'
+import type { Author, Page, Post } from '@astroload/cms/src/payload-types'
+import { isLocale, type Locale, type PageCollectionSlug } from '@astroload/cms/src/shared'
 
-export type Locale = Config['locale']
-export type PageCollectionSlug = keyof Config['collections']
+export { isLocale, type Locale, type PageCollectionSlug }
 export type PageData = Page | Post | Author

@@ -1,7 +1,8 @@
 import { createHash } from 'crypto'
 import { APIError, type PayloadRequest } from 'payload'
 
-import type { Config, Footer, Header, Labels } from '../payload-types'
+import type { Footer, Header, Labels } from '../payload-types'
+import { isLocale, LOCALES } from '../shared'
 
 export interface GlobalData {
   footer: Footer
@@ -9,13 +10,7 @@ export interface GlobalData {
   labels: Labels
 }
 
-type Locale = Config['locale']
-
-const LOCALES: readonly Locale[] = ['de', 'en']
 const PUBLIC_MAX_AGE_SECONDS = 60
-
-const isLocale = (value: unknown): value is Locale =>
-  typeof value === 'string' && (LOCALES as readonly string[]).includes(value)
 
 export async function getGlobalData(req: PayloadRequest): Promise<Response> {
   if (!req.user) {

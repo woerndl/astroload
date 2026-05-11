@@ -1,0 +1,36 @@
+---
+import { CMS_URL } from 'astro:env/client'
+
+import type { Media } from '@astroload/cms/src/payload-types'
+
+type SizeKey = 'xs' | 'sm' | 'md' | 'lg' | 'og'
+
+interface Props {
+  image: Media
+  size?: SizeKey
+  class?: string
+  loading?: 'lazy' | 'eager'
+}
+
+const { image, size = 'md', class: className, loading = 'lazy' } = Astro.props
+
+const variant = image.sizes?.[size]
+const url = variant?.url ?? image.url
+const width = variant?.width ?? image.width
+const height = variant?.height ?? image.height
+
+if (!url) {
+  throw new Error(`Media ${image.id} has no url`)
+}
+
+const src = url.startsWith('http') ? url : `${CMS_URL}${url}`
+---
+
+<img
+  src={src}
+  alt={image.alt}
+  width={width}
+  height={height}
+  loading={loading}
+  class={className}
+/>

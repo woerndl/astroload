@@ -1,0 +1,25 @@
+---
+import type { PageByPathResult } from '../../cms/getPageByPath'
+import type { Locale } from '../../cms/types'
+
+import AuthorLayout from './AuthorLayout.astro'
+import PageLayout from './PageLayout.astro'
+import PostLayout from './PostLayout.astro'
+
+interface Props {
+  result: PageByPathResult
+  lang: Locale
+}
+
+const { result, lang } = Astro.props
+---
+
+{
+  result.collection === 'pages' ? (
+    <PageLayout data={result.data} lang={lang} />
+  ) : result.collection === 'posts' ? (
+    <PostLayout data={result.data} lang={lang} />
+  ) : (
+    <AuthorLayout data={result.data} lang={lang} />
+  )
+}

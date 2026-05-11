@@ -1,0 +1,19 @@
+---
+import type { ImageBlock as ImageBlockType } from '@astroload/cms/src/payload-types'
+
+import Img from '../Img.astro'
+
+type Props = Omit<ImageBlockType, 'blockType'>
+
+const { image, caption } = Astro.props
+const media = typeof image === 'object' && image !== null ? image : null
+---
+
+{
+  media && (
+    <figure class="my-6">
+      <Img image={media} size="md" class="w-full" />
+      {caption && <figcaption class="mt-2 text-gray-600">{caption}</figcaption>}
+    </figure>
+  )
+}

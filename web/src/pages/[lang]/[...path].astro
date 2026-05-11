@@ -1,0 +1,40 @@
+---
+import type { InferGetStaticPropsType } from 'astro'
+
+import { getPageByPath, type PageByPathResult } from '../../cms/getPageByPath'
+import { getPageData } from '../../cms/getPageData'
+import { getStaticPaths as getCmsStaticPaths } from '../../cms/getStaticPaths'
+import { isLocale } from '../../cms/types'
+import CollectionLayout from '../../layout/collections/CollectionLayout.astro'
+
+export const prerender = !import.meta.env.DEV
+
+export async function getStaticPaths() {
+  return getCmsStaticPaths()
+}
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>
+
+const { lang, path } = Astro.params
+if (!isLocale(lang)) {
+  return new Response(null, { status: 404 })
+}
+const locale = lang
+const { id, collection } = Astro.props as Partial<Props>
+
+let result: PageByPathResult | null = null
+
+if (id && collection) {
+  const data = await getPageData(collection, id, locale)
+  result = { collection, data } as PageByPathResult
+} else {
+  const fullPath = path ? `/${lang}/${path}` : `/${lang}`
+  result = await getPageByPath(fullPath)
+}
+
+if (!result) {
+  return new Response(null, { status: 404 })
+}
+---
+
+<CollectionLayout result={result} lang={locale} />

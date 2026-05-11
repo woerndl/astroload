@@ -1,0 +1,26 @@
+---
+import RichTextLexical from '@jhb.software/astro-payload-richtext-lexical/RichTextLexical.astro'
+
+import BlockRenderer from './BlockRenderer.astro'
+import UploadRenderer from './UploadRenderer.astro'
+
+interface Props {
+  content: {
+    root: {
+      children: unknown[]
+      [k: string]: unknown
+    }
+    [k: string]: unknown
+  }
+  class?: string
+}
+
+const { content, class: className } = Astro.props
+---
+
+<RichTextLexical
+  nodes={content.root.children as never}
+  UploadRenderer={UploadRenderer}
+  BlockRenderer={BlockRenderer}
+  class:list={[className]}
+/>

@@ -1,0 +1,15 @@
+---
+import type { FormBlock as FormBlockType } from '@astroload/cms/src/payload-types'
+
+import LexicalContent from '../lexical/LexicalContent.astro'
+
+type Props = Omit<FormBlockType, 'blockType'>
+
+const { form, introContent } = Astro.props
+const populatedForm = typeof form === 'object' && form !== null ? form : null
+---
+
+<section class="my-8">
+  {introContent && <LexicalContent content={introContent} class="mb-4" />}
+  {populatedForm && <h3 class="text-xl font-semibold">{populatedForm.title}</h3>}
+</section>

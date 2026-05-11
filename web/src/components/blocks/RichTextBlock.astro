@@ -1,0 +1,11 @@
+---
+import type { RichTextBlock as RichTextBlockType } from '@astroload/cms/src/payload-types'
+
+import LexicalContent from '../lexical/LexicalContent.astro'
+
+type Props = Omit<RichTextBlockType, 'blockType'>
+
+const { text } = Astro.props
+---
+
+<LexicalContent content={text} />

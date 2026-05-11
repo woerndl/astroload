@@ -1,0 +1,25 @@
+---
+import type { BlockNode, InlineBlockNode } from '@jhb.software/astro-payload-richtext-lexical'
+
+import type { ImageBlock as ImageBlockType } from '@astroload/cms/src/payload-types'
+
+import ImageBlock from '../blocks/ImageBlock.astro'
+
+type Props = {
+  node: BlockNode | InlineBlockNode
+  inline?: boolean
+}
+
+const { node } = Astro.props
+const fields = node.fields as { blockType: string } & Record<string, unknown>
+---
+
+{
+  fields.blockType === 'image' ? (
+    <ImageBlock {...(fields as unknown as ImageBlockType)} />
+  ) : (
+    (() => {
+      throw new Error(`Lexical block "${fields.blockType}" not implemented`)
+    })()
+  )
+}

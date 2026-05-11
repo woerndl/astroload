@@ -20,7 +20,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Boot-time check at `cms/src/env.ts` that requires `PAYLOAD_SECRET`, `DATABASE_URI`, and `WEBSITE_URL`, throwing with a consolidated error if any are missing.
 - CMS content surface. Pages, Posts, Authors, Redirects collections via `@jhb.software/payload-pages-plugin`. Drafts on Pages, Posts, Authors. `Posts` and `Authors` use a shared parent Pages doc per collection. `name` on Authors stays non-localized.
 - Globals: `Header`, `Footer`, `Labels`, `SiteSettings`. Public read, admin update. SiteSettings carries default SEO triple, a Plausible domain placeholder, and a `robots.allowIndexing` flag (default off).
-- Localization: `de` and `en`, `defaultLocale: 'de'`, `fallback: true`. Localized fields across content collections and globals.
+- Localization: `de` and `en`, `defaultLocale: 'en'`, `fallback: true`. Localized fields across content collections and globals.
 - Media collection with named image sizes (`xs`, `sm`, `md`, `lg`, `og` 1200x630), `mimeTypes: ['image/*']`, `adminThumbnail: 'xs'`, localized `alt` and optional localized `caption`. Writes are admin-only.
 - Page-builder blocks under `cms/src/blocks/`: `RichTextBlock`, `ImageBlock`, `FormBlock`. `Pages.sections` accepts all three. `Posts.content` is a per-field Lexical editor with `BlocksFeature([ImageBlock])` for inline images.
 - `seoPlugin` adds `meta` (title, description, image) to Pages and Posts. `generateTitle` falls back to `doc.title`, `generateURL` resolves against `WEBSITE_URL`.
@@ -36,3 +36,12 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Two CMS endpoints feed the data layer. `GET /api/global-data` returns header, footer, and labels in one round-trip with localized page paths populated on link references. `GET /api/static-paths` enumerates published pages, posts, and authors with their localized paths. Both carry `ETag` and `Cache-Control`.
 - Astro env schema in `web/astro.config.mjs` declares `PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `CMS_URL`, `WEBSITE_URL`, and optional `PLAUSIBLE_DOMAIN` with localhost defaults for dev.
 - `@payloadcms/sdk` 3.84.1 added to `web/package.json`.
+- Public rendering. Catch-all `/[lang]/[...path]` route renders pages, posts, and authors. Prerendered in production, SSR fallback in dev so CMS edits show without an Astro restart.
+- `GET /api/page-by-path` resolves a full URL path to `{ collection, data }`. The pages-plugin `path` field is virtual, so the endpoint matches against slug results from the three page collections.
+- Block renderers (`RichTextBlock`, `ImageBlock`, `FormBlock`) and a Lexical pipeline via `@jhb.software/astro-payload-richtext-lexical` with custom block and upload renderers.
+- `Img.astro` picks the right `image.sizes` variant and prefixes relative URLs with `CMS_URL`.
+- `Layout.astro` with `<ClientRouter />` view transitions, Tailwind v4 via `@tailwindcss/vite` (no PostCSS), minimal default type scale.
+- `@astrojs/node@10.1.0` adapter in `mode: 'standalone'` so per-route `prerender = false` works in dev.
+- `index.astro` redirects `/` to `/en` with a 302. A static page is required because Astro's `redirects:` config drops the status override when the destination resolves to a dynamic route.
+- Static `404.astro` (`prerender = true`).
+- `web/.env.example` documents the required and optional env values.

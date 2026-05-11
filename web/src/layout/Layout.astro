@@ -1,0 +1,31 @@
+---
+import { ClientRouter } from 'astro:transitions'
+
+import type { Locale } from '../cms/types'
+import '../styles/app.css'
+
+interface Props {
+  title: string
+  description?: string
+  lang: Locale
+}
+
+const { title, description, lang } = Astro.props
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <ClientRouter />
+  </head>
+  <body class="bg-white text-gray-900 antialiased">
+    <main class="mx-auto max-w-3xl px-4 py-12">
+      <slot />
+    </main>
+  </body>
+</html>

@@ -1,7 +1,14 @@
 // @ts-check
+import node from '@astrojs/node'
+import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, envField } from 'astro/config'
 
 export default defineConfig({
+  adapter: node({ mode: 'standalone' }),
+  trailingSlash: 'never',
+  vite: {
+    plugins: [tailwindcss()],
+  },
   env: {
     schema: {
       PAYLOAD_READ_KEY: envField.string({ context: 'server', access: 'secret' }),

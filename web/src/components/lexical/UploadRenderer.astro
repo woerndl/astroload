@@ -1,0 +1,17 @@
+---
+import type { UploadNode } from '@jhb.software/astro-payload-richtext-lexical'
+
+import type { Media } from '@astroload/cms/src/payload-types'
+
+import Img from '../Img.astro'
+
+type Props = { node: UploadNode }
+
+const { node } = Astro.props
+---
+
+{
+  node.relationTo === 'media' && typeof node.value === 'object' ? (
+    <Img image={node.value as unknown as Media} size="md" class="my-6 w-full" />
+  ) : null
+}

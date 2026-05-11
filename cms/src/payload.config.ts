@@ -18,6 +18,7 @@ import { Posts } from './collections/Posts'
 import { Redirects } from './collections/Redirects'
 import { Users } from './collections/Users'
 import { getGlobalData } from './endpoints/globalData'
+import { getPageByPath } from './endpoints/pageByPath'
 import { getStaticPaths } from './endpoints/staticPaths'
 import { env } from './env'
 import { Footer } from './globals/Footer'
@@ -32,8 +33,6 @@ const s3Configured =
   !!process.env.S3_BUCKET && !!process.env.S3_ACCESS_KEY_ID && !!process.env.S3_SECRET_ACCESS_KEY
 const resendConfigured = !!process.env.RESEND_API_KEY && !!process.env.RESEND_FROM_ADDRESS
 
-export const pageCollectionsSlugs = ['pages', 'posts', 'authors'] as const
-
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -45,6 +44,7 @@ export default buildConfig({
   globals: [Header, Footer, Labels, SiteSettings],
   endpoints: [
     { path: '/global-data', method: 'get', handler: getGlobalData },
+    { path: '/page-by-path', method: 'get', handler: getPageByPath },
     { path: '/static-paths', method: 'get', handler: getStaticPaths },
   ],
   cors: [env.WEBSITE_URL],
@@ -54,7 +54,7 @@ export default buildConfig({
       { code: 'de', label: 'Deutsch' },
       { code: 'en', label: 'English' },
     ],
-    defaultLocale: 'de',
+    defaultLocale: 'en',
     fallback: true,
   },
   editor: lexicalEditor(),

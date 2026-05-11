@@ -1,11 +1,7 @@
 import { createHash } from 'crypto'
 import { APIError, type PayloadRequest } from 'payload'
 
-import { pageCollectionsSlugs } from '../payload.config'
-import type { Config } from '../payload-types'
-
-type Locale = Config['locale']
-type PageCollectionSlug = (typeof pageCollectionsSlugs)[number]
+import { type Locale, type PageCollectionSlug, pageCollectionsSlugs } from '../shared'
 
 interface PathDoc {
   id: string | number
