@@ -34,6 +34,7 @@ const s3Configured =
 const resendConfigured = !!process.env.RESEND_API_KEY && !!process.env.RESEND_FROM_ADDRESS
 
 export default buildConfig({
+  serverURL: env.SERVER_URL,
   admin: {
     user: Users.slug,
     importMap: {
@@ -47,8 +48,6 @@ export default buildConfig({
     { path: '/page-by-path', method: 'get', handler: getPageByPath },
     { path: '/static-paths', method: 'get', handler: getStaticPaths },
   ],
-  cors: [env.WEBSITE_URL],
-  csrf: [env.WEBSITE_URL],
   localization: {
     locales: [
       { code: 'de', label: 'Deutsch' },

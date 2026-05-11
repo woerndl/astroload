@@ -182,7 +182,7 @@ export interface Page {
   path: string;
   breadcrumbs: Breadcrumbs;
   title: string;
-  sections?: (RichTextBlock | ImageBlock | FormBlock)[] | null;
+  sections?: (RichTextBlock | ImageBlock | FormBlock | PostsListBlock | AuthorsListBlock)[] | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -493,6 +493,16 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PostsListBlock".
+ */
+export interface PostsListBlock {
+  posts?: (number | Post)[] | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'postsList';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
  */
 export interface Post {
@@ -564,6 +574,16 @@ export interface Author {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AuthorsListBlock".
+ */
+export interface AuthorsListBlock {
+  authors?: (number | Author)[] | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'authorsList';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -767,6 +787,8 @@ export interface PagesSelect<T extends boolean = true> {
         richText?: T | RichTextBlockSelect<T>;
         image?: T | ImageBlockSelect<T>;
         form?: T | FormBlockSelect<T>;
+        postsList?: T | PostsListBlockSelect<T>;
+        authorsList?: T | AuthorsListBlockSelect<T>;
       };
   meta?:
     | T
@@ -815,6 +837,24 @@ export interface ImageBlockSelect<T extends boolean = true> {
 export interface FormBlockSelect<T extends boolean = true> {
   form?: T;
   introContent?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PostsListBlock_select".
+ */
+export interface PostsListBlockSelect<T extends boolean = true> {
+  posts?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "AuthorsListBlock_select".
+ */
+export interface AuthorsListBlockSelect<T extends boolean = true> {
+  authors?: T;
   id?: T;
   blockName?: T;
 }

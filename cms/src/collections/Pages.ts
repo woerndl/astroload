@@ -1,8 +1,10 @@
 import type { PageCollectionConfig } from '@jhb.software/payload-pages-plugin'
 
 import { contentAccess } from '../access/contentAccess'
+import { AuthorsListBlock } from '../blocks/AuthorsListBlock'
 import { FormBlock } from '../blocks/FormBlock'
 import { ImageBlock } from '../blocks/ImageBlock'
+import { PostsListBlock } from '../blocks/PostsListBlock'
 import { RichTextBlock } from '../blocks/RichTextBlock'
 
 export const Pages: PageCollectionConfig = {
@@ -36,7 +38,7 @@ export const Pages: PageCollectionConfig = {
     {
       name: 'sections',
       type: 'blocks',
-      blocks: [RichTextBlock, ImageBlock, FormBlock],
+      blocks: [RichTextBlock, ImageBlock, FormBlock, PostsListBlock, AuthorsListBlock],
     },
   ],
 }

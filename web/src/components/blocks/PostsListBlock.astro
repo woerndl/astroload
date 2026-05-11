@@ -1,0 +1,43 @@
+---
+import type { Post, PostsListBlock as PostsListBlockType } from '@astroload/cms/src/payload-types'
+
+import Img from '../Img.astro'
+
+type Props = Omit<PostsListBlockType, 'blockType'>
+
+const { posts } = Astro.props
+const items = (posts ?? []).filter(
+  (p): p is Post => typeof p === 'object' && p !== null,
+)
+---
+
+{
+  items.length === 0 ? (
+    <p class="my-6 text-gray-500">No posts yet.</p>
+  ) : (
+    <ul class="my-6 flex flex-col gap-6">
+      {items.map((post) => {
+        const image = typeof post.image === 'object' ? post.image : null
+        const published = post.publishedAt
+          ? new Date(post.publishedAt).toLocaleDateString(Astro.currentLocale)
+          : null
+        return (
+          <li>
+            <a href={post.path} class="flex gap-4 group">
+              {image && (
+                <div class="w-32 shrink-0 sm:w-40">
+                  <Img image={image} size="sm" class="aspect-[4/3] w-full rounded object-cover" />
+                </div>
+              )}
+              <div class="flex-1">
+                <h3 class="font-semibold group-hover:underline">{post.title}</h3>
+                {published && <p class="mt-1 text-sm text-gray-500">{published}</p>}
+                <p class="mt-2 text-gray-700">{post.excerpt}</p>
+              </div>
+            </a>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}

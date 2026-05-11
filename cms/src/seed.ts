@@ -261,17 +261,96 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
     } as never,
   })
 
+  payload.logger.info('Seed: creating posts and authors parent pages')
+  const postsParentDe = await payload.create({
+    collection: 'pages',
+    locale: 'de',
+    data: {
+      title: 'Beiträge',
+      slug: 'posts',
+      sections: [
+        {
+          blockType: 'richText',
+          text: richText('Hier sammeln sich alle Beiträge.'),
+        },
+        {
+          blockType: 'postsList',
+        },
+      ],
+      _status: 'published',
+    } as never,
+  })
+  await payload.update({
+    collection: 'pages',
+    id: postsParentDe.id,
+    locale: 'en',
+    data: {
+      title: 'Posts',
+      slug: 'posts',
+      sections: [
+        {
+          id: postsParentDe.sections![0]!.id,
+          blockType: 'richText',
+          text: richText('All posts live here.'),
+        },
+        {
+          id: postsParentDe.sections![1]!.id,
+          blockType: 'postsList',
+        },
+      ],
+    } as never,
+  })
+
+  const authorsParentDe = await payload.create({
+    collection: 'pages',
+    locale: 'de',
+    data: {
+      title: 'Autoren',
+      slug: 'authors',
+      sections: [
+        {
+          blockType: 'richText',
+          text: richText('Wer schreibt hier eigentlich.'),
+        },
+        {
+          blockType: 'authorsList',
+        },
+      ],
+      _status: 'published',
+    } as never,
+  })
+  await payload.update({
+    collection: 'pages',
+    id: authorsParentDe.id,
+    locale: 'en',
+    data: {
+      title: 'Authors',
+      slug: 'authors',
+      sections: [
+        {
+          id: authorsParentDe.sections![0]!.id,
+          blockType: 'richText',
+          text: richText('Meet the people writing here.'),
+        },
+        {
+          id: authorsParentDe.sections![1]!.id,
+          blockType: 'authorsList',
+        },
+      ],
+    } as never,
+  })
+
   payload.logger.info('Seed: creating author')
   const authorDe = await payload.create({
     collection: 'authors',
     locale: 'de',
     data: {
-      name: 'Alex Beispiel',
-      slug: 'alex-beispiel',
-      parent: homeDe.id,
+      name: 'Sam Houston',
+      slug: 'sam-houston',
+      parent: authorsParentDe.id,
       role: 'Redakteur',
       photo: authorPhoto.id,
-      bio: richText('Alex schreibt über Web, Performance und CMS-Architektur.'),
+      bio: richText('Sam schreibt über Web, Performance und CMS-Architektur.'),
       _status: 'published',
     } as never,
   })
@@ -280,9 +359,9 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
     id: authorDe.id,
     locale: 'en',
     data: {
-      slug: 'alex-example',
+      slug: 'sam-houston',
       role: 'Editor',
-      bio: richText('Alex writes about the web, performance, and CMS architecture.'),
+      bio: richText('Sam writes about the web, performance, and CMS architecture.'),
     } as never,
   })
 
@@ -293,7 +372,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
     data: {
       title: 'Hallo Welt',
       slug: 'hallo-welt',
-      parent: homeDe.id,
+      parent: postsParentDe.id,
       authors: [authorDe.id],
       publishedAt: new Date().toISOString(),
       excerpt: 'Ein erster Beitrag, der den Blog-Renderer beleuchtet.',
@@ -374,8 +453,8 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         {
           heading: 'Inhalte',
           links: [
-            { page: { relationTo: 'posts', value: postDe.id }, label: 'Erster Beitrag' },
-            { page: { relationTo: 'authors', value: authorDe.id }, label: 'Alex Beispiel' },
+            { page: { relationTo: 'pages', value: postsParentDe.id }, label: 'Beiträge' },
+            { page: { relationTo: 'pages', value: authorsParentDe.id }, label: 'Autoren' },
           ],
         },
       ],
@@ -409,13 +488,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
           links: [
             {
               id: footerDe.columns![1]!.links![0]!.id,
-              page: { relationTo: 'posts', value: postDe.id },
-              label: 'First post',
+              page: { relationTo: 'pages', value: postsParentDe.id },
+              label: 'Posts',
             },
             {
               id: footerDe.columns![1]!.links![1]!.id,
-              page: { relationTo: 'authors', value: authorDe.id },
-              label: 'Alex Example',
+              page: { relationTo: 'pages', value: authorsParentDe.id },
+              label: 'Authors',
             },
           ],
         },

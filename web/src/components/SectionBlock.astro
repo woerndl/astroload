@@ -1,8 +1,10 @@
 ---
 import type { Page } from '@astroload/cms/src/payload-types'
 
+import AuthorsListBlock from './blocks/AuthorsListBlock.astro'
 import FormBlock from './blocks/FormBlock.astro'
 import ImageBlock from './blocks/ImageBlock.astro'
+import PostsListBlock from './blocks/PostsListBlock.astro'
 import RichTextBlock from './blocks/RichTextBlock.astro'
 
 type Section = NonNullable<Page['sections']>[number]
@@ -14,16 +16,8 @@ interface Props {
 const { block } = Astro.props
 ---
 
-{
-  block.blockType === 'richText' ? (
-    <RichTextBlock {...block} />
-  ) : block.blockType === 'image' ? (
-    <ImageBlock {...block} />
-  ) : block.blockType === 'form' ? (
-    <FormBlock {...block} />
-  ) : (
-    (() => {
-      throw new Error(`Section block "${(block as { blockType: string }).blockType}" not implemented`)
-    })()
-  )
-}
+{block.blockType === 'richText' && <RichTextBlock {...block} />}
+{block.blockType === 'image' && <ImageBlock {...block} />}
+{block.blockType === 'form' && <FormBlock {...block} />}
+{block.blockType === 'postsList' && <PostsListBlock {...block} />}
+{block.blockType === 'authorsList' && <AuthorsListBlock {...block} />}

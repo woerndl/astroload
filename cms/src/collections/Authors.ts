@@ -32,6 +32,7 @@ export const Authors: PageCollectionConfig = {
       name: 'name',
       type: 'text',
       required: true,
+      index: true,
     },
     {
       name: 'role',

@@ -1,4 +1,4 @@
-const required = ['PAYLOAD_SECRET', 'DATABASE_URI', 'WEBSITE_URL'] as const
+const required = ['PAYLOAD_SECRET', 'DATABASE_URI', 'SERVER_URL', 'WEBSITE_URL'] as const
 
 type RequiredEnv = (typeof required)[number]
 type LoadedEnv = Record<RequiredEnv, string>

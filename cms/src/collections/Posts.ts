@@ -45,6 +45,7 @@ export const Posts: PageCollectionConfig = {
     {
       name: 'publishedAt',
       type: 'date',
+      index: true,
       admin: {
         position: 'sidebar',
         date: { pickerAppearance: 'dayAndTime' },
