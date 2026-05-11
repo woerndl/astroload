@@ -41,6 +41,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Block renderers (`RichTextBlock`, `ImageBlock`, `FormBlock`) and a Lexical pipeline via `@jhb.software/astro-payload-richtext-lexical` with custom block and upload renderers.
 - `Img.astro` picks the right `image.sizes` variant and prefixes relative URLs with `CMS_URL`.
 - `Layout.astro` with `<ClientRouter />` view transitions, Tailwind v4 via `@tailwindcss/vite` (no PostCSS), minimal default type scale.
+- `Header.astro` and `Footer.astro` render the editor-configured globals. Layout fetches global data once per render via `getGlobalData`. The endpoint populates `path` on links into any of the three page collections (pages, posts, authors). Seed adds a footer column with the seeded post and author so the multi-collection nav shape is visible from a fresh database.
 - `@astrojs/node@10.1.0` adapter in `mode: 'standalone'` so per-route `prerender = false` works in dev.
 - `index.astro` redirects `/` to `/en` with a 302. A static page is required because Astro's `redirects:` config drops the status override when the destination resolves to a dynamic route.
 - Static `404.astro` (`prerender = true`).

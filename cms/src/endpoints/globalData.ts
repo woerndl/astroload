@@ -2,7 +2,7 @@ import { createHash } from 'crypto'
 import { APIError, type PayloadRequest } from 'payload'
 
 import type { Footer, Header, Labels } from '../payload-types'
-import { isLocale, LOCALES } from '../shared'
+import { isLocale, LOCALES, pageCollectionsSlugs } from '../shared'
 
 export interface GlobalData {
   footer: Footer
@@ -24,12 +24,14 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
 
   const preview = req.query.preview === 'true'
   const baseOptions = { draft: preview, locale, req }
-  const populatePages = { pages: { path: true } } as const
+  const populatePagePaths = Object.fromEntries(
+    pageCollectionsSlugs.map((slug) => [slug, { path: true }]),
+  )
 
   try {
     const [header, footer, labels] = await Promise.all([
-      req.payload.findGlobal({ slug: 'header', populate: populatePages, ...baseOptions }),
-      req.payload.findGlobal({ slug: 'footer', populate: populatePages, ...baseOptions }),
+      req.payload.findGlobal({ slug: 'header', populate: populatePagePaths, ...baseOptions }),
+      req.payload.findGlobal({ slug: 'footer', populate: populatePagePaths, ...baseOptions }),
       req.payload.findGlobal({ slug: 'labels', ...baseOptions }),
     ])
 

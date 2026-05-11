@@ -1,0 +1,44 @@
+---
+import type { Footer } from '@astroload/cms/src/payload-types'
+
+interface Props {
+  footer: Footer
+}
+
+const { footer } = Astro.props
+
+const columns = (footer.columns ?? []).map((column) => ({
+  heading: column.heading,
+  links: (column.links ?? [])
+    .map((link) => {
+      const target = link.page.value
+      if (typeof target !== 'object' || !target.path) return null
+      return { href: target.path, label: link.label }
+    })
+    .filter((link): link is { href: string; label: string } => link !== null),
+}))
+---
+
+<footer class="mx-auto max-w-3xl px-4 py-8 text-gray-600">
+  {
+    columns.length > 0 && (
+      <div class="grid gap-8 sm:grid-cols-3">
+        {columns.map((column) => (
+          <div>
+            <p class="font-semibold text-gray-900">{column.heading}</p>
+            {column.links.length > 0 && (
+              <ul>
+                {column.links.map((link) => (
+                  <li>
+                    <a href={link.href}>{link.label}</a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
+  {footer.copyright && <p class="mt-8">{footer.copyright}</p>}
+</footer>

@@ -1,0 +1,37 @@
+---
+import type { Header } from '@astroload/cms/src/payload-types'
+
+import type { Locale } from '../cms/types'
+
+interface Props {
+  header: Header
+  lang: Locale
+}
+
+const { header, lang } = Astro.props
+
+const links = (header.links ?? [])
+  .map((link) => {
+    const target = link.page.value
+    if (typeof target !== 'object' || !target.path) return null
+    return { href: target.path, label: link.label }
+  })
+  .filter((link): link is { href: string; label: string } => link !== null)
+---
+
+<header class="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
+  <a href={`/${lang}`} class="font-semibold">Home</a>
+  {
+    links.length > 0 && (
+      <nav>
+        <ul class="flex gap-4 text-gray-600">
+          {links.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )
+  }
+</header>

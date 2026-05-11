@@ -371,6 +371,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
             { page: { relationTo: 'pages', value: aboutDe.id }, label: 'Über uns' },
           ],
         },
+        {
+          heading: 'Inhalte',
+          links: [
+            { page: { relationTo: 'posts', value: postDe.id }, label: 'Erster Beitrag' },
+            { page: { relationTo: 'authors', value: authorDe.id }, label: 'Alex Beispiel' },
+          ],
+        },
       ],
       copyright: `© ${year} ${SITE_NAME}`,
     } as never,
@@ -393,6 +400,22 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
               id: footerDe.columns![0]!.links![1]!.id,
               page: { relationTo: 'pages', value: aboutDe.id },
               label: 'About',
+            },
+          ],
+        },
+        {
+          id: footerDe.columns![1]!.id,
+          heading: 'Content',
+          links: [
+            {
+              id: footerDe.columns![1]!.links![0]!.id,
+              page: { relationTo: 'posts', value: postDe.id },
+              label: 'First post',
+            },
+            {
+              id: footerDe.columns![1]!.links![1]!.id,
+              page: { relationTo: 'authors', value: authorDe.id },
+              label: 'Alex Example',
             },
           ],
         },
