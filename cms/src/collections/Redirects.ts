@@ -6,6 +6,7 @@ import {
   triggerDeployAlwaysAfterChange,
   triggerDeployAlwaysAfterDelete,
 } from '../hooks/triggerDeploy'
+import { CollectionGroups } from '../shared'
 
 // Redirects has no draft/published state, so contentAccess does not apply.
 // Read-only API keys need read so the website can apply redirects.
@@ -14,6 +15,9 @@ import {
 // deploy webhook on every change.
 export const Redirects: RedirectsCollectionConfig = {
   slug: 'redirects',
+  admin: {
+    group: CollectionGroups.System,
+  },
   access: {
     read: isAuthenticated,
     create: isAdmin,

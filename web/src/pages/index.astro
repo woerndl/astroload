@@ -1,5 +1,8 @@
 ---
+import { pickLocale } from '../cms/pickLocale'
+
 export const prerender = false
 
-return Astro.redirect('/en', 302)
+const locale = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
+return Astro.redirect(`/${locale}`, 302)
 ---

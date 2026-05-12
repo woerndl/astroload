@@ -20,3 +20,16 @@ export const livePreviewBreakpoints = [
   { name: 'tablet', label: 'Tablet', width: 768, height: 1024 },
   { name: 'desktop', label: 'Desktop', width: 1280, height: 800 },
 ] as const
+
+// Pages, Posts, and Authors stay in the default Collections group, so only
+// the custom groups are listed here.
+export const CollectionGroups = {
+  Media: {
+    de: 'Medien',
+    en: 'Media',
+  },
+  System: {
+    de: 'System',
+    en: 'System',
+  },
+} as const

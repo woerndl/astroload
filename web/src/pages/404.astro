@@ -1,12 +1,13 @@
 ---
-import { DEFAULT_LOCALE } from '@astroload/cms/src/shared'
-
 import { getGlobalData } from '../cms/getGlobalData'
+import { pickLocale } from '../cms/pickLocale'
 import Layout from '../layout/Layout.astro'
 
-export const prerender = true
+// SSR so Astro.url.pathname holds the originally requested URL and the
+// locale can be picked from it.
+export const prerender = false
 
-const lang = DEFAULT_LOCALE
+const lang = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
 const { labels } = await getGlobalData({ locale: lang, preview: false })
 const { title, description, homePageButton } = labels.notFound
 ---

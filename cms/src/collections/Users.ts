@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { isAdmin as isAdminField } from '../access/field/isAdmin'
 import { isAdmin } from '../access/isAdmin'
 import { isSelfOrAdmin } from '../access/isSelfOrAdmin'
+import { CollectionGroups } from '../shared'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -10,6 +11,7 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
     defaultColumns: ['email', 'firstName', 'lastName', 'roles'],
     listSearchableFields: ['email', 'firstName', 'lastName'],
+    group: CollectionGroups.System,
   },
   auth: true,
   access: {

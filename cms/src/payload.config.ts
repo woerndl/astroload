@@ -26,6 +26,7 @@ import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Labels } from './globals/Labels'
 import { SiteSettings } from './globals/SiteSettings'
+import { CollectionGroups } from './shared'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -106,7 +107,11 @@ export default buildConfig({
         state: false,
         upload: false,
       },
+      formOverrides: {
+        admin: { group: CollectionGroups.System },
+      },
       formSubmissionOverrides: {
+        admin: { group: CollectionGroups.System },
         hooks: {
           beforeChange: [spamGuard],
         },

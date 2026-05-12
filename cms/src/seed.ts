@@ -115,6 +115,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   const createMedia = async (altDe: string, altEn: string) => {
     const doc = await payload.create({
       collection: 'media',
+      locale: 'de',
       filePath: placeholderImagePath,
       data: { alt: altDe },
     })

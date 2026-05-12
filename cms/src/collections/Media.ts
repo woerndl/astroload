@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin } from '../access/isAdmin'
+import { CollectionGroups } from '../shared'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -14,6 +15,7 @@ export const Media: CollectionConfig = {
   admin: {
     useAsTitle: 'alt',
     defaultColumns: ['alt', 'mimeType', 'filesize', 'updatedAt'],
+    group: CollectionGroups.Media,
   },
   fields: [
     {
