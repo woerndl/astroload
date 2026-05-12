@@ -56,6 +56,7 @@ async function clearAll(payload: Payload): Promise<void> {
   await payload.delete({ collection: 'authors', where: all })
   await payload.delete({ collection: 'pages', where: { isRootPage: { not_equals: true } } })
   await payload.delete({ collection: 'pages', where: all })
+  await payload.delete({ collection: 'redirects', where: all })
   await payload.delete({ collection: 'form-submissions', where: all })
   await payload.delete({ collection: 'forms', where: all })
   await payload.delete({ collection: 'media', where: all })

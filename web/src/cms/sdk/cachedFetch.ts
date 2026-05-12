@@ -1,3 +1,5 @@
+import { createHash } from 'crypto'
+
 import { cache } from '../cache'
 
 export const USE_CACHE_HEADER = 'X-Use-Cache'
@@ -6,11 +8,16 @@ export const cacheHeader = (useCache: boolean): Record<string, string> => ({
   [USE_CACHE_HEADER]: useCache ? 'true' : 'false',
 })
 
+// Hash the auth header into the key so rotating the API key invalidates old
+// entries and the raw secret never appears in cache keys or diagnostics.
+const hashAuth = (value: string): string =>
+  value ? createHash('sha256').update(value).digest('hex').slice(0, 16) : ''
+
 const createCacheKey = (url: string, init?: RequestInit): string => {
   const method = init?.method ?? 'GET'
   const body = init?.body ? String(init.body) : ''
   const headers = init?.headers ? new Headers(init.headers) : null
-  const auth = headers?.get('authorization') ?? ''
+  const auth = hashAuth(headers?.get('authorization') ?? '')
   return `${method}:${url}:${body}:${auth}`
 }
 

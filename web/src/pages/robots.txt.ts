@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro'
+import { DEFAULT_LOCALE } from '@astroload/cms/src/shared'
 
 import { getGlobalData } from '../cms/getGlobalData'
 import { absoluteSiteURL } from '../cms/urls'
@@ -6,7 +7,7 @@ import { absoluteSiteURL } from '../cms/urls'
 export const prerender = !import.meta.env.DEV
 
 export const GET: APIRoute = async () => {
-  const { siteSettings } = await getGlobalData({ locale: 'en', preview: false })
+  const { siteSettings } = await getGlobalData({ locale: DEFAULT_LOCALE, preview: false })
   const allow = siteSettings.robots?.allowIndexing === true
 
   const body = allow

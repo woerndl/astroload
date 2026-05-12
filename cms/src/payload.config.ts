@@ -46,6 +46,7 @@ export default buildConfig({
   collections: [Pages, Posts, Authors, Media, ApiKeys, Redirects, Users],
   globals: [Header, Footer, Labels, SiteSettings],
   cors: [env.WEBSITE_URL],
+  csrf: [env.WEBSITE_URL],
   endpoints: [
     { path: '/global-data', method: 'get', handler: getGlobalData },
     { path: '/page-by-path', method: 'get', handler: getPageByPath },
