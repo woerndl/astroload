@@ -8,7 +8,7 @@ export const prerender = true
 
 const lang = DEFAULT_LOCALE
 const { labels } = await getGlobalData({ locale: lang, preview: false })
-const { title, description, homePageButton } = labels.notFound
+const { title, description, homePageButton } = labels.serverError
 ---
 
 <Layout title={title} description={description} lang={lang}>

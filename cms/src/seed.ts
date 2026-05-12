@@ -526,6 +526,11 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         description: 'Die angeforderte Seite existiert nicht.',
         homePageButton: 'Zur Startseite',
       },
+      serverError: {
+        title: 'Serverfehler',
+        description: 'Beim Laden der Seite ist ein Fehler aufgetreten.',
+        homePageButton: 'Zur Startseite',
+      },
       preview: {
         editingDraft: 'Entwurf bearbeiten',
         openInAdmin: 'In Admin öffnen',
@@ -549,6 +554,11 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       notFound: {
         title: 'Page not found',
         description: 'The page you requested does not exist.',
+        homePageButton: 'Back to home',
+      },
+      serverError: {
+        title: 'Server error',
+        description: 'Something went wrong while loading the page.',
         homePageButton: 'Back to home',
       },
       preview: {

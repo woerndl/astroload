@@ -118,6 +118,45 @@ export const triggerDeployAfterDelete: CollectionAfterDeleteHook = ({
   return doc
 }
 
+// For collections without drafts/publishing (e.g. redirects). Every save and
+// delete needs a rebuild because the data is baked into the static output.
+export const triggerDeployAlwaysAfterChange: CollectionAfterChangeHook = ({
+  doc,
+  req,
+  collection,
+}) => {
+  schedulePost(
+    `${collection.slug}:${doc.id}`,
+    {
+      collection: collection.slug,
+      id: doc.id,
+      locale: typeof req.locale === 'string' ? req.locale : undefined,
+      op: 'change',
+    },
+    req.payload.logger,
+  )
+  return doc
+}
+
+export const triggerDeployAlwaysAfterDelete: CollectionAfterDeleteHook = ({
+  doc,
+  req,
+  collection,
+  id,
+}) => {
+  schedulePost(
+    `${collection.slug}:${id}`,
+    {
+      collection: collection.slug,
+      id,
+      locale: typeof req.locale === 'string' ? req.locale : undefined,
+      op: 'delete',
+    },
+    req.payload.logger,
+  )
+  return doc
+}
+
 export const triggerDeployGlobalAfterChange: GlobalAfterChangeHook = ({
   doc,
   req,

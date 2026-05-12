@@ -110,6 +110,9 @@ importers:
       astro-seo-schema:
         specifier: ^6.0.0
         version: 6.0.0(astro@6.3.1(@types/node@24.12.3)(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.60.3)(sass@1.77.4)(tsx@4.21.0)(yaml@2.8.4))(schema-dts@1.1.5)
+      dotenv:
+        specifier: 16.4.7
+        version: 16.4.7
       lru-cache:
         specifier: 11.3.6
         version: 11.3.6

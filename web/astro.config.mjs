@@ -3,9 +3,12 @@ import node from '@astrojs/node'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, envField } from 'astro/config'
 
+import { getRedirects } from './src/cms/getRedirects'
+
 export default defineConfig({
   adapter: node({ mode: 'standalone' }),
   trailingSlash: 'never',
+  redirects: await getRedirects(),
   vite: {
     plugins: [tailwindcss()],
   },

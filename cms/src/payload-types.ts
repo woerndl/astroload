@@ -1274,6 +1274,11 @@ export interface Labels {
     description: string;
     homePageButton: string;
   };
+  serverError: {
+    title: string;
+    description: string;
+    homePageButton: string;
+  };
   preview: {
     editingDraft: string;
     openInAdmin: string;
@@ -1365,6 +1370,13 @@ export interface LabelsSelect<T extends boolean = true> {
         lastUpdatedAt?: T;
       };
   notFound?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        homePageButton?: T;
+      };
+  serverError?:
     | T
     | {
         title?: T;

@@ -49,6 +49,16 @@ export const Labels: GlobalConfig = {
       ],
     },
     {
+      name: 'serverError',
+      type: 'group',
+      label: 'Server error (500) page',
+      fields: [
+        labelField('title'),
+        labelField('description'),
+        labelField('homePageButton'),
+      ],
+    },
+    {
       name: 'preview',
       type: 'group',
       label: 'Live preview toolbar',
