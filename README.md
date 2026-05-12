@@ -15,7 +15,7 @@
 Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as a pnpm workspace on Postgres. It includes live preview, multi-locale routing, SEO output, S3 storage, spam-protected forms, build-time redirects, deploy webhooks, and a typed CMS data layer with LRU caching.
 
 > [!NOTE]
-> This template is in active development. The API, content model, and project structure may change before a tagged release. Pin a commit if you build on top of it.
+> This template is in active development. Production deployment is untested. Expect the API, content model, and project structure to change between releases. Pin a tag or commit if you build on top of it.
 
 ## Features
 
@@ -80,7 +80,7 @@ Prerequisites: Node `>=22.12` (see `.nvmrc`), pnpm `>=9`, Docker.
 
 ```bash
 # 1. Get the code
-git clone <YOUR_REPO_URL> astroload
+git clone https://github.com/woerndl/astroload.git
 cd astroload
 
 # 2. Install dependencies
