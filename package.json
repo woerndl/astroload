@@ -8,7 +8,8 @@
     "dev:cms": "pnpm --filter @astroload/cms dev",
     "dev:web": "pnpm --filter @astroload/web dev",
     "build": "pnpm -r build",
-    "lint": "pnpm --filter @astroload/cms lint"
+    "lint": "pnpm --filter @astroload/cms lint",
+    "check": "pnpm --filter @astroload/web check"
   },
   "engines": {
     "node": ">=22.12.0",
