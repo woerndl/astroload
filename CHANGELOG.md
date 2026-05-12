@@ -8,6 +8,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-12
+
 ### Workspace and stack
 
 - pnpm-workspace with `cms/` (Payload 3.84.1, Postgres via `@payloadcms/db-postgres`) and `web/` (Astro 6.3.1).
