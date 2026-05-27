@@ -14,6 +14,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 - Public-facing docs under `docs/`: `architecture.md` (system shape, service boundaries, decoupling trade-offs), `conventions.md` (rules for contributors and LLM agents), `forms.md` (form surface, cross-origin POST, spam guard, JS-off fallback), `maintenance.md` (failure modes that are not obvious from reading the code), `security.md` (threat model, residual risks, hardening to add before production), with an index at `docs/README.md`.
 - Architecture section in the root `README.md` and in `docs/architecture.md` § Service boundaries, with a Mermaid service-boundary diagram covering `Editor → cms → Postgres`, `cms → web`, and `Visitor → web`. The root section also carries the workspace directory tree.
+- `AGENTS.md` as the single source of agent guidance for any coding agent using the repo, with `CLAUDE.md` reduced to a one-line `@AGENTS.md` reference. AGENTS.md carries the no-banner-separator-comments rule and a routing list that points at the `docs/` files by topic keywords.
 
 ## [0.1.0] - 2026-05-12
 
