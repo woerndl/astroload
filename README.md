@@ -138,7 +138,17 @@ Variables are declared in `cms/.env.example` and `web/.env.example`, which are t
 - `CMS_URL`, `WEBSITE_URL` origins.
 - `PLAUSIBLE_DOMAIN` optional.
 
-## Project Layout
+## Architecture
+
+```mermaid
+flowchart LR
+    Editor -->|HTTPS| CMS["cms<br/>Payload + Next.js admin"]
+    CMS <-->|SQL| Postgres[(Postgres)]
+    CMS -->|REST / GraphQL| Web["web<br/>Astro + Node adapter"]
+    Visitor -->|HTTPS| Web
+```
+
+Two Node processes, one Postgres database. `cms/` owns the admin, the API, and the schema. `web/` reads from the CMS over HTTP at build time (for prerendered pages and redirects) and at request time (for `/preview` and any opted-in SSR route). See [`docs/architecture.md`](./docs/architecture.md) for the longer version.
 
 ```
 .

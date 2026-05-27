@@ -42,3 +42,6 @@ cms/payload-types.ts.bak
 # Misc
 .turbo/
 .cache/
+
+# Internal notes (working files, legacy ADRs, decision records)
+.internal-notes/
