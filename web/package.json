@@ -8,8 +8,9 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "REDIRECTS_STRICT=1 astro build",
     "preview": "astro preview",
+    "start": "HOST=${HOST:-0.0.0.0} PORT=${PORT:-4321} node ./dist/server/entry.mjs",
     "check": "astro check",
     "astro": "astro"
   },

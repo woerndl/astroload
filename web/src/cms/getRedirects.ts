@@ -7,32 +7,36 @@ import type { Config } from '@astroload/cms/src/payload-types'
 // so astro:env is not available and process.env only sees what the shell
 // exported. dotenv/config fills the gap for a plain `pnpm dev` or `pnpm build`.
 //
-// Failure modes:
-//   - missing env during a production build: throw, so the deploy aborts loudly
-//     instead of shipping a site with an empty redirect table.
-//   - missing env in dev or CI type-check: return {} silently, no warning.
-//   - CMS unreachable or fetch errored: warn and return {} so the build still
-//     ships. Editors lose redirect changes until the next successful build.
+// Strictness is keyed on REDIRECTS_STRICT, set by the `build` script, not on
+// NODE_ENV: astro check forces NODE_ENV=production while resolving the config
+// and must not abort on a CMS blip. Failure modes:
+//   - REDIRECTS_STRICT=1 (the deploy build): a missing CMS_URL/PAYLOAD_READ_KEY
+//     or a failed CMS fetch throws, so the deploy aborts loudly instead of
+//     shipping a site with an empty redirect table.
+//   - otherwise (dev, astro check, plain astro build): a missing env var
+//     returns {} silently, and a failed fetch warns and returns {} so the run
+//     still ships. Editors lose redirect changes until the next strict build.
 export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
   const cmsUrl = process.env.CMS_URL
   const apiKey = process.env.PAYLOAD_READ_KEY
+  const strict = process.env.REDIRECTS_STRICT === '1'
   if (!cmsUrl || !apiKey) {
-    if (process.env.NODE_ENV === 'production') {
+    if (strict) {
       throw new Error(
-        '[getRedirects] CMS_URL and PAYLOAD_READ_KEY are required for production builds',
+        '[getRedirects] CMS_URL and PAYLOAD_READ_KEY are required for a strict build (REDIRECTS_STRICT=1)',
       )
     }
     return {}
   }
 
-  const sdk = new PayloadSDK<Config>({
-    baseURL: new URL('/api', cmsUrl).toString(),
-    baseInit: {
-      headers: { Authorization: `api-keys API-Key ${apiKey}` },
-    },
-  })
-
   try {
+    const sdk = new PayloadSDK<Config>({
+      baseURL: new URL('/api', cmsUrl).toString(),
+      baseInit: {
+        headers: { Authorization: `api-keys API-Key ${apiKey}` },
+      },
+    })
+
     const result = await sdk.find({
       collection: 'redirects',
       limit: 0,
@@ -47,6 +51,14 @@ export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
       return acc
     }, {})
   } catch (err) {
+    if (strict) {
+      throw new Error(
+        '[getRedirects] CMS fetch failed during a strict build; refusing to ship ' +
+          'without redirects. Original error: ' +
+          (err instanceof Error ? err.message : String(err)),
+        { cause: err },
+      )
+    }
     console.warn('[getRedirects] CMS fetch failed, shipping build without redirects:', err)
     return {}
   }

@@ -10,6 +10,6 @@ below describe what is not obvious from reading the code.
 - [`maintenance.md`](./maintenance.md): failure modes that are not
   obvious from reading the code.
 - [`forms.md`](./forms.md): the forms surface, cross-origin POST, spam
-  guard, and JS-off fallback.
+  guard, and why submission requires JavaScript.
 - [`security.md`](./security.md): threat model, what the template
   defends against, and what you should add before production.
