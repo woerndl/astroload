@@ -40,7 +40,7 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 - Autosave-driven preview on every editable collection
 - Mobile, tablet, and desktop breakpoints preconfigured in the admin
 - Editor toolbar overlay on the standalone preview tab, hidden inside the Payload iframe
-- Preview route guarded by a shared secret with `crypto.timingSafeEqual`, served with `Cache-Control: no-store` and `X-Robots-Tag: noindex, nofollow`
+- Preview route guarded by a shared secret with `crypto.timingSafeEqual`, served with `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, and `Referrer-Policy: no-referrer`
 
 **SEO and i18n**
 
@@ -54,7 +54,7 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 **Forms and spam protection**
 
 - Form builder with text, email, number, textarea, select, checkbox, and message fields
-- JS-off fallback via native HTML submission to the CMS endpoint
+- Client-side submission to the CMS endpoint (JavaScript required)
 - Hidden honeypot field plus a submit-time trap, both stripped server-side
 
 **Operations**
@@ -76,7 +76,7 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 
 ## Quickstart
 
-Prerequisites: Node `>=22.12` (see `.nvmrc`), pnpm `>=9`, Docker.
+Prerequisites: Node `>=22.12` (see `.nvmrc`), pnpm `>=9`, Docker. The package scripts assume a POSIX shell, so on Windows run them under WSL or Git Bash.
 
 ```bash
 # 1. Get the code
@@ -137,6 +137,7 @@ Variables are declared in `cms/.env.example` and `web/.env.example`, which are t
 - `PREVIEW_SECRET` matches the CMS value.
 - `CMS_URL`, `WEBSITE_URL` origins.
 - `PLAUSIBLE_DOMAIN` optional.
+- `CMS_URL`, `WEBSITE_URL`, and `PLAUSIBLE_DOMAIN` are public, build-time-baked values. Build the web app with production values. Injecting them only at runtime has no effect. See [Deployment](#deployment).
 
 ## Architecture
 
@@ -170,9 +171,11 @@ Both apps are plain Node servers. No serverless adapter or provider-specific bui
 
 **Web**
 
-- `pnpm --filter @astroload/web build` then `pnpm --filter @astroload/web start`.
-- Pages and sitemap routes are prerendered. The `/preview` route is SSR. Forms POST directly to Payload's `/api/form-submissions` endpoint, so no Web-side submission route is needed.
-- `astro build` calls the Pages collection through the CMS REST API to read redirects. The CMS must be reachable during build.
+- `pnpm --filter @astroload/web build` then `pnpm --filter @astroload/web start`. The `start` script binds `0.0.0.0:4321` by default. Container hosts (Railway, Coolify, Fly) inject `HOST` and `PORT` to override that.
+- Build env is deploy env. `CMS_URL`, `WEBSITE_URL`, and `PLAUSIBLE_DOMAIN` are `astro:env/client` public values, inlined into the output at `astro build`. The web app must be built with the production values. Injecting them only at `start` has no effect.
+- The Astro standalone server does not auto-load `.env`, unlike the CMS's `next start`. The host injects the runtime server vars (`PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `PREVIEW_SECRET`). For local production testing, export them or run `node --env-file=.env ./dist/server/entry.mjs`.
+- Pages and sitemap routes are prerendered. The `/preview` route is SSR. A client-side script POSTs form submissions as JSON to Payload's `/api/form-submissions` endpoint, so no Web-side submission route is needed. Submission requires JavaScript.
+- `astro build` reads redirects from the `Redirects` collection through the CMS REST API. The CMS must be reachable during build.
 
 **Deploy webhook**
 

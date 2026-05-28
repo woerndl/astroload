@@ -1,6 +1,7 @@
 ---
 import type { Form, FormBlock as FormBlockType } from '@astroload/cms/src/payload-types'
 
+import { DEFAULT_LOCALE } from '@astroload/cms/src/shared'
 import { isLocale, isPopulated, type Locale } from '../../cms/types'
 import { absoluteCmsURL } from '../../cms/urls'
 import LexicalContent from '../lexical/LexicalContent.astro'
@@ -10,16 +11,18 @@ type Props = Omit<FormBlockType, 'blockType'>
 const { form, introContent } = Astro.props
 const populatedForm = isPopulated<Form>(form) ? form : null
 
-const lang: Locale = isLocale(Astro.currentLocale) ? Astro.currentLocale : 'en'
+const lang: Locale = isLocale(Astro.params.lang) ? Astro.params.lang : DEFAULT_LOCALE
 
 const submitURL = absoluteCmsURL('/api/form-submissions')
 
-const STRINGS: Record<Locale, { sending: string; error: string }> = {
+const STRINGS: Record<Locale, { submit: string; sending: string; error: string }> = {
   de: {
+    submit: 'Senden',
     sending: 'Wird gesendet ...',
     error: 'Senden fehlgeschlagen. Bitte versuche es erneut.',
   },
   en: {
+    submit: 'Submit',
     sending: 'Sending ...',
     error: 'Sending failed. Please try again.',
   },
@@ -27,7 +30,7 @@ const STRINGS: Record<Locale, { sending: string; error: string }> = {
 const strings = STRINGS[lang]
 
 const fields = populatedForm?.fields ?? []
-const submitLabel = populatedForm?.submitButtonLabel ?? 'Submit'
+const submitLabel = populatedForm?.submitButtonLabel ?? strings.submit
 const fieldBasis = (width?: number | null) => {
   const clamped = Math.min(100, Math.max(1, width ?? 100))
   return `flex: 1 1 calc(${clamped}% - 1rem); min-width: 12rem`
@@ -173,6 +176,7 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${name}`
     const button = form.querySelector<HTMLButtonElement>('button[type=submit]')
     const confirmation = root?.querySelector<HTMLElement>('[data-confirmation]') ?? null
 
+    // Last-resort defaults, unreachable because the frontmatter always sets these data-* attrs from the locale strings.
     const submitLabel = form.dataset.submitLabel ?? 'Submit'
     const sendingLabel = form.dataset.sendingLabel ?? 'Sending'
     const errorMessage = form.dataset.errorMessage ?? 'Submission failed.'

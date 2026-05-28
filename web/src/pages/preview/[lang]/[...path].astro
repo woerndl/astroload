@@ -19,24 +19,36 @@ function isValidSecret(supplied: string | null): boolean {
   return timingSafeEqual(a, expectedSecret)
 }
 
+const previewResponseHeaders = {
+  'Cache-Control': 'no-store',
+  'X-Robots-Tag': 'noindex, nofollow',
+  'Referrer-Policy': 'no-referrer',
+}
+
 const supplied = Astro.url.searchParams.get('previewSecret')
 if (!isValidSecret(supplied)) {
-  return new Response('Forbidden', { status: 403 })
+  return new Response('Forbidden', { status: 403, headers: previewResponseHeaders })
 }
 
 const { lang, path } = Astro.params
 if (!isLocale(lang)) {
-  return new Response(null, { status: 404 })
+  return new Response(null, { status: 404, headers: previewResponseHeaders })
 }
 
 const fullPath = path ? `/${lang}/${path}` : `/${lang}`
-const result = await getPageByPath(fullPath, { preview: true, sdk: previewPayloadSDK })
+let result: Awaited<ReturnType<typeof getPageByPath>>
+try {
+  result = await getPageByPath(fullPath, { preview: true, sdk: previewPayloadSDK })
+} catch {
+  return new Response(null, { status: 500, headers: previewResponseHeaders })
+}
 if (!result) {
-  return new Response(null, { status: 404 })
+  return new Response(null, { status: 404, headers: previewResponseHeaders })
 }
 
-Astro.response.headers.set('Cache-Control', 'no-store')
-Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+for (const [name, value] of Object.entries(previewResponseHeaders)) {
+  Astro.response.headers.set(name, value)
+}
 ---
 
 <CollectionLayout result={result} lang={lang} preview={true} />

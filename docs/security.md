@@ -158,14 +158,19 @@ defaults. If your forms accept long-text fields, add an explicit cap.
 ## Preview secret in URLs leaks through Referer
 
 The preview route accepts the secret in a query string. A page rendered
-inside the preview iframe can leak its full URL (including the secret)
-through the `Referer` header on any outbound request. If your project
-embeds third-party scripts, images, or links in preview, set
-`Referrer-Policy: no-referrer` on `/preview/*` so the secret does not
-leave the origin.
+inside the preview iframe could otherwise leak its full URL (including
+the secret) through the `Referer` header on any outbound request to a
+third party.
 
-The template does not set this header by default. Adding it is one line
-in the preview route or the host's response-header rules.
+The preview route sets `Referrer-Policy: no-referrer` on the responses it
+returns: the secret check, the not-found cases, a failed draft fetch, and
+the rendered page. The browser then sends no `Referer` from a preview page.
+
+One gap remains. An error thrown while the layout renders falls through to
+Astro's error page, which is built without the route's headers. If you need
+the policy on every preview response, or you serve other secret-bearing
+paths, enforce it at the edge with a `Referrer-Policy` rule on `/preview/*`
+in the host's response-header config.
 
 ## Lexical link renderer accepts arbitrary schemes
 
@@ -208,7 +213,6 @@ covers the gaps the template specifically leaves open. It is not a full
 production hardening checklist:
 
 - Rate-limit rule in front of the CMS (CDN or middleware).
-- `Referrer-Policy: no-referrer` on `/preview/*`.
 - Body-size limit on form submissions.
 - IP allow-list on `/admin` if your team is in a known network.
 - Automated regression test for draft leakage at populated depth.

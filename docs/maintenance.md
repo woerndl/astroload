@@ -97,26 +97,63 @@ undefined at the moment `getRedirects()` runs, the function returns
 on disk. Anything else added to `astro.config.mjs` that reads
 `process.env` needs the same treatment.
 
-The fetch handles missing env vars and missing CMS in two different
-ways:
+The fetch handles missing env vars and a failed CMS read the same way,
+keyed on the `REDIRECTS_STRICT` flag:
 
-- If `CMS_URL` or `PAYLOAD_READ_KEY` is missing in production
-  (`NODE_ENV === 'production'`), the function throws so the build
-  fails loudly.
-- If either is missing in dev or in a type-check job, the function
-  returns `{}` with no warning. A non-production build boots with no
-  redirects.
-- If the env vars are set but the CMS fetch fails, the function logs
-  a warning and returns `{}` so the build still succeeds.
+- With `REDIRECTS_STRICT=1`, both a missing `CMS_URL`/`PAYLOAD_READ_KEY`
+  and a failed CMS fetch throw, so the build aborts loudly instead of
+  shipping an empty redirect table. The `build` script in
+  `web/package.json` sets the flag, so a normal
+  `pnpm --filter @astroload/web build` is strict.
+- Without it (dev, `astro check`, or a plain `astro build`), a missing
+  env var returns `{}` with no warning, and a failed fetch logs a
+  warning and returns `{}` so the run still succeeds. A non-strict build
+  boots with no redirects.
 
-If you want a warning in dev too, add a `console.warn` to the
-no-env-vars branch in `getRedirects.ts`.
+Strictness keys on the flag instead of `NODE_ENV` because `astro check`
+forces `NODE_ENV=production` while resolving the config. Keying on
+`NODE_ENV` would then make a type-check abort on a transient CMS outage.
+The flag scopes strictness to the deploy build alone.
+
+This is a build-time policy, independent of runtime resilience. The
+running standalone server has no request-time dependency on the CMS for
+redirects or prerendered content (see above), so a CMS outage does not
+take the live site down. Failing a strict build during an outage is the
+safer choice: it leaves the last good deploy serving instead of replacing
+it with a redirect-less one.
+
+If you need deploys to succeed during a CMS outage without silently
+dropping redirects, generate a committed last-known-good snapshot (for
+example `redirects.fallback.json`) and have `getRedirects()` read it when
+the fetch fails. That trades build-time CMS coupling for the discipline of
+keeping the snapshot fresh, so it is left as a downstream option, not
+wired in by default.
+
+If you want a warning in dev too, add a `console.warn` to the no-env-vars
+branch in `getRedirects.ts`.
 
 Source paths in the collection must be the exact string the URL router
 sees, locale prefix included. There is no pattern matching at this layer.
 If the adapter ever changes to a static host (Cloudflare Pages, Netlify
 static), the same code path produces static redirect files with no
 changes.
+
+## Public web env is baked in at build time
+
+`CMS_URL`, `WEBSITE_URL`, and `PLAUSIBLE_DOMAIN` are declared as
+`astro:env/client` public values in `web/astro.config.mjs`. Astro inlines
+public values into the build output at `astro build`. Running the built
+standalone server later with a different env does not change them, because
+they are already compiled into the JS.
+
+Consequence: a build produced against staging or localhost URLs keeps those
+URLs in production even when the deploy environment "sets" the right values.
+The CMS's server-side secrets behave the opposite way, since the running
+process reads them from its environment at runtime. There is no code change
+to make here. Build the web app with the production values of these three
+vars. Splitting individual server-only consumers onto `astro:env/server` is
+a separate, optional decision and does not remove the need to build with
+correct public URLs.
 
 ## Lexical internal links do not switch to the preview URL
 

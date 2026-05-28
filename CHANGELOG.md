@@ -8,6 +8,21 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-05-28
+
+### Fixed
+
+- The web deploy build now aborts when the redirect fetch errors instead of silently shipping an empty redirect table. A `REDIRECTS_STRICT` flag, set by the web `build` script, gates this so a missing env var and a failed CMS fetch fail symmetrically on a deploy build, while `astro check` and dev still degrade to an empty redirect table.
+- The web app ships an env-overridable `start` script (`HOST`/`PORT`, defaulting to `0.0.0.0:4321`), so the documented production deploy command works against the Node standalone server.
+- `FormBlock` resolves the page locale from the route and renders its sending and error strings in that locale, with the submit-label fallback localized too, instead of hardcoding English. The submit button still shows the form's CMS `submitButtonLabel` when one is set, so a German page now renders German status text where it previously showed English.
+- The `/preview` route sets `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, and `Referrer-Policy: no-referrer` on the responses it returns: the 403, both 404s, a failed draft fetch, and the rendered page. The `previewSecret` stays out of `Referer`, and preview output is neither cached nor indexed. A render-time exception still falls through to Astro's error page without these headers. `security.md` documents the edge rule that closes that gap.
+
+### Documentation
+
+- Documented that the web app's `astro:env/client` public values (`CMS_URL`, `WEBSITE_URL`, `PLAUSIBLE_DOMAIN`) are baked in at `astro build`, so the app must be built with production values rather than having them injected at runtime.
+- Removed the README's no-JS form fallback claim. The forms and deployment sections now state that submission goes through a client-side script and requires JavaScript, matching `docs/forms.md`.
+- Corrected the redirect source collection name in the README (`Redirects`, not `Pages`), added the build-time-env caveat to the README env list, and removed the stale "JS-off fallback" reference from the docs index and the AGENTS.md routing list.
+
 ## [0.1.1] - 2026-05-27
 
 ### Documentation

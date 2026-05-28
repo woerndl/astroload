@@ -60,13 +60,15 @@ constructs its own `PayloadSDK` from `process.env` instead of going
 through the rest of the SDK helpers. Do not add new exceptions without
 a similarly hard reason.
 
-## Build-time CMS reads degrade gracefully
+## Build-time CMS reads fail loud on a strict build, degrade otherwise
 
 `web/src/cms/getRedirects.ts` runs from `astro.config.mjs`. The result
-is folded into the server manifest. In production builds, missing env
-vars throw and a CMS-unreachable fetch logs a warning and continues
-with no redirects. In dev or type-check jobs, missing env vars return
-`{}` with no warning. Anything else that reads `process.env` from
+is folded into the server manifest. On a strict build (`REDIRECTS_STRICT=1`,
+which the web `build` script sets), a missing env var or a failed CMS fetch
+both throw, so the deploy aborts loudly rather than shipping with an empty
+redirect table. In dev, `astro check`, or a plain `astro build`, a missing
+env var returns `{}` with no warning and a failed fetch warns and continues
+with no redirects. Anything else that reads `process.env` from
 `astro.config.mjs` needs to import `dotenv/config` at the top of its
 module, because Astro loads `.env` through Vite after the user config
 has already been evaluated. See [`maintenance.md`](./maintenance.md)
