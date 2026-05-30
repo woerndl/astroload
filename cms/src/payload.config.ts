@@ -26,10 +26,28 @@ import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Labels } from './globals/Labels'
 import { SiteSettings } from './globals/SiteSettings'
-import { CollectionGroups } from './shared'
+import { CollectionGroups, DEFAULT_LOCALE, LOCALES } from './shared'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+const locales = [
+  { code: 'de', label: 'Deutsch' },
+  { code: 'en', label: 'English' },
+] as const
+
+// The web app reads LOCALES/DEFAULT_LOCALE from shared.ts; if the CMS locale
+// set drifts from those, the two sides disagree silently. Fail fast at boot
+// instead.
+const localeCodes = locales.map((locale) => locale.code)
+if (
+  localeCodes.length !== LOCALES.length ||
+  !LOCALES.every((code) => localeCodes.includes(code))
+) {
+  throw new Error(
+    `Payload locales [${localeCodes.join(', ')}] do not match shared LOCALES [${LOCALES.join(', ')}]`,
+  )
+}
 
 const s3Configured =
   !!process.env.S3_BUCKET && !!process.env.S3_ACCESS_KEY_ID && !!process.env.S3_SECRET_ACCESS_KEY
@@ -53,11 +71,8 @@ export default buildConfig({
     { path: '/static-paths', method: 'get', handler: getStaticPaths },
   ],
   localization: {
-    locales: [
-      { code: 'de', label: 'Deutsch' },
-      { code: 'en', label: 'English' },
-    ],
-    defaultLocale: 'en',
+    locales: [...locales],
+    defaultLocale: DEFAULT_LOCALE,
     fallback: true,
   },
   editor: lexicalEditorWithSafeLinks(),

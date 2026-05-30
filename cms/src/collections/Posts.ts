@@ -8,7 +8,7 @@ import {
   triggerDeployAfterDelete,
 } from '../hooks/triggerDeploy'
 import { lexicalEditorWithSafeLinks } from '../lexical/editor'
-import { livePreviewBreakpoints } from '../shared'
+import { AUTOSAVE_INTERVAL, livePreviewBreakpoints } from '../shared'
 
 export const Posts: PageCollectionConfig = {
   slug: 'posts',
@@ -19,7 +19,7 @@ export const Posts: PageCollectionConfig = {
   },
   versions: {
     drafts: {
-      autosave: { interval: 1500 },
+      autosave: { interval: AUTOSAVE_INTERVAL },
       schedulePublish: false,
     },
   },

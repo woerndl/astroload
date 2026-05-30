@@ -1,5 +1,7 @@
 import type { Block } from 'payload'
 
+import { publishedRelationField } from './publishedRelationField'
+
 export const AuthorsListBlock: Block = {
   slug: 'authorsList',
   interfaceName: 'AuthorsListBlock',
@@ -8,29 +10,5 @@ export const AuthorsListBlock: Block = {
     plural: 'Authors Lists',
   },
   admin: { disableBlockName: true },
-  fields: [
-    {
-      name: 'authors',
-      type: 'relationship',
-      relationTo: 'authors',
-      hasMany: true,
-      virtual: true,
-      admin: { hidden: true },
-      hooks: {
-        afterRead: [
-          async ({ req: { payload, locale } }) => {
-            const { docs } = await payload.find({
-              collection: 'authors',
-              limit: 0,
-              pagination: false,
-              locale,
-              where: { _status: { equals: 'published' } },
-              sort: 'name',
-            })
-            return docs.map((doc) => doc.id)
-          },
-        ],
-      },
-    },
-  ],
+  fields: [publishedRelationField({ name: 'authors', relationTo: 'authors', sort: 'name' })],
 }

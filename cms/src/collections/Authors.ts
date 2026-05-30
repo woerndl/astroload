@@ -5,7 +5,7 @@ import {
   triggerDeployAfterChange,
   triggerDeployAfterDelete,
 } from '../hooks/triggerDeploy'
-import { livePreviewBreakpoints } from '../shared'
+import { AUTOSAVE_INTERVAL, livePreviewBreakpoints } from '../shared'
 
 export const Authors: PageCollectionConfig = {
   slug: 'authors',
@@ -16,7 +16,7 @@ export const Authors: PageCollectionConfig = {
   },
   versions: {
     drafts: {
-      autosave: { interval: 1500 },
+      autosave: { interval: AUTOSAVE_INTERVAL },
       schedulePublish: false,
     },
   },
