@@ -1,14 +1,13 @@
 ---
 import type { Post, PostsListBlock as PostsListBlockType } from '@astroload/cms/src/payload-types'
 
+import { isPopulated, type Locale } from '../../cms/types'
 import Img from '../Img.astro'
 
-type Props = Omit<PostsListBlockType, 'blockType'>
+type Props = Omit<PostsListBlockType, 'blockType'> & { lang: Locale }
 
-const { posts } = Astro.props
-const items = (posts ?? []).filter(
-  (p): p is Post => typeof p === 'object' && p !== null,
-)
+const { posts, lang } = Astro.props
+const items = (posts ?? []).filter((p): p is Post => isPopulated(p))
 ---
 
 {
@@ -17,9 +16,9 @@ const items = (posts ?? []).filter(
   ) : (
     <ul class="my-6 flex flex-col gap-6">
       {items.map((post) => {
-        const image = typeof post.image === 'object' ? post.image : null
+        const image = isPopulated(post.image) ? post.image : null
         const published = post.publishedAt
-          ? new Date(post.publishedAt).toLocaleDateString(Astro.currentLocale)
+          ? new Date(post.publishedAt).toLocaleDateString(lang)
           : null
         return (
           <li>

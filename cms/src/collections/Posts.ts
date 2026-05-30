@@ -1,5 +1,5 @@
 import type { PageCollectionConfig } from '@jhb.software/payload-pages-plugin'
-import { BlocksFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
+import { BlocksFeature } from '@payloadcms/richtext-lexical'
 
 import { contentAccess } from '../access/contentAccess'
 import { ImageBlock } from '../blocks/ImageBlock'
@@ -7,6 +7,7 @@ import {
   triggerDeployAfterChange,
   triggerDeployAfterDelete,
 } from '../hooks/triggerDeploy'
+import { lexicalEditorWithSafeLinks } from '../lexical/editor'
 import { livePreviewBreakpoints } from '../shared'
 
 export const Posts: PageCollectionConfig = {
@@ -87,12 +88,7 @@ export const Posts: PageCollectionConfig = {
       type: 'richText',
       required: true,
       localized: true,
-      editor: lexicalEditor({
-        features: ({ defaultFeatures }) => [
-          ...defaultFeatures,
-          BlocksFeature({ blocks: [ImageBlock] }),
-        ],
-      }),
+      editor: lexicalEditorWithSafeLinks([BlocksFeature({ blocks: [ImageBlock] })]),
     },
   ],
 }

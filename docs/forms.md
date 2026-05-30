@@ -115,7 +115,8 @@ fork if your project needs it.
 `cms/src/hooks/spamGuard.ts` runs on `beforeChange` for
 `form-submissions` and applies the following rules:
 
-- If the honeypot field is non-empty, throw `APIError('Submission rejected.', 400)`.
+- If `submissionData` is missing or not an array, throw `APIError('Submission rejected.', 400)`.
+- If the honeypot field is non-empty, throw the same error.
 - If `_rendered_at` is missing or unparseable, throw the same error.
 - If `_rendered_at` is less than 1.5s before now, throw the same error.
 - Strip both internal fields from the document so they never reach the

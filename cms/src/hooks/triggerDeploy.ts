@@ -80,9 +80,12 @@ export const triggerDeployAfterChange: CollectionAfterChangeHook = ({
   req,
   collection,
 }) => {
-  const becamePublished =
-    doc?._status === 'published' && previousDoc?._status !== 'published'
-  if (!becamePublished) return doc
+  // Rebuild whenever the published output changes: a first publish, a re-publish
+  // of a live doc, or an unpublish that retracts it. Pure draft saves are skipped;
+  // the per-doc throttle coalesces autosave churn.
+  const affectsPublished =
+    doc?._status === 'published' || previousDoc?._status === 'published'
+  if (!affectsPublished) return doc
 
   schedulePost(
     `${collection.slug}:${doc.id}`,

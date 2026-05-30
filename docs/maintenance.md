@@ -66,9 +66,11 @@ trigger one build per save. If you want snappier or stricter behaviour,
 change the constant. If the throttle window is shorter than the build,
 you get overlapping builds.
 
-The hook fires on three events: a draft published, a published doc
-deleted, and any global changed. It targets `DEPLOY_HOOK_URL` and posts a
-small JSON payload with no auth header.
+The hook fires whenever the published output changes: a doc that is or
+was published changed (publish, re-publish, or unpublish), a published
+doc deleted, and any global changed. Pure draft saves are skipped. It
+targets `DEPLOY_HOOK_URL` and posts a small JSON payload with no auth
+header.
 
 ## Redirects load at Astro config evaluation, not at request time
 

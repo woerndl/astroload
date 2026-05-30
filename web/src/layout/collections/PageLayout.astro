@@ -30,7 +30,7 @@ const seo = resolveSeo(data)
   <article>
     <h1 class="text-3xl font-semibold">{data.title}</h1>
     <div class="mt-8 space-y-6">
-      {sections.map((block) => <SectionBlock block={block} />)}
+      {sections.map((block) => <SectionBlock block={block} lang={lang} />)}
     </div>
   </article>
 </Layout>

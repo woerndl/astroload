@@ -1,7 +1,7 @@
 ---
 import type { Author, SiteSetting } from '@astroload/cms/src/payload-types'
 import { Schema } from 'astro-seo-schema'
-import type { Article, Graph, Organization, Person, Thing, WebPage, WebSite } from 'schema-dts'
+import type { Article, Distance, Graph, Organization, Person, Thing, WebPage, WebSite } from 'schema-dts'
 
 import type { PageByPathResult } from '../cms/getPageByPath'
 import { isPopulated, type Locale } from '../cms/types'
@@ -71,8 +71,9 @@ if (isHome) {
     article.image = {
       '@type': 'ImageObject',
       url: absoluteCmsURL(ogVariant.url),
-      width: `${ogVariant.width} px`,
-      height: `${ogVariant.height} px`,
+      // schema-dts types these as Distance/QuantitativeValue; Google wants a bare integer.
+      width: ogVariant.width as unknown as Distance,
+      height: ogVariant.height as unknown as Distance,
     }
   } else {
     const fallback = mediaURL(cover)

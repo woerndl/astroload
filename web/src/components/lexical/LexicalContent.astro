@@ -3,6 +3,7 @@ import type { LexicalNode } from '@jhb.software/astro-payload-richtext-lexical'
 import RichTextLexical from '@jhb.software/astro-payload-richtext-lexical/RichTextLexical.astro'
 
 import BlockRenderer from './BlockRenderer.astro'
+import { sanitizeLexicalLinks } from './sanitizeLinks'
 import UploadRenderer from './UploadRenderer.astro'
 
 interface Props {
@@ -17,10 +18,11 @@ interface Props {
 }
 
 const { content, class: className } = Astro.props
+const nodes = sanitizeLexicalLinks(content.root.children)
 ---
 
 <RichTextLexical
-  nodes={content.root.children}
+  nodes={nodes}
   UploadRenderer={UploadRenderer}
   BlockRenderer={BlockRenderer}
   class:list={[className]}

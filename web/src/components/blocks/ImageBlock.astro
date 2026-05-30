@@ -1,12 +1,13 @@
 ---
 import type { ImageBlock as ImageBlockType } from '@astroload/cms/src/payload-types'
 
+import { isPopulated } from '../../cms/types'
 import Img from '../Img.astro'
 
 type Props = Omit<ImageBlockType, 'blockType'>
 
 const { image, caption } = Astro.props
-const media = typeof image === 'object' && image !== null ? image : null
+const media = isPopulated(image) ? image : null
 ---
 
 {

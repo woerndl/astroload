@@ -172,18 +172,22 @@ the policy on every preview response, or you serve other secret-bearing
 paths, enforce it at the edge with a `Referrer-Policy` rule on `/preview/*`
 in the host's response-header config.
 
-## Lexical link renderer accepts arbitrary schemes
+## Lexical link scheme allowlist
 
-The rich text renderer renders link nodes with whatever `url` the
-Lexical document holds. That includes `javascript:` URLs unless the
-editor flow filters them. If an editor (or an attacker with editor
-access) can inject a `javascript:` link, the public site renders a
-clickable XSS vector.
+The rich text renderer prints link nodes with whatever `url` the Lexical
+document holds, so an unfiltered `javascript:` or `data:` URL would render
+as a clickable XSS vector. Astroload closes this in two layers:
 
-The realistic mitigation is in the link picker in the admin. If your
-project accepts free-form URL input from editors, add a schema-level
-validator that rejects `javascript:` and `data:` URLs. The starter does
-not ship this. Add it before going live with untrusted editors.
+- **Schema** ([`cms/src/lexical/editor.ts`](../cms/src/lexical/editor.ts)):
+  the link feature's `url` validator allows only `http`, `https`, `mailto`,
+  `tel`, and relative/schemeless URLs, rejecting the rest at save time for
+  every editor that inherits the global feature set.
+- **Renderer** ([`web/src/components/lexical/sanitizeLinks.ts`](../web/src/components/lexical/sanitizeLinks.ts)):
+  before rendering, link nodes whose `url` carries a disallowed scheme are
+  unwrapped to plain text, covering content that predates the validator.
+
+If you add a richtext editor that does not inherit the global feature set,
+pass it through `lexicalEditorWithSafeLinks` so the validator applies.
 
 ## Generated keys are not in the repo
 
@@ -218,5 +222,3 @@ production hardening checklist:
 - Automated regression test for draft leakage at populated depth.
 - Server-stamped time-trap (or alternative) on form submissions if you
   expect targeted spam.
-- `javascript:` and `data:` scheme rejection in the Lexical link picker
-  if editors can author arbitrary links.

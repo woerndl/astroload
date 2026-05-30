@@ -15,7 +15,10 @@ const isEntry = (value: unknown): value is SubmissionEntry => {
 export const spamGuard: CollectionBeforeChangeHook = ({ data, operation, req }) => {
   if (operation !== 'create') return data
   const raw = (data as { submissionData?: unknown }).submissionData
-  if (!Array.isArray(raw)) return data
+  if (!Array.isArray(raw)) {
+    req.payload.logger.info('form submission rejected: missing submissionData')
+    throw new APIError('Submission rejected.', 400, undefined, true)
+  }
 
   const entries = raw.filter(isEntry)
   const honeypot = entries.find((entry) => entry.field === 'fax')
