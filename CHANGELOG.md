@@ -8,6 +8,40 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-30
+
+### Added
+
+- A GitHub Actions workflow (`.github/workflows/ci.yml`) that runs lint and type-checks on push and pull request.
+- A `SKIP_ENV_VALIDATION` flag in `cms/src/env.ts` that bypasses the boot-time env check, so commands like type generation can run without a populated `.env`.
+
+### Changed
+
+- `PostsListBlock` and `AuthorsListBlock` now build their virtual relationship through a shared `publishedRelationField` factory instead of repeating the `afterRead` hook. Both still return all published items in the current locale, sorted by the per-block sort key.
+- The live-preview autosave interval lives in `cms/src/shared.ts` as `AUTOSAVE_INTERVAL`, and Pages, Posts, and Authors reference it instead of repeating the literal.
+- `payload.config.ts` asserts at boot that its localization locales match the `LOCALES` set from the shared module, throwing if they differ, and sources its `defaultLocale` from `DEFAULT_LOCALE`, so the CMS and web sides can no longer drift apart silently. `pickLocale` now imports `isLocale` and `DEFAULT_LOCALE` from the shared module rather than keeping its own copy.
+- Hardcoded UI strings now come from the Labels global instead of being inlined. The home and language navigation labels, the empty-list messages for the post and author list blocks, and the form's submit, sending, and error text are all editor-controlled, and the unused label fields were removed.
+- `Img.astro`, `PreviewToolbar.astro`, and the SDK factory resolve CMS URLs through the shared `absoluteCmsURL` helper instead of building `new URL(...)` inline.
+- The `page-by-path` endpoint looks up candidates by slug at depth 0 selecting only the `path` field, then loads the single matched document at full depth, so colliding slugs in other collections are never populated. Its 404 response now carries the same `Cache-Control: no-cache` as the hit path.
+- `getPageData` dropped its unused `preview` option and always reads published content; the preview route fetches drafts through its own SDK.
+- The collection deploy hooks in `triggerDeploy.ts` route through a single `post` helper, and `JsonLd.astro` selects the `WebPage` branch with an explicit `pages` check rather than a catch-all `else`.
+- The seed script wraps its typed insert payloads in a small `seedData` helper instead of scattering `as never` casts.
+
+### Fixed
+
+- The Lexical link feature validates URLs against a scheme allowlist (`http`, `https`, `mailto`, `tel`, or a relative path), rejecting `javascript:`, `data:`, and protocol-relative `//host` links before they are stored. As a second guard, the web renderer unwraps any link with a dangerous href to plain text, covering content that never passes through the editor (seeds, imports, database restores).
+- `spamGuard` fails closed: a form submission whose `submissionData` is not an array is rejected with a 400 and logged, instead of being saved unchecked.
+- The deploy webhook now fires whenever the published output changes, including an unpublish or a direct re-publish of a live document, not only the first draft-to-published transition. Pure draft saves are still skipped and the per-document throttle absorbs autosave churn.
+- Post publication dates format in the page locale instead of a fixed one.
+- JSON-LD image dimensions are emitted as numbers, which is what Google expects for `width` and `height`.
+- Header and Footer navigation links resolve through a shared `resolveNavLinks` helper that drops any link whose target is an unpopulated relation or has no path, and the block and upload renderers guard relations with `isPopulated` before reading them.
+
+### Documentation
+
+- Documented the seeded admin credentials and recommended changing them after the first sign-in.
+- Corrected the README's hreflang description and the claim about re-running the seed.
+- Smaller documentation fixes: capitalized the Astroload product name, simplified some wording, corrected the CI status note, and made several code comments plainer.
+
 ## [0.1.2] - 2026-05-28
 
 ### Fixed
