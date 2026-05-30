@@ -92,7 +92,7 @@ if (isHome) {
   const personImage = mediaURL(photo)
   if (personImage) person.image = personImage
   graph.push(person)
-} else {
+} else if (result.collection === 'pages') {
   const webPage: WebPage = {
     '@type': 'WebPage',
     name: result.data.title ?? siteSettings.siteName,

@@ -15,6 +15,8 @@ export type PageCollectionSlug = (typeof pageCollectionsSlugs)[number]
 
 export type LocalePaths = Partial<Record<Locale, string>>
 
+export const AUTOSAVE_INTERVAL = 1500
+
 export const livePreviewBreakpoints = [
   { name: 'mobile', label: 'Mobile', width: 390, height: 844 },
   { name: 'tablet', label: 'Tablet', width: 768, height: 1024 },

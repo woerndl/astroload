@@ -1,8 +1,8 @@
 ---
 import type { Labels } from '@astroload/cms/src/payload-types'
-import { CMS_URL } from 'astro:env/client'
 
 import type { PreviewContext } from '../cms/types'
+import { absoluteCmsURL } from '../cms/urls'
 
 interface Props extends PreviewContext {
   labels: Labels['preview']
@@ -11,7 +11,7 @@ interface Props extends PreviewContext {
 const { collection, id, labels } = Astro.props
 
 const insideIframe = Astro.request.headers.get('sec-fetch-dest') === 'iframe'
-const adminHref = new URL(`/admin/collections/${collection}/${id}`, CMS_URL).toString()
+const adminHref = absoluteCmsURL(`/admin/collections/${collection}/${id}`)
 ---
 
 {

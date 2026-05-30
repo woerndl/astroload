@@ -1,7 +1,7 @@
 ---
-import { CMS_URL } from 'astro:env/client'
-
 import type { Media } from '@astroload/cms/src/payload-types'
+
+import { absoluteCmsURL } from '../cms/urls'
 
 type SizeKey = 'xs' | 'sm' | 'md' | 'lg' | 'og'
 
@@ -23,7 +23,7 @@ if (!url) {
   throw new Error(`Media ${image.id} has no url`)
 }
 
-const src = new URL(url, CMS_URL).toString()
+const src = absoluteCmsURL(url)
 ---
 
 <img
