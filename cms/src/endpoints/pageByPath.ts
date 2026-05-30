@@ -7,9 +7,10 @@ interface PageByPathBody {
   data: unknown
 }
 
-// The pages-plugin `path` field is virtual and not indexed, so it cannot be
-// used as a `where` filter. Look up by the last URL segment (the document
-// slug) and match the full path in memory. Root pages have an empty slug.
+// The pages-plugin `path` field is virtual and unindexed, so it can't be a
+// `where` filter. Look up by slug, match the full path in memory, then load
+// only the matched id at full depth — colliding slugs are never populated.
+// Root pages have an empty slug.
 export async function getPageByPath(req: PayloadRequest): Promise<Response> {
   if (!req.user) {
     return new Response('Unauthorized', { status: 401 })
@@ -33,7 +34,7 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
   const preview = req.query.preview === 'true'
 
   try {
-    const results = await Promise.all(
+    const lookups = await Promise.all(
       pageCollectionsSlugs.map((collection) =>
         req.payload.find({
           collection,
@@ -43,24 +44,27 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
             slug: { equals: slug },
             _status: preview ? { in: ['draft', 'published'] } : { equals: 'published' },
           },
+          select: { path: true },
+          depth: 0,
           limit: 0,
           req,
         }),
       ),
     )
 
-    for (const [i, result] of results.entries()) {
+    for (const [i, lookup] of lookups.entries()) {
       const collection = pageCollectionsSlugs[i]!
-      const match = (result.docs as Array<{ id: string | number; path?: string }>).find(
+      const match = (lookup.docs as Array<{ id: string | number; path?: string }>).find(
         (doc) => doc.path === fullPath,
       )
       if (!match) continue
 
-      const body: PageByPathBody = { collection, data: match }
+      const data = await req.payload.findByID({ collection, id: match.id, locale, draft: preview, req })
+      const body: PageByPathBody = { collection, data }
       return Response.json(body, { headers: { 'Cache-Control': 'no-cache' } })
     }
 
-    return new Response(null, { status: 404 })
+    return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-cache' } })
   } catch (error) {
     req.payload.logger.error({ err: error }, 'pageByPath endpoint failed')
     throw new APIError('Internal server error', 500)

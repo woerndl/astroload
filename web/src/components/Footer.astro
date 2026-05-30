@@ -1,6 +1,8 @@
 ---
 import type { Footer } from '@astroload/cms/src/payload-types'
 
+import { resolveNavLinks } from '../cms/types'
+
 interface Props {
   footer: Footer
 }
@@ -9,13 +11,7 @@ const { footer } = Astro.props
 
 const columns = (footer.columns ?? []).map((column) => ({
   heading: column.heading,
-  links: (column.links ?? [])
-    .map((link) => {
-      const target = link.page.value
-      if (typeof target !== 'object' || !target.path) return null
-      return { href: target.path, label: link.label }
-    })
-    .filter((link): link is { href: string; label: string } => link !== null),
+  links: resolveNavLinks(column.links),
 }))
 ---
 
