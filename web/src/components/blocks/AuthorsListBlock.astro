@@ -1,14 +1,13 @@
 ---
 import type { Author, AuthorsListBlock as AuthorsListBlockType } from '@astroload/cms/src/payload-types'
 
+import { isPopulated } from '../../cms/types'
 import Img from '../Img.astro'
 
 type Props = Omit<AuthorsListBlockType, 'blockType'>
 
 const { authors } = Astro.props
-const items = (authors ?? []).filter(
-  (a): a is Author => typeof a === 'object' && a !== null,
-)
+const items = (authors ?? []).filter((a): a is Author => isPopulated(a))
 ---
 
 {
@@ -17,7 +16,7 @@ const items = (authors ?? []).filter(
   ) : (
     <ul class="my-6 flex flex-col gap-6">
       {items.map((author) => {
-        const photo = typeof author.photo === 'object' && author.photo !== null ? author.photo : null
+        const photo = isPopulated(author.photo) ? author.photo : null
         return (
           <li>
             <a href={author.path} class="flex gap-4 group items-center">

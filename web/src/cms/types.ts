@@ -17,3 +17,26 @@ export interface PreviewContext {
 export function isPopulated<T extends object>(value: number | T | null | undefined): value is T {
   return typeof value === 'object' && value !== null
 }
+
+type NavLink = {
+  page: { value: number | Page | Post | Author }
+  label: string
+}
+
+export interface ResolvedNavLink {
+  href: string
+  label: string
+}
+
+// Resolve Header/Footer nav links to href + label, dropping any whose target is
+// unpopulated (a raw id) or pathless.
+export function resolveNavLinks(links: NavLink[] | null | undefined): ResolvedNavLink[] {
+  return (links ?? [])
+    .map((link) => {
+      const target = link.page.value
+      return isPopulated(target) && target.path
+        ? { href: target.path, label: link.label }
+        : null
+    })
+    .filter((link): link is ResolvedNavLink => link !== null)
+}
