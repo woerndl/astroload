@@ -3,11 +3,11 @@ import type { FeatureProviderServer } from '@payloadcms/richtext-lexical'
 
 const ALLOWED_LINK_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:']
 
-// Schemeless values (relative paths, anchors, bare hosts) parse as no URL and
-// are allowed; absolute URLs must use an allowed scheme, rejecting javascript:
-// and data:.
+// Relative paths and anchors are allowed; protocol-relative `//host` is rejected
+// (off-origin); absolute URLs must use an allowed scheme, rejecting javascript:/data:.
 function isAllowedLinkUrl(value: string): boolean {
   const url = value.trim()
+  if (url.startsWith('//')) return false
   if (!url || /^[/#?]/.test(url)) return true
   try {
     return ALLOWED_LINK_SCHEMES.includes(new URL(url).protocol)

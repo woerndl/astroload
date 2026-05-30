@@ -2,10 +2,11 @@ import type { LexicalNode } from '@jhb.software/astro-payload-richtext-lexical'
 
 const ALLOWED_LINK_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:']
 
-// Only absolute URLs with a disallowed scheme (javascript:, data:) are dangerous;
-// the renderer already handles relative and schemeless ones.
+// Dangerous: absolute URLs with a disallowed scheme (javascript:, data:) and
+// protocol-relative `//host` (off-origin). Relative/schemeless are left to the renderer.
 function isDangerousHref(url: string): boolean {
   const trimmed = url.trim()
+  if (trimmed.startsWith('//')) return true
   if (!trimmed || trimmed.startsWith('/')) return false
   try {
     return !ALLOWED_LINK_SCHEMES.includes(new URL(trimmed).protocol)
