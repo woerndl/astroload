@@ -48,7 +48,7 @@ mismatch does not produce a build error. It produces a wrong
 ignores or attributes to the wrong locale.
 
 If you swap the default (or add a new locale and pick it as default),
-change both lines. If this ever bites somebody, the right fix is a
+change both lines. If this ever causes a problem, the right fix is a
 boot-time check that compares the value `shared.ts` exports against the
 generated `Config['locale']` defaults.
 
@@ -62,7 +62,7 @@ window per document.
 
 The window is set in code, not env. The default is tuned for hosts that
 bill per build minute, where editors publishing in bursts should not
-trigger one build per save. If you want snappier or stricter behaviour,
+trigger one build per save. If you want faster or stricter behaviour,
 change the constant. If the throttle window is shorter than the build,
 you get overlapping builds.
 
@@ -85,7 +85,7 @@ deploy. The Redirects collection registers
 `triggerDeployAlwaysAfterChange` on save and
 `triggerDeployAlwaysAfterDelete` on delete. These fire unconditionally
 on any save or delete in that collection, not on a draft-to-published
-transition (Redirects do not use drafts). The fire path still goes
+transition (Redirects do not use drafts). The webhook call still goes
 through the same per-document throttle as `triggerDeploy`, so editor
 bursts coalesce. A configured `DEPLOY_HOOK_URL` means redirects refresh
 automatically. An unset hook means an editor must trigger a manual
@@ -103,7 +103,7 @@ The fetch handles missing env vars and a failed CMS read the same way,
 keyed on the `REDIRECTS_STRICT` flag:
 
 - With `REDIRECTS_STRICT=1`, both a missing `CMS_URL`/`PAYLOAD_READ_KEY`
-  and a failed CMS fetch throw, so the build aborts loudly instead of
+  and a failed CMS fetch throw, so the build fails with an error instead of
   shipping an empty redirect table. The `build` script in
   `web/package.json` sets the flag, so a normal
   `pnpm --filter @astroload/web build` is strict.
@@ -124,8 +124,8 @@ take the live site down. Failing a strict build during an outage is the
 safer choice: it leaves the last good deploy serving instead of replacing
 it with a redirect-less one.
 
-If you need deploys to succeed during a CMS outage without silently
-dropping redirects, generate a committed last-known-good snapshot (for
+If you need deploys to succeed during a CMS outage without dropping
+redirects unnoticed, generate a committed last-known-good snapshot (for
 example `redirects.fallback.json`) and have `getRedirects()` read it when
 the fetch fails. That trades build-time CMS coupling for the discipline of
 keeping the snapshot fresh, so it is left as a downstream option, not
