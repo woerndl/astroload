@@ -25,7 +25,7 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 - Drafts and autosave on Pages, Posts, and Authors
 - Role-based access (`admin`, `editor`) plus separate API keys for read-only and preview reads. The Astro side uses these scoped keys, so no admin-capable Payload token ships in `web/.env`
 - Editor-managed Header, Footer, Labels, and SiteSettings globals
-- Seed script for an admin user, API keys, and demo content, safe to re-run
+- Seed script for an admin user, API keys, and demo content; re-running is a no-op unless `--force` or `SEED_FORCE=1`
 
 **Frontend rendering**
 
@@ -44,7 +44,7 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 
 **SEO and i18n**
 
-- Two locales (`en`, `de`) with per-locale URL segments and `hreflang` plus `x-default` on every page
+- Two locales (`en`, `de`) with per-locale URL segments and `hreflang` plus `x-default` on content pages (error and root pages carry no alternates)
 - Editable SEO metadata (title, description, image) on every content type, with fallbacks
 - JSON-LD output: `WebSite` and `Organization` on home, `Article` on posts, `Person` on authors
 - Sitemap index plus per-locale sitemaps with `lastmod` and alternate-locale links
