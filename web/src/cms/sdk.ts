@@ -1,13 +1,13 @@
 import { PayloadSDK } from '@payloadcms/sdk'
-import { CMS_URL } from 'astro:env/client'
 import { PAYLOAD_READ_KEY } from 'astro:env/server'
 import type { Config } from '@astroload/cms/src/payload-types'
 
 import { createCachedFetch } from './sdk/cachedFetch'
+import { absoluteCmsURL } from './urls'
 
 export function createPayloadSDK(apiKey: string): PayloadSDK<Config> {
   return new PayloadSDK<Config>({
-    baseURL: new URL('/api', CMS_URL).toString(),
+    baseURL: absoluteCmsURL('/api'),
     baseInit: {
       headers: { Authorization: `api-keys API-Key ${apiKey}` },
     },

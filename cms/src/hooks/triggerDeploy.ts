@@ -74,6 +74,17 @@ function schedulePost(key: string, body: DeployPayload, logger: Logger): void {
   existing.pending = { body, logger }
 }
 
+const localeOf = (req: PayloadRequest): string | undefined =>
+  typeof req.locale === 'string' ? req.locale : undefined
+
+function post(req: PayloadRequest, slug: string, id: string | number, op: DeployPayload['op']): void {
+  schedulePost(
+    `${slug}:${id}`,
+    { collection: slug, id, locale: localeOf(req), op },
+    req.payload.logger,
+  )
+}
+
 export const triggerDeployAfterChange: CollectionAfterChangeHook = ({
   doc,
   previousDoc,
@@ -87,16 +98,7 @@ export const triggerDeployAfterChange: CollectionAfterChangeHook = ({
     doc?._status === 'published' || previousDoc?._status === 'published'
   if (!affectsPublished) return doc
 
-  schedulePost(
-    `${collection.slug}:${doc.id}`,
-    {
-      collection: collection.slug,
-      id: doc.id,
-      locale: typeof req.locale === 'string' ? req.locale : undefined,
-      op: 'change',
-    },
-    req.payload.logger,
-  )
+  post(req, collection.slug, doc.id, 'change')
   return doc
 }
 
@@ -108,16 +110,7 @@ export const triggerDeployAfterDelete: CollectionAfterDeleteHook = ({
 }) => {
   if (doc?._status !== 'published') return doc
 
-  schedulePost(
-    `${collection.slug}:${id}`,
-    {
-      collection: collection.slug,
-      id,
-      locale: typeof req.locale === 'string' ? req.locale : undefined,
-      op: 'delete',
-    },
-    req.payload.logger,
-  )
+  post(req, collection.slug, id, 'delete')
   return doc
 }
 
@@ -128,16 +121,7 @@ export const triggerDeployAlwaysAfterChange: CollectionAfterChangeHook = ({
   req,
   collection,
 }) => {
-  schedulePost(
-    `${collection.slug}:${doc.id}`,
-    {
-      collection: collection.slug,
-      id: doc.id,
-      locale: typeof req.locale === 'string' ? req.locale : undefined,
-      op: 'change',
-    },
-    req.payload.logger,
-  )
+  post(req, collection.slug, doc.id, 'change')
   return doc
 }
 
@@ -147,16 +131,7 @@ export const triggerDeployAlwaysAfterDelete: CollectionAfterDeleteHook = ({
   collection,
   id,
 }) => {
-  schedulePost(
-    `${collection.slug}:${id}`,
-    {
-      collection: collection.slug,
-      id,
-      locale: typeof req.locale === 'string' ? req.locale : undefined,
-      op: 'delete',
-    },
-    req.payload.logger,
-  )
+  post(req, collection.slug, id, 'delete')
   return doc
 }
 
@@ -167,11 +142,7 @@ export const triggerDeployGlobalAfterChange: GlobalAfterChangeHook = ({
 }) => {
   schedulePost(
     `global:${global.slug}`,
-    {
-      global: global.slug,
-      locale: typeof req.locale === 'string' ? req.locale : undefined,
-      op: 'change',
-    },
+    { global: global.slug, locale: localeOf(req), op: 'change' },
     req.payload.logger,
   )
   return doc

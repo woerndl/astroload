@@ -31,6 +31,10 @@ if (id && collection) {
     result = { collection, data } as PageByPathResult
   }
 } else {
+  // Dev-only branch in practice: a prerendered build only serves routes from
+  // getStaticPaths, each carrying id/collection props, so it takes the branch
+  // above. This refetch runs when those props are absent, which today happens
+  // only with prerender off (import.meta.env.DEV).
   const fullPath = path ? `/${lang}/${path}` : `/${lang}`
   const found = await getPageByPath(fullPath)
   if (found) {
