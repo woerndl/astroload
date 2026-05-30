@@ -1,12 +1,12 @@
 ---
 import type { Post, PostsListBlock as PostsListBlockType } from '@astroload/cms/src/payload-types'
 
-import { isPopulated } from '../../cms/types'
+import { isPopulated, type Locale } from '../../cms/types'
 import Img from '../Img.astro'
 
-type Props = Omit<PostsListBlockType, 'blockType'>
+type Props = Omit<PostsListBlockType, 'blockType'> & { lang: Locale }
 
-const { posts } = Astro.props
+const { posts, lang } = Astro.props
 const items = (posts ?? []).filter((p): p is Post => isPopulated(p))
 ---
 
@@ -18,7 +18,7 @@ const items = (posts ?? []).filter((p): p is Post => isPopulated(p))
       {items.map((post) => {
         const image = isPopulated(post.image) ? post.image : null
         const published = post.publishedAt
-          ? new Date(post.publishedAt).toLocaleDateString(Astro.currentLocale)
+          ? new Date(post.publishedAt).toLocaleDateString(lang)
           : null
         return (
           <li>
