@@ -3,7 +3,6 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { resendAdapter } from '@payloadcms/email-resend'
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import { seoPlugin } from '@payloadcms/plugin-seo'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { s3Storage } from '@payloadcms/storage-s3'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -21,6 +20,7 @@ import { getGlobalData } from './endpoints/globalData'
 import { getPageByPath } from './endpoints/pageByPath'
 import { getStaticPaths } from './endpoints/staticPaths'
 import { env } from './env'
+import { lexicalEditorWithSafeLinks } from './lexical/editor'
 import { spamGuard } from './hooks/spamGuard'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
@@ -60,7 +60,7 @@ export default buildConfig({
     defaultLocale: 'en',
     fallback: true,
   },
-  editor: lexicalEditor(),
+  editor: lexicalEditorWithSafeLinks(),
   secret: env.PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
