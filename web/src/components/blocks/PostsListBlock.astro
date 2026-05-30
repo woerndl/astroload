@@ -4,15 +4,15 @@ import type { Post, PostsListBlock as PostsListBlockType } from '@astroload/cms/
 import { isPopulated, type Locale } from '../../cms/types'
 import Img from '../Img.astro'
 
-type Props = Omit<PostsListBlockType, 'blockType'> & { lang: Locale }
+type Props = Omit<PostsListBlockType, 'blockType'> & { lang: Locale; emptyLabel: string }
 
-const { posts, lang } = Astro.props
+const { posts, lang, emptyLabel } = Astro.props
 const items = (posts ?? []).filter((p): p is Post => isPopulated(p))
 ---
 
 {
   items.length === 0 ? (
-    <p class="my-6 text-gray-500">No posts yet.</p>
+    <p class="my-6 text-gray-500">{emptyLabel}</p>
   ) : (
     <ul class="my-6 flex flex-col gap-6">
       {items.map((post) => {

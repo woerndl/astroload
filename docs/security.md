@@ -48,11 +48,11 @@ the Resend and S3 keys) are separate concerns and live alongside these.
    know. Gates the `/preview` route itself.
 
 No admin-capable Payload token ever lands in `web/.env`. A leak of the
-read-only key exposes already-public content. A leak of the preview key
-exposes drafts. Neither gives write access or the admin surface.
+read-only key reveals already-public content. A leak of the preview key
+reveals drafts. Neither gives write access or the admin surface.
 
-The read-only key is still server-only even though its leak surface is
-smaller. Exposing it to client islands would enable enumeration and
+The read-only key is still server-only even though the risk from a leak is
+smaller. Putting it in client islands would allow enumeration and
 rate-limit abuse against the CMS API. Keep both keys behind
 `astro:env/server`.
 
@@ -84,7 +84,7 @@ Two exceptions exist by design. Decide on each before production:
 If you add a new collection that holds drafts, give it
 `readPublishedOrDraft` (or equivalent). A regression here is hard to
 spot through manual testing. The starter does not ship an automated
-draft-leakage test. Add one when you wire your test runner.
+draft-leakage test. Add one when you set up your test runner.
 
 ## The preview route and the preview API key
 
@@ -178,13 +178,15 @@ The rich text renderer prints link nodes with whatever `url` the Lexical
 document holds, so an unfiltered `javascript:` or `data:` URL would render
 as a clickable XSS vector. Astroload closes this in two layers:
 
-- **Schema** ([`cms/src/lexical/editor.ts`](../cms/src/lexical/editor.ts)):
-  the link feature's `url` validator allows only `http`, `https`, `mailto`,
-  `tel`, and relative/schemeless URLs, rejecting the rest at save time for
-  every editor that inherits the global feature set.
-- **Renderer** ([`web/src/components/lexical/sanitizeLinks.ts`](../web/src/components/lexical/sanitizeLinks.ts)):
-  before rendering, link nodes whose `url` carries a disallowed scheme are
-  unwrapped to plain text, covering content that predates the validator.
+- At the schema layer
+  ([`cms/src/lexical/editor.ts`](../cms/src/lexical/editor.ts)), the link
+  feature's `url` validator allows only `http`, `https`, `mailto`, `tel`,
+  and relative/schemeless URLs, rejecting the rest at save time for every
+  editor that inherits the global feature set.
+- The renderer
+  ([`web/src/components/lexical/sanitizeLinks.ts`](../web/src/components/lexical/sanitizeLinks.ts))
+  unwraps link nodes whose `url` carries a disallowed scheme to plain text
+  before rendering, covering content that predates the validator.
 
 If you add a richtext editor that does not inherit the global feature set,
 pass it through `lexicalEditorWithSafeLinks` so the validator applies.

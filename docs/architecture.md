@@ -1,6 +1,6 @@
 # Architecture
 
-astroload is a pnpm workspace with two applications that run as separate
+Astroload is a pnpm workspace with two applications that run as separate
 Node processes:
 
 - `cms/` is the Payload application. It owns the admin UI, the REST and
@@ -9,7 +9,7 @@ Node processes:
   the public site.
 
 The two processes share nothing at runtime. They share types at build time
-through generated TypeScript and a small SDK glue layer.
+through generated TypeScript and a small SDK layer.
 
 ## Service boundaries
 
@@ -49,7 +49,7 @@ The frontend never uses an admin-capable Payload token. There are two
 scoped API keys instead:
 
 - A read-only key the public renderer uses. It cannot read drafts and
-  cannot write. A leak exposes already-public content.
+  cannot write. A leak reveals already-public content.
 - A preview-scoped key the `/preview` route uses on the server. It can
   read drafts but cannot write.
 
@@ -92,7 +92,7 @@ ones that show up most in this starter:
 
 - No in-process revalidation. A Next.js + Payload setup can call
   `revalidatePath` from an `afterChange` hook and the next request sees
-  the change. astroload cannot. Static pages need a redeploy, which the
+  the change. Astroload cannot. Static pages need a redeploy, which the
   deploy webhook automates.
 - Two deploys to coordinate. A schema change that affects the frontend
   shape lands in two repos worth of effort even though there is one
@@ -101,15 +101,15 @@ ones that show up most in this starter:
   site on another, so live preview, form submissions, and any
   browser-to-CMS request crosses an origin boundary. CORS and cookie
   scoping are explicit.
-- A more involved editor preview. The in-process iframe story Payload +
-  Next.js has out of the box is not free here. astroload pairs Payload
+- A more involved editor preview. The in-process iframe preview Payload +
+  Next.js has by default is not free here. Astroload pairs Payload
   autosave with an iframe reload, plus a standalone `/preview` SSR
   route for sharing draft URLs. Updates appear after each autosave
   cycle. Acceptable for editorial work, not as tight as a
   single-process setup.
 - No shared component bundle between admin and frontend. The admin
   renders in React, the frontend in Astro, so the Next.js + Payload
-  monorepo trick of importing the same React component from both does
+  monorepo pattern of importing the same React component from both does
   not apply here.
 
 ## Rich text on the frontend

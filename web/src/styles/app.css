@@ -2,5 +2,5 @@
 
 /* Honeypot wrapper. Lives in the global stylesheet so the rule ships as an
    external .css file, not inlined into the HTML. Commodity spam bots that
-   only parse HTML never see the display:none and fill the bait. */
+   only parse HTML never see the display:none and fill the honeypot field. */
 .form-extra { display: none; }

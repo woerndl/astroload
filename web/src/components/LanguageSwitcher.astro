@@ -6,9 +6,10 @@ import type { Locale, LocalePaths } from '../cms/types'
 interface Props {
   lang: Locale
   paths?: LocalePaths
+  label: string
 }
 
-const { lang, paths } = Astro.props
+const { lang, paths, label } = Astro.props
 
 const links = LOCALES.map((code) => ({
   code,
@@ -17,7 +18,7 @@ const links = LOCALES.map((code) => ({
 }))
 ---
 
-<nav aria-label="Language" class="flex gap-2 text-sm uppercase tracking-wide">
+<nav aria-label={label} class="flex gap-2 text-sm uppercase tracking-wide">
   {
     links.map((link, i) => (
       <>
