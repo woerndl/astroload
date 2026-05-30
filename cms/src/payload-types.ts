@@ -1260,16 +1260,8 @@ export interface Footer {
 export interface Labels {
   id: number;
   global: {
-    readMore: string;
-    learnMore: string;
-    openMenu: string;
-    closeMenu: string;
     home: string;
     language: string;
-  };
-  posts: {
-    writtenBy: string;
-    lastUpdatedAt: string;
   };
   lists: {
     noPosts: string;
@@ -1369,18 +1361,8 @@ export interface LabelsSelect<T extends boolean = true> {
   global?:
     | T
     | {
-        readMore?: T;
-        learnMore?: T;
-        openMenu?: T;
-        closeMenu?: T;
         home?: T;
         language?: T;
-      };
-  posts?:
-    | T
-    | {
-        writtenBy?: T;
-        lastUpdatedAt?: T;
       };
   lists?:
     | T

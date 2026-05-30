@@ -26,19 +26,7 @@ export const Labels: GlobalConfig = {
     {
       name: 'global',
       type: 'group',
-      fields: [
-        labelField('readMore'),
-        labelField('learnMore'),
-        labelField('openMenu'),
-        labelField('closeMenu'),
-        labelField('home'),
-        labelField('language'),
-      ],
-    },
-    {
-      name: 'posts',
-      type: 'group',
-      fields: [labelField('writtenBy'), labelField('lastUpdatedAt')],
+      fields: [labelField('home'), labelField('language')],
     },
     {
       name: 'lists',

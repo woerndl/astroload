@@ -514,16 +514,8 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
     locale: 'de',
     data: {
       global: {
-        readMore: 'Weiterlesen',
-        learnMore: 'Mehr erfahren',
-        openMenu: 'Menü öffnen',
-        closeMenu: 'Menü schließen',
         home: 'Startseite',
         language: 'Sprache',
-      },
-      posts: {
-        writtenBy: 'Geschrieben von',
-        lastUpdatedAt: 'Zuletzt aktualisiert',
       },
       lists: {
         noPosts: 'Noch keine Beiträge.',
@@ -555,16 +547,8 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
     locale: 'en',
     data: {
       global: {
-        readMore: 'Read more',
-        learnMore: 'Learn more',
-        openMenu: 'Open menu',
-        closeMenu: 'Close menu',
         home: 'Home',
         language: 'Language',
-      },
-      posts: {
-        writtenBy: 'Written by',
-        lastUpdatedAt: 'Last updated',
       },
       lists: {
         noPosts: 'No posts yet.',
