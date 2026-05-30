@@ -9,7 +9,7 @@ interface PageByPathBody {
 
 // The pages-plugin `path` field is virtual and unindexed, so it can't be a
 // `where` filter. Look up by slug, match the full path in memory, then load
-// only the matched id at full depth — colliding slugs are never populated.
+// only the matched id at full depth. Colliding slugs are never populated.
 // Root pages have an empty slug.
 export async function getPageByPath(req: PayloadRequest): Promise<Response> {
   if (!req.user) {

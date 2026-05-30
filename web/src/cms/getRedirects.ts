@@ -9,12 +9,12 @@ import type { Config } from '@astroload/cms/src/payload-types'
 //
 // Strictness is keyed on REDIRECTS_STRICT, set by the `build` script, not on
 // NODE_ENV: astro check forces NODE_ENV=production while resolving the config
-// and must not abort on a CMS blip. Failure modes:
+// and must not abort on a temporary CMS outage. Failure modes:
 //   - REDIRECTS_STRICT=1 (the deploy build): a missing CMS_URL/PAYLOAD_READ_KEY
-//     or a failed CMS fetch throws, so the deploy aborts loudly instead of
+//     or a failed CMS fetch throws, so the deploy fails with an error instead of
 //     shipping a site with an empty redirect table.
 //   - otherwise (dev, astro check, plain astro build): a missing env var
-//     returns {} silently, and a failed fetch warns and returns {} so the run
+//     returns {} without warning, and a failed fetch warns and returns {} so the run
 //     still ships. Editors lose redirect changes until the next strict build.
 export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
   const cmsUrl = process.env.CMS_URL
