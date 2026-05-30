@@ -36,6 +36,12 @@ const richTextWithImageBlock = (text: string, imageId: number, caption: string) 
     ],
   })
 
+// Payload's generated create/update types describe the union of every
+// collection's fields. The seed writes one collection at a time with partial,
+// per-locale documents that don't fit that union, so the data passes through
+// this single opt-out instead of an `as never` cast at each call site.
+const seedData = (data: Record<string, unknown>) => data as never
+
 // Pages can be parents of other pages, posts, and authors. The pages-plugin
 // blocks deleting a parent that still has children, so child collections go
 // first, then non-root pages, then the root page. Globals are cleared up
@@ -45,11 +51,11 @@ const richTextWithImageBlock = (text: string, imageId: number, caption: string) 
 async function clearAll(payload: Payload): Promise<void> {
   const all = { id: { exists: true as const } }
 
-  await payload.updateGlobal({ slug: 'header', data: { links: [] } as never })
-  await payload.updateGlobal({ slug: 'footer', data: { columns: [] } as never })
+  await payload.updateGlobal({ slug: 'header', data: seedData({ links: [] }) })
+  await payload.updateGlobal({ slug: 'footer', data: seedData({ columns: [] }) })
   await payload.updateGlobal({
     slug: 'site-settings',
-    data: { defaultSeo: { image: null } } as never,
+    data: seedData({ defaultSeo: { image: null } }),
   })
 
   await payload.delete({ collection: 'posts', where: all })
@@ -152,7 +158,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   const homeDe = await payload.create({
     collection: 'pages',
     locale: 'de',
-    data: {
+    data: seedData({
       title: 'Startseite',
       slug: '',
       isRootPage: true,
@@ -170,13 +176,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         },
       ],
       _status: 'published',
-    } as never,
+    }),
   })
   await payload.update({
     collection: 'pages',
     id: homeDe.id,
     locale: 'en',
-    data: {
+    data: seedData({
       title: 'Home',
       slug: '',
       sections: [
@@ -192,13 +198,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
           caption: 'Placeholder image',
         },
       ],
-    } as never,
+    }),
   })
 
   const aboutDe = await payload.create({
     collection: 'pages',
     locale: 'de',
-    data: {
+    data: seedData({
       title: 'Über uns',
       slug: 'ueber-uns',
       parent: homeDe.id,
@@ -209,13 +215,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         },
       ],
       _status: 'published',
-    } as never,
+    }),
   })
   await payload.update({
     collection: 'pages',
     id: aboutDe.id,
     locale: 'en',
-    data: {
+    data: seedData({
       title: 'About',
       slug: 'about',
       sections: [
@@ -225,13 +231,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
           text: richText('This page shows how child pages nest under the home page.'),
         },
       ],
-    } as never,
+    }),
   })
 
   const contactDe = await payload.create({
     collection: 'pages',
     locale: 'de',
-    data: {
+    data: seedData({
       title: 'Kontakt',
       slug: 'kontakt',
       parent: homeDe.id,
@@ -245,13 +251,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         },
       ],
       _status: 'published',
-    } as never,
+    }),
   })
   await payload.update({
     collection: 'pages',
     id: contactDe.id,
     locale: 'en',
-    data: {
+    data: seedData({
       title: 'Contact',
       slug: 'contact',
       sections: [
@@ -264,14 +270,14 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
           ),
         },
       ],
-    } as never,
+    }),
   })
 
   payload.logger.info('Seed: creating posts and authors parent pages')
   const postsParentDe = await payload.create({
     collection: 'pages',
     locale: 'de',
-    data: {
+    data: seedData({
       title: 'Beiträge',
       slug: 'posts',
       sections: [
@@ -284,13 +290,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         },
       ],
       _status: 'published',
-    } as never,
+    }),
   })
   await payload.update({
     collection: 'pages',
     id: postsParentDe.id,
     locale: 'en',
-    data: {
+    data: seedData({
       title: 'Posts',
       slug: 'posts',
       sections: [
@@ -304,13 +310,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
           blockType: 'postsList',
         },
       ],
-    } as never,
+    }),
   })
 
   const authorsParentDe = await payload.create({
     collection: 'pages',
     locale: 'de',
-    data: {
+    data: seedData({
       title: 'Autoren',
       slug: 'authors',
       sections: [
@@ -323,13 +329,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         },
       ],
       _status: 'published',
-    } as never,
+    }),
   })
   await payload.update({
     collection: 'pages',
     id: authorsParentDe.id,
     locale: 'en',
-    data: {
+    data: seedData({
       title: 'Authors',
       slug: 'authors',
       sections: [
@@ -343,14 +349,14 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
           blockType: 'authorsList',
         },
       ],
-    } as never,
+    }),
   })
 
   payload.logger.info('Seed: creating author')
   const authorDe = await payload.create({
     collection: 'authors',
     locale: 'de',
-    data: {
+    data: seedData({
       name: 'Sam Houston',
       slug: 'sam-houston',
       parent: authorsParentDe.id,
@@ -358,24 +364,24 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       photo: authorPhoto.id,
       bio: richText('Sam schreibt über Web, Performance und CMS-Architektur.'),
       _status: 'published',
-    } as never,
+    }),
   })
   await payload.update({
     collection: 'authors',
     id: authorDe.id,
     locale: 'en',
-    data: {
+    data: seedData({
       slug: 'sam-houston',
       role: 'Editor',
       bio: richText('Sam writes about the web, performance, and CMS architecture.'),
-    } as never,
+    }),
   })
 
   payload.logger.info('Seed: creating post')
   const postDe = await payload.create({
     collection: 'posts',
     locale: 'de',
-    data: {
+    data: seedData({
       title: 'Hallo Welt',
       slug: 'hallo-welt',
       parent: postsParentDe.id,
@@ -389,13 +395,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         'Platzhalterbild',
       ),
       _status: 'published',
-    } as never,
+    }),
   })
   await payload.update({
     collection: 'posts',
     id: postDe.id,
     locale: 'en',
-    data: {
+    data: seedData({
       title: 'Hello world',
       slug: 'hello-world',
       excerpt: 'A first post to exercise the blog renderer.',
@@ -404,25 +410,25 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         heroImage.id,
         'Placeholder image',
       ),
-    } as never,
+    }),
   })
 
   payload.logger.info('Seed: updating globals')
   const headerDe = await payload.updateGlobal({
     slug: 'header',
     locale: 'de',
-    data: {
+    data: seedData({
       links: [
         { page: { relationTo: 'pages', value: homeDe.id }, label: 'Startseite' },
         { page: { relationTo: 'pages', value: aboutDe.id }, label: 'Über uns' },
         { page: { relationTo: 'pages', value: contactDe.id }, label: 'Kontakt' },
       ],
-    } as never,
+    }),
   })
   await payload.updateGlobal({
     slug: 'header',
     locale: 'en',
-    data: {
+    data: seedData({
       links: [
         {
           id: headerDe.links![0]!.id,
@@ -440,14 +446,14 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
           label: 'Contact',
         },
       ],
-    } as never,
+    }),
   })
 
   const year = new Date().getFullYear()
   const footerDe = await payload.updateGlobal({
     slug: 'footer',
     locale: 'de',
-    data: {
+    data: seedData({
       columns: [
         {
           heading: 'Navigation',
@@ -465,12 +471,12 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         },
       ],
       copyright: `© ${year} ${SITE_NAME}`,
-    } as never,
+    }),
   })
   await payload.updateGlobal({
     slug: 'footer',
     locale: 'en',
-    data: {
+    data: seedData({
       columns: [
         {
           id: footerDe.columns![0]!.id,
@@ -506,7 +512,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         },
       ],
       copyright: `© ${year} ${SITE_NAME}`,
-    } as never,
+    }),
   })
 
   await payload.updateGlobal({
