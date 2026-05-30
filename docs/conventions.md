@@ -65,7 +65,7 @@ a similarly hard reason.
 `web/src/cms/getRedirects.ts` runs from `astro.config.mjs`. The result
 is folded into the server manifest. On a strict build (`REDIRECTS_STRICT=1`,
 which the web `build` script sets), a missing env var or a failed CMS fetch
-both throw, so the deploy aborts loudly rather than shipping with an empty
+both throw, so the deploy fails with an error rather than shipping with an empty
 redirect table. In dev, `astro check`, or a plain `astro build`, a missing
 env var returns `{}` with no warning and a failed fetch warns and continues
 with no redirects. Anything else that reads `process.env` from
@@ -103,10 +103,10 @@ after collection changes.
 
 ## Lints and checks before opening a PR
 
-Run `pnpm lint` and `pnpm check` before opening a PR. The template does
-not ship a CI workflow yet. When you wire one (GitHub Actions or
-otherwise), run the same two commands and add the type generator step
-so generated types stay in sync.
+Run `pnpm lint` and `pnpm check` before opening a PR. The CI workflow
+(`.github/workflows/ci.yml`) runs the same two commands on every push to
+`main` and every pull request, plus a step that regenerates the types and
+fails if the committed `payload-types.ts` is out of date.
 
 There is no test runner in v1. The repo has slots for a draft-leakage
 regression test and a form-submission integration test, both called

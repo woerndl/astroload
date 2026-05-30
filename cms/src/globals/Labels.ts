@@ -26,17 +26,17 @@ export const Labels: GlobalConfig = {
     {
       name: 'global',
       type: 'group',
-      fields: [
-        labelField('readMore'),
-        labelField('learnMore'),
-        labelField('openMenu'),
-        labelField('closeMenu'),
-      ],
+      fields: [labelField('home'), labelField('language')],
     },
     {
-      name: 'posts',
+      name: 'lists',
       type: 'group',
-      fields: [labelField('writtenBy'), labelField('lastUpdatedAt')],
+      fields: [labelField('noPosts'), labelField('noAuthors')],
+    },
+    {
+      name: 'form',
+      type: 'group',
+      fields: [labelField('submit'), labelField('sending'), labelField('error')],
     },
     {
       name: 'notFound',

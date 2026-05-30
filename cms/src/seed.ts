@@ -514,14 +514,17 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
     locale: 'de',
     data: {
       global: {
-        readMore: 'Weiterlesen',
-        learnMore: 'Mehr erfahren',
-        openMenu: 'Menü öffnen',
-        closeMenu: 'Menü schließen',
+        home: 'Startseite',
+        language: 'Sprache',
       },
-      posts: {
-        writtenBy: 'Geschrieben von',
-        lastUpdatedAt: 'Zuletzt aktualisiert',
+      lists: {
+        noPosts: 'Noch keine Beiträge.',
+        noAuthors: 'Noch keine Autoren.',
+      },
+      form: {
+        submit: 'Senden',
+        sending: 'Wird gesendet ...',
+        error: 'Senden fehlgeschlagen. Bitte versuche es erneut.',
       },
       notFound: {
         title: 'Seite nicht gefunden',
@@ -544,14 +547,17 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
     locale: 'en',
     data: {
       global: {
-        readMore: 'Read more',
-        learnMore: 'Learn more',
-        openMenu: 'Open menu',
-        closeMenu: 'Close menu',
+        home: 'Home',
+        language: 'Language',
       },
-      posts: {
-        writtenBy: 'Written by',
-        lastUpdatedAt: 'Last updated',
+      lists: {
+        noPosts: 'No posts yet.',
+        noAuthors: 'No authors yet.',
+      },
+      form: {
+        submit: 'Submit',
+        sending: 'Sending ...',
+        error: 'Sending failed. Please try again.',
       },
       notFound: {
         title: 'Page not found',

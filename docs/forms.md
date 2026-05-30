@@ -1,6 +1,6 @@
 # Forms
 
-astroload ships with Payload's form builder plugin and a custom Astro
+Astroload ships with Payload's form builder plugin and a custom Astro
 field renderer that submits to the CMS over HTTP.
 
 ## What is rendered
@@ -56,7 +56,7 @@ allow-list explicitly.
 
 ## Spam protection
 
-The form builder plugin has no built-in spam protection. astroload
+The form builder plugin has no built-in spam protection. Astroload
 ships a few baseline checks against commodity contact-form spam:
 
 - A honeypot field named `fax`, hidden by `.form-extra { display: none }`

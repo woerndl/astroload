@@ -1,36 +1,19 @@
 ---
-import type { Form, FormBlock as FormBlockType } from '@astroload/cms/src/payload-types'
+import type { Form, FormBlock as FormBlockType, Labels } from '@astroload/cms/src/payload-types'
 
-import { DEFAULT_LOCALE } from '@astroload/cms/src/shared'
-import { isLocale, isPopulated, type Locale } from '../../cms/types'
+import { isPopulated } from '../../cms/types'
 import { absoluteCmsURL } from '../../cms/urls'
 import LexicalContent from '../lexical/LexicalContent.astro'
 
-type Props = Omit<FormBlockType, 'blockType'>
+type Props = Omit<FormBlockType, 'blockType'> & { labels: Labels['form'] }
 
-const { form, introContent } = Astro.props
+const { form, introContent, labels } = Astro.props
 const populatedForm = isPopulated<Form>(form) ? form : null
-
-const lang: Locale = isLocale(Astro.params.lang) ? Astro.params.lang : DEFAULT_LOCALE
 
 const submitURL = absoluteCmsURL('/api/form-submissions')
 
-const STRINGS: Record<Locale, { submit: string; sending: string; error: string }> = {
-  de: {
-    submit: 'Senden',
-    sending: 'Wird gesendet ...',
-    error: 'Senden fehlgeschlagen. Bitte versuche es erneut.',
-  },
-  en: {
-    submit: 'Submit',
-    sending: 'Sending ...',
-    error: 'Sending failed. Please try again.',
-  },
-}
-const strings = STRINGS[lang]
-
 const fields = populatedForm?.fields ?? []
-const submitLabel = populatedForm?.submitButtonLabel ?? strings.submit
+const submitLabel = populatedForm?.submitButtonLabel ?? labels.submit
 const fieldBasis = (width?: number | null) => {
   const clamped = Math.min(100, Math.max(1, width ?? 100))
   return `flex: 1 1 calc(${clamped}% - 1rem); min-width: 12rem`
@@ -53,8 +36,8 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${name}`
         data-confirmation-type={populatedForm.confirmationType ?? 'message'}
         data-redirect-url={populatedForm.redirect?.url ?? ''}
         data-submit-label={submitLabel}
-        data-sending-label={strings.sending}
-        data-error-message={strings.error}
+        data-sending-label={labels.sending}
+        data-error-message={labels.error}
       >
         {fields.map((field) => {
           if (field.blockType === 'message') {

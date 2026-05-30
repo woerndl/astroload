@@ -4,15 +4,15 @@ import type { Author, AuthorsListBlock as AuthorsListBlockType } from '@astroloa
 import { isPopulated } from '../../cms/types'
 import Img from '../Img.astro'
 
-type Props = Omit<AuthorsListBlockType, 'blockType'>
+type Props = Omit<AuthorsListBlockType, 'blockType'> & { emptyLabel: string }
 
-const { authors } = Astro.props
+const { authors, emptyLabel } = Astro.props
 const items = (authors ?? []).filter((a): a is Author => isPopulated(a))
 ---
 
 {
   items.length === 0 ? (
-    <p class="my-6 text-gray-500">No authors yet.</p>
+    <p class="my-6 text-gray-500">{emptyLabel}</p>
   ) : (
     <ul class="my-6 flex flex-col gap-6">
       {items.map((author) => {

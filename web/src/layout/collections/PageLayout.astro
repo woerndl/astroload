@@ -1,6 +1,7 @@
 ---
 import type { Page } from '@astroload/cms/src/payload-types'
 
+import { getGlobalData } from '../../cms/getGlobalData'
 import { resolveSeo } from '../../cms/resolveSeo'
 import type { Locale, LocalePaths, PreviewContext } from '../../cms/types'
 import SectionBlock from '../../components/SectionBlock.astro'
@@ -16,6 +17,11 @@ interface Props {
 const { data, lang, paths, preview } = Astro.props
 const sections = data.sections ?? []
 const seo = resolveSeo(data)
+
+// Blocks render in Layout's slot, evaluated in this scope before Layout's
+// frontmatter, so Layout's labels can't reach them as props. The refetch hits
+// the shared LRU in production; dev and preview bypass it and pay a real fetch.
+const { labels } = await getGlobalData({ locale: lang, preview: Boolean(preview) })
 ---
 
 <Layout
@@ -30,7 +36,7 @@ const seo = resolveSeo(data)
   <article>
     <h1 class="text-3xl font-semibold">{data.title}</h1>
     <div class="mt-8 space-y-6">
-      {sections.map((block) => <SectionBlock block={block} lang={lang} />)}
+      {sections.map((block) => <SectionBlock block={block} lang={lang} labels={labels} />)}
     </div>
   </article>
 </Layout>
