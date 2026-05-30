@@ -1,5 +1,5 @@
 ---
-import type { Page } from '@astroload/cms/src/payload-types'
+import type { Labels, Page } from '@astroload/cms/src/payload-types'
 
 import type { Locale } from '../cms/types'
 import AuthorsListBlock from './blocks/AuthorsListBlock.astro'
@@ -13,13 +13,14 @@ type Section = NonNullable<Page['sections']>[number]
 interface Props {
   block: Section
   lang: Locale
+  labels: Labels
 }
 
-const { block, lang } = Astro.props
+const { block, lang, labels } = Astro.props
 ---
 
 {block.blockType === 'richText' && <RichTextBlock {...block} />}
 {block.blockType === 'image' && <ImageBlock {...block} />}
-{block.blockType === 'form' && <FormBlock {...block} />}
-{block.blockType === 'postsList' && <PostsListBlock {...block} lang={lang} />}
-{block.blockType === 'authorsList' && <AuthorsListBlock {...block} />}
+{block.blockType === 'form' && <FormBlock {...block} labels={labels.form} />}
+{block.blockType === 'postsList' && <PostsListBlock {...block} lang={lang} emptyLabel={labels.lists.noPosts} />}
+{block.blockType === 'authorsList' && <AuthorsListBlock {...block} emptyLabel={labels.lists.noAuthors} />}
