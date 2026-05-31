@@ -219,3 +219,40 @@ The content catch-all in this template uses `!import.meta.env.DEV`
 exactly for that reason. If you are editing in admin and not seeing
 changes on `localhost:4321`, check whether the route is prerendered in
 dev.
+
+## Cutting a release
+
+Versions follow SemVer, and `CHANGELOG.md` follows Keep a Changelog:
+new work accumulates under `## [Unreleased]` as it lands. Cutting a
+release is three steps, in order.
+
+1. Promote the changelog. Rename `## [Unreleased]` to
+   `## [X.Y.Z] - YYYY-MM-DD` and leave a fresh empty `## [Unreleased]`
+   above it. This goes in its own commit, with no code in it:
+
+   ```bash
+   git commit -m "docs: release X.Y.Z in CHANGELOG"
+   ```
+
+2. Tag that commit. Tags are lightweight and named `vX.Y.Z` (note the
+   `v`, which the commit subject omits):
+
+   ```bash
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
+   ```
+
+3. Create the GitHub release against the tag. The title is the bare
+   tag, `vX.Y.Z`, with no summary suffix. Write the body to stand on
+   its own for an outside reader: base it on that version's changelog
+   section, drop any internal shorthand, and keep the prose plain.
+   Normal releases are neither drafts nor prereleases.
+
+   ```bash
+   gh release create vX.Y.Z --verify-tag --title "vX.Y.Z" \
+     --notes-file <notes>
+   ```
+
+The changelog entry is the canonical record. The GitHub release body is
+a reader-facing summary of the same change, not a second source of
+truth.
