@@ -83,7 +83,9 @@ A project that ships a single locale drops the `[lang]` segment entirely.
 Pages serve at `/<path>`, the root serves the home page directly with no
 redirect, and pages emit a plain canonical link with no `hreflang`. The
 CMS still stores the `/{locale}` path, and the web ingress normalizes it
-away, so this is a config switch rather than a content change.
+away, so this is a config switch rather than a content change. A
+single-locale project that expects to add locales later can instead keep the
+prefix via `FORCE_URL_PREFIX` (see [`maintenance.md`](./maintenance.md)).
 
 The default locale and the shipped locale set live in one module,
 `cms/src/site-config.ts`, which the Payload config and the Astro side both

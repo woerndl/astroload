@@ -48,6 +48,12 @@ in production sitemaps.
 To swap the default, or to change which locales ship, edit
 `site-config.ts`. Nothing else changes in lockstep.
 
+By default a project carries the `/{locale}` URL prefix only when it ships more
+than one locale. To keep the prefix on a single-locale project, so its URLs
+survive adding a second locale later with no redirects, set `FORCE_URL_PREFIX`
+to `true` in `site-config.ts`. Forcing it off while several locales ship is
+rejected at import, because their un-prefixed URLs would collide.
+
 ## Deploy webhook throttles per document
 
 The deploy hook (`cms/src/hooks/triggerDeploy.ts`) coalesces bursts. The

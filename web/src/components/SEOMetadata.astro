@@ -4,8 +4,8 @@ import type { Media, SiteSetting } from '@astroload/cms/src/payload-types'
 import {
   DEFAULT_LOCALE,
   isPopulated,
-  LOCALE_URL_PREFIX,
   LOCALES,
+  MULTIPLE_LOCALES,
   type Locale,
   type LocalePaths,
   type PageCollectionSlug,
@@ -56,14 +56,14 @@ const allowIndexing = siteSettings.robots?.allowIndexing === true
 <link rel="canonical" href={canonicalURL} />
 {!allowIndexing && <meta name="robots" content="noindex, nofollow" />}
 
-{LOCALE_URL_PREFIX &&
+{MULTIPLE_LOCALES &&
   paths &&
   LOCALES.map((code) => {
     const altPath = paths[code]
     if (!altPath) return null
     return <link rel="alternate" hreflang={code} href={absoluteSiteURL(altPath)} />
   })}
-{LOCALE_URL_PREFIX && paths?.[DEFAULT_LOCALE] && (
+{MULTIPLE_LOCALES && paths?.[DEFAULT_LOCALE] && (
   <link rel="alternate" hreflang="x-default" href={absoluteSiteURL(paths[DEFAULT_LOCALE]!)} />
 )}
 

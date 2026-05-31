@@ -2,7 +2,7 @@
 import type { Header, Labels } from '@astroload/cms/src/payload-types'
 
 import {
-  LOCALE_URL_PREFIX,
+  MULTIPLE_LOCALES,
   resolveNavLinks,
   stripLocalePath,
   type Locale,
@@ -39,6 +39,6 @@ const homeHref = stripLocalePath(`/${lang}`)
         </nav>
       )
     }
-    {LOCALE_URL_PREFIX && <LanguageSwitcher lang={lang} paths={paths} label={labels.language} />}
+    {MULTIPLE_LOCALES && <LanguageSwitcher lang={lang} paths={paths} label={labels.language} />}
   </div>
 </header>

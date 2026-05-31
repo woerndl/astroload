@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
-Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as a pnpm workspace on Postgres. It includes live preview, multi-locale routing, SEO output, S3 storage, spam-protected forms, build-time redirects, deploy webhooks, and a typed CMS data layer with LRU caching.
+Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as a pnpm workspace on Postgres. It includes live preview, single- or multi-locale routing, SEO output, S3 storage, spam-protected forms, build-time redirects, deploy webhooks, and a typed CMS data layer with LRU caching.
 
 > [!NOTE]
 > This template is in active development. Production deployment is untested. Expect the API, content model, and project structure to change between releases. Pin a tag or commit if you build on top of it.
@@ -44,12 +44,13 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 
 **SEO and i18n**
 
-- Two locales (`en`, `de`) with per-locale URL segments and `hreflang` plus `x-default` on content pages (error and root pages carry no alternates)
+- Configurable locale set (`en` and `de` out of the box). With more than one locale, URLs carry a `/{locale}` segment and content pages get `hreflang` plus `x-default` alternates (error and root pages carry none)
+- With a single locale the prefix is omitted, so URLs read `/about` rather than `/en/about`, and the switcher and alternates are off. A single-locale project that may add languages later can set `FORCE_URL_PREFIX` to keep the `/{locale}` prefix, so its URLs survive that change with no redirects
 - Editable SEO metadata (title, description, image) on every content type, with fallbacks
 - JSON-LD output: `WebSite` and `Organization` on home, `Article` on posts, `Person` on authors
 - Sitemap index plus per-locale sitemaps with `lastmod` and alternate-locale links
 - `robots.txt` gated by a SiteSettings toggle so staging stays out of search
-- Language switcher in the header
+- Language switcher in the header when more than one locale ships
 
 **Forms and spam protection**
 
