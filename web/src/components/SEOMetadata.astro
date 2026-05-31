@@ -1,8 +1,14 @@
 ---
 import type { Media, SiteSetting } from '@astroload/cms/src/payload-types'
 
-import { DEFAULT_LOCALE, LOCALES } from '@astroload/cms/src/shared'
-import { isPopulated, type Locale, type LocalePaths, type PageCollectionSlug } from '../cms/types'
+import {
+  DEFAULT_LOCALE,
+  isPopulated,
+  LOCALES,
+  type Locale,
+  type LocalePaths,
+  type PageCollectionSlug,
+} from '../cms/types'
 import { absoluteCmsURL, absoluteSiteURL } from '../cms/urls'
 
 interface Props {

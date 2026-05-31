@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro'
 
-import { LOCALES } from '@astroload/cms/src/shared'
+import { LOCALES } from '../cms/types'
 
 import { absoluteSiteURL } from '../cms/urls'
 

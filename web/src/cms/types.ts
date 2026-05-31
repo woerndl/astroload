@@ -7,6 +7,12 @@ import {
 } from '@astroload/cms/src/shared'
 
 export { isLocale, type Locale, type LocalePaths, type PageCollectionSlug }
+export {
+  LOCALES,
+  DEFAULT_LOCALE,
+  LOCALE_URL_PREFIX,
+  SITE_NAME,
+} from '@astroload/cms/src/site-config'
 export type PageData = Page | Post | Author
 
 export interface PreviewContext {

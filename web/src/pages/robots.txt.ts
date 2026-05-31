@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro'
-import { DEFAULT_LOCALE } from '@astroload/cms/src/shared'
+import { DEFAULT_LOCALE } from '../cms/types'
 
 import { getGlobalData } from '../cms/getGlobalData'
 import { absoluteSiteURL } from '../cms/urls'
