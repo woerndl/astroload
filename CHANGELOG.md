@@ -8,6 +8,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-31
+
 ### Added
 
 - `cms/src/site-config.ts` is the single source of truth for the shipped locale set (`LOCALES`, `DEFAULT_LOCALE`), the per-locale admin labels, the build-time `SITE_NAME`, and the derived `LOCALE_URL_PREFIX` flag (`LOCALES.length > 1`). Both apps read these four names through it — the CMS re-exports them from `shared.ts`, and the web app re-exports them from `web/src/cms/types.ts`.
