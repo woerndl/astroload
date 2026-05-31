@@ -10,7 +10,7 @@ import Layout from '../layout/Layout.astro'
 export const prerender = false
 
 const lang = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
-const { labels } = await getGlobalData({ locale: lang, preview: false })
+const { labels } = await getGlobalData({ locale: lang, preview: false, locals: Astro.locals })
 const { title, description, homePageButton } = labels.serverError
 const homeHref = stripLocalePath(`/${lang}`)
 ---

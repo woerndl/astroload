@@ -11,13 +11,7 @@ export interface GlobalData {
   siteSettings: SiteSetting
 }
 
-export async function getGlobalData({
-  locale,
-  preview,
-}: {
-  locale: Locale
-  preview: boolean
-}): Promise<GlobalData> {
+async function fetchGlobalData(locale: Locale, preview: boolean): Promise<GlobalData> {
   const query = new URLSearchParams({ locale, preview: String(preview) })
   const response = await payloadSDK.request({
     method: 'GET',
@@ -34,4 +28,30 @@ export async function getGlobalData({
     throw new Error('global-data response is incomplete')
   }
   return data
+}
+
+export function getGlobalData({
+  locale,
+  preview,
+  locals,
+}: {
+  locale: Locale
+  preview: boolean
+  locals?: App.Locals
+}): Promise<GlobalData> {
+  // Without a request scope (build-time prerender, endpoints), fetch directly;
+  // the SDK LRU already dedupes repeat calls in production.
+  if (!locals) return fetchGlobalData(locale, preview)
+
+  // Memoize the in-flight promise on per-request Astro.locals so one render that
+  // needs globals in several places makes a single CMS round-trip.
+  const memo = (locals.globalData ??= new Map<string, Promise<GlobalData>>())
+
+  const key = `${locale}:${preview}`
+  const existing = memo.get(key)
+  if (existing) return existing
+
+  const promise = fetchGlobalData(locale, preview)
+  memo.set(key, promise)
+  return promise
 }

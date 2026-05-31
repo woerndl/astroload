@@ -1,9 +1,10 @@
 ---
-import type { PageByPathResult } from '../cms/getPageByPath'
+import { getGlobalData } from '../cms/getGlobalData'
+import { getPageByPath, type PageByPathResult } from '../cms/getPageByPath'
 import { getStaticPathItems } from '../cms/getStaticPaths'
 import { loadPageResult } from '../cms/loadPage'
 import { pickLocale } from '../cms/pickLocale'
-import { DEFAULT_LOCALE, LOCALE_URL_PREFIX } from '../cms/types'
+import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type LocalePaths } from '../cms/types'
 import CollectionLayout from '../layout/collections/CollectionLayout.astro'
 
 // Multi-locale redirects to the locale home (needs the request, so SSR);
@@ -17,15 +18,35 @@ if (localeRedirect) {
   return Astro.redirect(localeRedirect, 302)
 }
 
-const items = await getStaticPathItems()
-const home = items.find((item) => item.paths[DEFAULT_LOCALE] === '/')
-const result: PageByPathResult | null = home
-  ? await loadPageResult(home.collection, home.id, DEFAULT_LOCALE)
-  : null
+// Kick off global data now so it overlaps the page fetch; the layout awaits
+// the same Astro.locals memo (see getGlobalData).
+const globalData = getGlobalData({ locale: DEFAULT_LOCALE, preview: false, locals: Astro.locals })
+
+let result: PageByPathResult | null
+let paths: LocalePaths | undefined
+
+if (import.meta.env.DEV) {
+  // Resolve the home page directly by path so dev navigation skips the
+  // full static-paths scan the prerendered build amortizes.
+  const found = await getPageByPath('/')
+  result = found
+  paths = found?.paths
+} else {
+  // Prerendered build: getStaticPaths already scanned every path, so reusing the
+  // snapshot here is free.
+  const items = await getStaticPathItems()
+  const home = items.find((item) => item.paths[DEFAULT_LOCALE] === '/')
+  result = home ? await loadPageResult(home.collection, home.id, DEFAULT_LOCALE) : null
+  paths = home?.paths
+}
+
 if (!result) {
+  // A 404 renders no layout, so nothing awaits the global-data fetch kicked
+  // off above; swallow it so a globals failure can't turn this into a 500.
+  void globalData.catch(() => {})
   return new Response(null, { status: 404 })
 }
-const paths = home?.paths
+await globalData
 ---
 
 <CollectionLayout result={result} paths={paths} lang={DEFAULT_LOCALE} />

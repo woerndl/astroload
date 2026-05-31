@@ -1,8 +1,8 @@
 import { createHash } from 'crypto'
 import { APIError, type PayloadRequest } from 'payload'
 
-import { LOCALE_URL_PREFIX, type Locale, type PageCollectionSlug, pageCollectionsSlugs } from '../shared'
-import { stripLocalePath } from '../stripLocalePath'
+import { type Locale, type PageCollectionSlug, pageCollectionsSlugs } from '../shared'
+import { toPublicPaths } from '../stripLocalePath'
 
 interface PathDoc {
   id: string | number
@@ -15,17 +15,6 @@ export interface StaticPathItem {
   id: string | number
   paths: Partial<Record<Locale, string>>
   updatedAt: string
-}
-
-// Single-locale projects serve un-prefixed URLs, so the public path list drops
-// the stored `/${locale}` prefix. Multi-locale paths pass through unchanged.
-function toPublicPaths(paths: Partial<Record<Locale, string>>): Partial<Record<Locale, string>> {
-  if (LOCALE_URL_PREFIX) return paths
-  const out: Partial<Record<Locale, string>> = {}
-  for (const [code, value] of Object.entries(paths) as [Locale, string | undefined][]) {
-    out[code] = value ? stripLocalePath(value) : value
-  }
-  return out
 }
 
 export async function getStaticPaths(req: PayloadRequest): Promise<Response> {

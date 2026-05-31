@@ -8,6 +8,14 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-05-31
+
+### Changed
+
+- Global data (header, footer, labels, site settings) is fetched once per request. `getGlobalData` memoizes the in-flight fetch on `Astro.locals`, keyed by locale and preview, so the page layout and the outer layout share one web-to-CMS request for it instead of fetching separately. Callers without a request scope (build-time prerender, endpoints) still fetch directly.
+- Each page route starts the global-data fetch alongside resolving the page, so the two requests overlap instead of running one after the other. On a not-found request the started fetch is observed but not awaited, so it cannot turn a 404 into a 500.
+- The `page-by-path` endpoint returns the matched document's `path` in every locale. The home route in development and the catch-all fallback paths read alternate-locale paths from that response instead of from the static-paths list, and in development the home page is resolved by path, while the prerendered build still uses the list. `toPublicPaths` moved into `stripLocalePath.ts`, shared by the static-paths and page-by-path endpoints.
+
 ## [0.3.0] - 2026-05-31
 
 ### Added
