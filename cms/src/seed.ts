@@ -5,6 +5,8 @@ import type { SerializedBlockNode } from '@payloadcms/richtext-lexical'
 import type { Payload } from 'payload'
 import { fileURLToPath } from 'url'
 
+import { LOCALES, type Locale } from './shared'
+
 const ADMIN_EMAIL = 'admin@example.com'
 const ADMIN_PASSWORD = 'admin1234'
 const SITE_NAME = 'My site'
@@ -41,6 +43,12 @@ const richTextWithImageBlock = (text: string, imageId: number, caption: string) 
 // per-locale documents that don't fit that union, so the data passes through
 // this single opt-out instead of an `as never` cast at each call site.
 const seedData = (data: Record<string, unknown>) => data as never
+
+// Returns the locale only if the project ships it. The seed authors every
+// document in 'de' and overlays 'en' on top; a single-locale project skips the
+// overlay for a locale it no longer has.
+const configuredLocale = (code: string): Locale | null =>
+  (LOCALES as readonly string[]).includes(code) ? (code as Locale) : null
 
 // Pages can be parents of other pages, posts, and authors. The pages-plugin
 // blocks deleting a parent that still has children, so child collections go
@@ -81,6 +89,11 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       return
     }
   }
+
+  // The English overlay writes run only when the project ships 'en'; a
+  // single-locale build skips them. `en` is typed Locale (not the literal
+  // 'en'), so it stays assignable when the project's locale set excludes it.
+  const en = configuredLocale('en')
 
   payload.logger.info('Seed: creating admin user')
   await payload.create({
@@ -126,10 +139,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       filePath: placeholderImagePath,
       data: { alt: altDe },
     })
-    await payload.update({
+    if (en) await payload.update({
       collection: 'media',
       id: doc.id,
-      locale: 'en',
+      locale: en,
       data: { alt: altEn },
     })
     return doc
@@ -178,10 +191,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       _status: 'published',
     }),
   })
-  await payload.update({
+  if (en) await payload.update({
     collection: 'pages',
     id: homeDe.id,
-    locale: 'en',
+    locale: en,
     data: seedData({
       title: 'Home',
       slug: '',
@@ -217,10 +230,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       _status: 'published',
     }),
   })
-  await payload.update({
+  if (en) await payload.update({
     collection: 'pages',
     id: aboutDe.id,
-    locale: 'en',
+    locale: en,
     data: seedData({
       title: 'About',
       slug: 'about',
@@ -253,10 +266,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       _status: 'published',
     }),
   })
-  await payload.update({
+  if (en) await payload.update({
     collection: 'pages',
     id: contactDe.id,
-    locale: 'en',
+    locale: en,
     data: seedData({
       title: 'Contact',
       slug: 'contact',
@@ -292,10 +305,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       _status: 'published',
     }),
   })
-  await payload.update({
+  if (en) await payload.update({
     collection: 'pages',
     id: postsParentDe.id,
-    locale: 'en',
+    locale: en,
     data: seedData({
       title: 'Posts',
       slug: 'posts',
@@ -331,10 +344,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       _status: 'published',
     }),
   })
-  await payload.update({
+  if (en) await payload.update({
     collection: 'pages',
     id: authorsParentDe.id,
-    locale: 'en',
+    locale: en,
     data: seedData({
       title: 'Authors',
       slug: 'authors',
@@ -366,10 +379,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       _status: 'published',
     }),
   })
-  await payload.update({
+  if (en) await payload.update({
     collection: 'authors',
     id: authorDe.id,
-    locale: 'en',
+    locale: en,
     data: seedData({
       slug: 'sam-houston',
       role: 'Editor',
@@ -397,10 +410,10 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       _status: 'published',
     }),
   })
-  await payload.update({
+  if (en) await payload.update({
     collection: 'posts',
     id: postDe.id,
-    locale: 'en',
+    locale: en,
     data: seedData({
       title: 'Hello world',
       slug: 'hello-world',
@@ -425,9 +438,9 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       ],
     }),
   })
-  await payload.updateGlobal({
+  if (en) await payload.updateGlobal({
     slug: 'header',
-    locale: 'en',
+    locale: en,
     data: seedData({
       links: [
         {
@@ -473,9 +486,9 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       copyright: `© ${year} ${SITE_NAME}`,
     }),
   })
-  await payload.updateGlobal({
+  if (en) await payload.updateGlobal({
     slug: 'footer',
-    locale: 'en',
+    locale: en,
     data: seedData({
       columns: [
         {
@@ -548,9 +561,9 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       },
     },
   })
-  await payload.updateGlobal({
+  if (en) await payload.updateGlobal({
     slug: 'labels',
-    locale: 'en',
+    locale: en,
     data: {
       global: {
         home: 'Home',
@@ -594,9 +607,9 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       robots: { allowIndexing: false },
     },
   })
-  await payload.updateGlobal({
+  if (en) await payload.updateGlobal({
     slug: 'site-settings',
-    locale: 'en',
+    locale: en,
     data: {
       siteName: SITE_NAME,
       defaultSeo: {

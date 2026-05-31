@@ -4,6 +4,7 @@ import type { Media, SiteSetting } from '@astroload/cms/src/payload-types'
 import {
   DEFAULT_LOCALE,
   isPopulated,
+  LOCALE_URL_PREFIX,
   LOCALES,
   type Locale,
   type LocalePaths,
@@ -21,7 +22,9 @@ interface Props {
   siteSettings: SiteSetting
 }
 
-const OG_LOCALE: Record<Locale, string> = { de: 'de_DE', en: 'en_US' }
+// Keyed by string, not Locale, so the map can list locales a single-locale
+// build no longer ships without tripping the type checker.
+const OG_LOCALE: Record<string, string> = { de: 'de_DE', en: 'en_US' }
 
 const { lang, collection, paths, title, description, image, siteSettings } = Astro.props
 
@@ -53,13 +56,14 @@ const allowIndexing = siteSettings.robots?.allowIndexing === true
 <link rel="canonical" href={canonicalURL} />
 {!allowIndexing && <meta name="robots" content="noindex, nofollow" />}
 
-{paths &&
+{LOCALE_URL_PREFIX &&
+  paths &&
   LOCALES.map((code) => {
     const altPath = paths[code]
     if (!altPath) return null
     return <link rel="alternate" hreflang={code} href={absoluteSiteURL(altPath)} />
   })}
-{paths?.[DEFAULT_LOCALE] && (
+{LOCALE_URL_PREFIX && paths?.[DEFAULT_LOCALE] && (
   <link rel="alternate" hreflang="x-default" href={absoluteSiteURL(paths[DEFAULT_LOCALE]!)} />
 )}
 
