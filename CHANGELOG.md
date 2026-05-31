@@ -8,6 +8,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Changed
+
+- The SEO plugin reads its page-collection list from the shared `pageCollectionsSlugs` constant instead of repeating the slugs, so the list has one source of truth and a new page collection is covered for SEO without a second edit.
+
 ## [0.3.3] - 2026-05-31
 
 ### Changed

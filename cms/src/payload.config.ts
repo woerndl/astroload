@@ -26,7 +26,7 @@ import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Labels } from './globals/Labels'
 import { SiteSettings } from './globals/SiteSettings'
-import { CollectionGroups } from './shared'
+import { CollectionGroups, pageCollectionsSlugs } from './shared'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES, SITE_NAME } from './site-config'
 import { stripLocalePath } from './stripLocalePath'
 
@@ -93,7 +93,7 @@ export default buildConfig({
       },
     }),
     seoPlugin({
-      collections: ['pages', 'posts', 'authors'],
+      collections: [...pageCollectionsSlugs],
       uploadsCollection: 'media',
       generateURL: ({ doc }) =>
         typeof doc?.path === 'string'
