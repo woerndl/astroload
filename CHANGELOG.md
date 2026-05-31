@@ -8,6 +8,12 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-05-31
+
+### Changed
+
+- Updated Payload to 3.85.0 and Astro to 6.4.2, including all `@payloadcms/*` packages and the `@astrojs/node` adapter (10.1.2).
+
 ## [0.3.1] - 2026-05-31
 
 ### Changed
