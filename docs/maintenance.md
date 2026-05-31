@@ -30,27 +30,23 @@ when adding a required field to an existing global is: generate a
 migration, apply it with a default or a backfill step, optionally tighten
 to NOT NULL in a second migration once rows are populated.
 
-## Default locale lives in two files
+## Locale set and default locale live in one file
 
-The default locale is pinned in two places that must stay in sync:
+`cms/src/site-config.ts` is the single source for the shipped locale set
+(`LOCALES`) and the default (`DEFAULT_LOCALE`). `cms/src/shared.ts`
+re-exports both, `payload.config.ts` derives `localization.locales` and
+`localization.defaultLocale` from them, and the Astro side reads them
+through `web/src/cms/types.ts`. The sitemap `x-default` emission and the
+public page lookup anchor on the same `DEFAULT_LOCALE`, so the Payload
+config can no longer drift from the value those consumers read.
 
-- `cms/src/payload.config.ts` `localization.defaultLocale: 'en'` drives
-  Payload's fallback locale for content reads.
-- `cms/src/shared.ts` `DEFAULT_LOCALE: Locale = 'en'` drives sitemap
-  `x-default` emission and is consumed by the Astro side through
-  `@astroload/cms/src/shared`.
+`site-config.ts` asserts at import that `DEFAULT_LOCALE` is one of
+`LOCALES`. A default outside the shipped set fails fast at import, instead
+of silently producing wrong paths and a wrong `hreflang="x-default"` link
+in production sitemaps.
 
-The duplication is intentional. Payload's config is server-only. The
-shared module crosses the workspace boundary and lands in the Astro
-client bundle. There is no runtime assertion that the two match. A
-mismatch does not produce a build error. It produces a wrong
-`hreflang="x-default"` link in production sitemaps, which Google either
-ignores or attributes to the wrong locale.
-
-If you swap the default (or add a new locale and pick it as default),
-change both lines. If this ever causes a problem, the right fix is a
-boot-time check that compares the value `shared.ts` exports against the
-generated `Config['locale']` defaults.
+To swap the default, or to change which locales ship, edit
+`site-config.ts`. Nothing else changes in lockstep.
 
 ## Deploy webhook throttles per document
 

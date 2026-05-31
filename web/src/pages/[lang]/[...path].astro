@@ -2,21 +2,21 @@
 import type { InferGetStaticPropsType } from 'astro'
 
 import { getPageByPath, type PageByPathResult } from '../../cms/getPageByPath'
-import { getPageData } from '../../cms/getPageData'
 import { getStaticPaths as getCmsStaticPaths, getStaticPathItems } from '../../cms/getStaticPaths'
-import { isLocale, type LocalePaths } from '../../cms/types'
+import { loadPageResult } from '../../cms/loadPage'
+import { isLocale, LOCALE_URL_PREFIX, type LocalePaths } from '../../cms/types'
 import CollectionLayout from '../../layout/collections/CollectionLayout.astro'
 
 export const prerender = !import.meta.env.DEV
 
 export async function getStaticPaths() {
-  return getCmsStaticPaths()
+  return LOCALE_URL_PREFIX ? getCmsStaticPaths() : []
 }
 
 type Props = InferGetStaticPropsType<typeof getStaticPaths>
 
 const { lang, path } = Astro.params
-if (!isLocale(lang)) {
+if (!LOCALE_URL_PREFIX || !isLocale(lang)) {
   return new Response(null, { status: 404 })
 }
 const locale = lang
@@ -26,10 +26,7 @@ let result: PageByPathResult | null = null
 let resolvedPaths: LocalePaths | undefined = paths
 
 if (id && collection) {
-  const data = await getPageData(collection, id, locale)
-  if (data) {
-    result = { collection, data } as PageByPathResult
-  }
+  result = await loadPageResult(collection, id, locale)
 } else {
   // Dev-only branch in practice: a prerendered build only serves routes from
   // getStaticPaths, each carrying id/collection props, so it takes the branch

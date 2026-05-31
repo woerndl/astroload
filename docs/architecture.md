@@ -79,11 +79,16 @@ Content pages emit `hreflang` per locale and an `x-default` pointing at
 the configured default locale. The error pages and the root redirect do
 not, because they have no per-locale counterpart to point at.
 
-The default locale is set in two places (Payload config and a small shared
-module). The reason is documented in
-[`maintenance.md`](./maintenance.md). A mismatch is silent at build time
-and produces wrong sitemap output. If you change the default, change both
-files.
+A project that ships a single locale drops the `[lang]` segment entirely.
+Pages serve at `/<path>`, the root serves the home page directly with no
+redirect, and pages emit a plain canonical link with no `hreflang`. The
+CMS still stores the `/{locale}` path, and the web ingress normalizes it
+away, so this is a config switch rather than a content change.
+
+The default locale and the shipped locale set live in one module,
+`cms/src/site-config.ts`, which the Payload config and the Astro side both
+read. See [`maintenance.md`](./maintenance.md) for how the single source is
+wired and the import-time check that guards it.
 
 ## What we give up by decoupling
 

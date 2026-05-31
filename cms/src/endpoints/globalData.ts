@@ -3,6 +3,7 @@ import { APIError, type PayloadRequest } from 'payload'
 
 import type { Footer, Header, Labels, SiteSetting } from '../payload-types'
 import { isLocale, LOCALES, pageCollectionsSlugs } from '../shared'
+import { stripLocalePathsDeep } from '../stripLocalePath'
 
 export interface GlobalData {
   footer: Footer
@@ -37,7 +38,12 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
       req.payload.findGlobal({ slug: 'site-settings', ...baseOptions }),
     ])
 
-    const body: GlobalData = { footer, header, labels, siteSettings }
+    // Header and Footer carry populated nav-link paths; published responses
+    // serve every populated path un-prefixed in single-locale mode. Preview
+    // keeps the prefix so the admin live-preview routes still resolve.
+    const body: GlobalData = preview
+      ? { footer, header, labels, siteSettings }
+      : stripLocalePathsDeep({ footer, header, labels, siteSettings })
     const json = JSON.stringify(body)
     const etag = createHash('md5').update(json).digest('hex')
     const cacheControl = preview ? 'no-cache' : `public, max-age=${PUBLIC_MAX_AGE_SECONDS}`

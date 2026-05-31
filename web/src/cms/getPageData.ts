@@ -1,5 +1,6 @@
 import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
+import { stripLocalePathsDeep } from './types'
 import type { Locale, PageCollectionSlug, PageData } from './types'
 
 export async function getPageData(
@@ -21,5 +22,9 @@ export async function getPageData(
     { headers: cacheHeader(true) },
   )
 
-  return (result.docs[0] as PageData | undefined) ?? null
+  const doc = (result.docs[0] as PageData | undefined) ?? null
+  // Generic find returns the stored prefixed `path` on the doc, its breadcrumbs,
+  // populated relations, and rich-text internal links. Normalize them all so
+  // single-locale pages render un-prefixed hrefs.
+  return doc ? stripLocalePathsDeep(doc) : null
 }

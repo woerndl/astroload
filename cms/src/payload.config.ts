@@ -28,6 +28,7 @@ import { Labels } from './globals/Labels'
 import { SiteSettings } from './globals/SiteSettings'
 import { CollectionGroups } from './shared'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES, SITE_NAME } from './site-config'
+import { stripLocalePath } from './stripLocalePath'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -83,7 +84,10 @@ export default buildConfig({
     payloadPagesPlugin({
       generatePageURL: ({ path: pagePath, preview }) => {
         if (!pagePath) return null
-        const url = new URL(`${preview ? '/preview' : ''}${pagePath}`, env.WEBSITE_URL)
+        // Preview keeps the stored /{locale} prefix so the prefixed preview route
+        // resolves; the public link drops it to match the served single-locale URL.
+        const linkPath = preview ? pagePath : stripLocalePath(pagePath)
+        const url = new URL(`${preview ? '/preview' : ''}${linkPath}`, env.WEBSITE_URL)
         if (preview) url.searchParams.set('previewSecret', env.PREVIEW_SECRET)
         return url.toString()
       },
@@ -92,7 +96,9 @@ export default buildConfig({
       collections: ['pages', 'posts', 'authors'],
       uploadsCollection: 'media',
       generateURL: ({ doc }) =>
-        typeof doc?.path === 'string' ? new URL(doc.path, env.WEBSITE_URL).toString() : '',
+        typeof doc?.path === 'string'
+          ? new URL(stripLocalePath(doc.path), env.WEBSITE_URL).toString()
+          : '',
       generateTitle: ({ doc }) => {
         if (typeof doc?.title === 'string') return doc.title
         if (typeof doc?.name === 'string') return doc.name
