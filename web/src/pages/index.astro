@@ -1,8 +1,31 @@
 ---
+import type { PageByPathResult } from '../cms/getPageByPath'
+import { getStaticPathItems } from '../cms/getStaticPaths'
+import { loadPageResult } from '../cms/loadPage'
 import { pickLocale } from '../cms/pickLocale'
+import { DEFAULT_LOCALE, LOCALE_URL_PREFIX } from '../cms/types'
+import CollectionLayout from '../layout/collections/CollectionLayout.astro'
 
-export const prerender = false
+// Multi-locale redirects to the locale home (needs the request, so SSR);
+// single-locale prerenders the home page at the site root.
+export const prerender = LOCALE_URL_PREFIX ? false : !import.meta.env.DEV
 
-const locale = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
-return Astro.redirect(`/${locale}`, 302)
+const localeRedirect = LOCALE_URL_PREFIX
+  ? `/${pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))}`
+  : null
+if (localeRedirect) {
+  return Astro.redirect(localeRedirect, 302)
+}
+
+const items = await getStaticPathItems()
+const home = items.find((item) => item.paths[DEFAULT_LOCALE] === '/')
+const result: PageByPathResult | null = home
+  ? await loadPageResult(home.collection, home.id, DEFAULT_LOCALE)
+  : null
+if (!result) {
+  return new Response(null, { status: 404 })
+}
+const paths = home?.paths
 ---
+
+<CollectionLayout result={result} paths={paths} lang={DEFAULT_LOCALE} />

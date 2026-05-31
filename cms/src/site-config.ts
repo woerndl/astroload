@@ -8,8 +8,10 @@ export const LOCALES: readonly Locale[] = ['de', 'en']
 
 export const DEFAULT_LOCALE: Locale = 'en'
 
-// Admin labels per locale; a missing code falls back to the code itself.
-export const LOCALE_LABELS: Partial<Record<Locale, string>> = {
+// Admin labels keyed by locale code; a code with no entry falls back to the
+// code itself. Typed by string, not Locale, so it can keep labels for locales
+// a single-locale project no longer ships without tripping the type checker.
+export const LOCALE_LABELS: Record<string, string> = {
   de: 'Deutsch',
   en: 'English',
 }
@@ -20,3 +22,10 @@ export const SITE_NAME = 'Astroload'
 
 // Multi-locale keeps the /{lang} URL prefix; single-locale drops it.
 export const LOCALE_URL_PREFIX: boolean = LOCALES.length > 1
+
+// DEFAULT_LOCALE must be one of LOCALES. Payload's defaultLocale, the URL-prefix
+// stripping, and the public page lookup all anchor on it, so a value outside the
+// shipped set would silently produce wrong paths. Fail fast at import instead.
+if (!LOCALES.includes(DEFAULT_LOCALE)) {
+  throw new Error(`DEFAULT_LOCALE "${DEFAULT_LOCALE}" must be one of LOCALES [${LOCALES.join(', ')}]`)
+}

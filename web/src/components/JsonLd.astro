@@ -4,7 +4,7 @@ import { Schema } from 'astro-seo-schema'
 import type { Article, Distance, Graph, Organization, Person, Thing, WebPage, WebSite } from 'schema-dts'
 
 import type { PageByPathResult } from '../cms/getPageByPath'
-import { isPopulated, type Locale } from '../cms/types'
+import { isPopulated, stripLocalePath, type Locale } from '../cms/types'
 import { absoluteCmsURL, absoluteSiteURL } from '../cms/urls'
 
 interface Props {
@@ -17,7 +17,9 @@ interface Props {
 const { result, lang, pathname, siteSettings } = Astro.props
 
 const siteOrigin = new URL(absoluteSiteURL('/')).origin
-const homeURL = `${siteOrigin}/${lang}`
+// Public home path: `/${lang}` while prefixed, `/` once the prefix is dropped.
+const homePath = stripLocalePath(`/${lang}`)
+const homeURL = `${siteOrigin}${homePath}`
 const pageURL = absoluteSiteURL(pathname)
 
 const defaultImage = isPopulated(siteSettings.defaultSeo?.image) ? siteSettings.defaultSeo.image : null
@@ -27,7 +29,7 @@ function mediaURL(media: { url?: string | null } | null | undefined): string | u
   return absoluteCmsURL(media.url)
 }
 
-const isHome = pathname === `/${lang}` || pathname === `/${lang}/`
+const isHome = pathname === homePath || pathname === `${homePath}/`
 
 const graph: Thing[] = []
 

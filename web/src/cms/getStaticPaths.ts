@@ -1,5 +1,6 @@
 import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
+import { LOCALE_URL_PREFIX } from './types'
 import type { Locale, PageCollectionSlug } from './types'
 
 export interface StaticPathItem {
@@ -10,7 +11,7 @@ export interface StaticPathItem {
 }
 
 export interface StaticPageParams {
-  params: { lang: string; path: string | undefined }
+  params: { lang?: string; path: string | undefined }
   props: {
     id: string | number
     collection: PageCollectionSlug
@@ -39,14 +40,19 @@ export async function getStaticPaths(): Promise<StaticPageParams[]> {
   for (const item of items) {
     for (const [lang, fullPath] of Object.entries(item.paths)) {
       if (!fullPath) continue
-      const prefix = `/${lang}`
-      const trimmed = fullPath.startsWith(prefix)
-        ? fullPath.slice(prefix.length) || undefined
-        : fullPath
-      out.push({
-        params: { lang, path: trimmed },
-        props: { id: item.id, collection: item.collection, paths: item.paths },
-      })
+      const props = { id: item.id, collection: item.collection, paths: item.paths }
+      if (LOCALE_URL_PREFIX) {
+        const prefix = `/${lang}`
+        const trimmed = fullPath.startsWith(prefix)
+          ? fullPath.slice(prefix.length) || undefined
+          : fullPath
+        out.push({ params: { lang, path: trimmed }, props })
+      } else {
+        // The endpoint already stripped the prefix; '/' is the home page, which
+        // index.astro owns, so the catch-all route skips it.
+        if (fullPath === '/') continue
+        out.push({ params: { path: fullPath.replace(/^\//, '') }, props })
+      }
     }
   }
 

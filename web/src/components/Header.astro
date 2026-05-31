@@ -1,7 +1,13 @@
 ---
 import type { Header, Labels } from '@astroload/cms/src/payload-types'
 
-import { resolveNavLinks, type Locale, type LocalePaths } from '../cms/types'
+import {
+  LOCALE_URL_PREFIX,
+  resolveNavLinks,
+  stripLocalePath,
+  type Locale,
+  type LocalePaths,
+} from '../cms/types'
 import LanguageSwitcher from './LanguageSwitcher.astro'
 
 interface Props {
@@ -14,10 +20,11 @@ interface Props {
 const { header, lang, paths, labels } = Astro.props
 
 const links = resolveNavLinks(header.links)
+const homeHref = stripLocalePath(`/${lang}`)
 ---
 
 <header class="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-  <a href={`/${lang}`} class="font-semibold">{labels.home}</a>
+  <a href={homeHref} class="font-semibold">{labels.home}</a>
   <div class="flex items-center gap-6">
     {
       links.length > 0 && (
@@ -32,6 +39,6 @@ const links = resolveNavLinks(header.links)
         </nav>
       )
     }
-    <LanguageSwitcher lang={lang} paths={paths} label={labels.language} />
+    {LOCALE_URL_PREFIX && <LanguageSwitcher lang={lang} paths={paths} label={labels.language} />}
   </div>
 </header>

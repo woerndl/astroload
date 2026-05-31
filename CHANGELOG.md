@@ -11,11 +11,14 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 ### Added
 
 - `cms/src/site-config.ts` is the single source of truth for the shipped locale set (`LOCALES`, `DEFAULT_LOCALE`), the per-locale admin labels, the build-time `SITE_NAME`, and the derived `LOCALE_URL_PREFIX` flag (`LOCALES.length > 1`). Both apps read these four names through it — the CMS re-exports them from `shared.ts`, and the web app re-exports them from `web/src/cms/types.ts`.
+- A project that ships a single locale now serves un-prefixed public URLs (`/about` instead of `/de/about`). The CMS still stores the `/{locale}` path, which is normalized away at the web ingress by `stripLocalePath`, so switching a project between one and several locales is a config-only change with no content migration. Multi-locale projects keep the `/{locale}` prefix and are byte-for-byte unaffected.
 
 ### Changed
 
 - `payload.config.ts` derives its `localization.locales` from `LOCALES` instead of a hardcoded array, so changing the shipped locale set is a one-line edit in `site-config.ts`. The boot-time guard that reconciled the Payload locale list against `shared.LOCALES` is gone, since a single source can no longer drift from itself.
 - The Payload admin title suffix now reads ` — ${SITE_NAME}` from `site-config.ts`.
+- The web app resolves pages through both a prefixed `[lang]/[...path].astro` and an un-prefixed `[...path].astro` route tree, choosing one via `LOCALE_URL_PREFIX`. When a single locale ships, the home route, language switcher, sitemap, JSON-LD, the canonical/hreflang tags, and the admin's links to published pages all drop the locale prefix. Admin live preview stays prefixed in every configuration.
+- Both sitemap routes build their XML through a shared `web/src/cms/sitemap.ts` helper instead of each re-implementing entry escaping and document assembly.
 
 ## [0.2.0] - 2026-05-30
 

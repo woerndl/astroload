@@ -1,0 +1,50 @@
+---
+import type { InferGetStaticPropsType } from 'astro'
+
+import { getPageByPath, type PageByPathResult } from '../cms/getPageByPath'
+import { getStaticPaths as getCmsStaticPaths, getStaticPathItems } from '../cms/getStaticPaths'
+import { loadPageResult } from '../cms/loadPage'
+import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type LocalePaths } from '../cms/types'
+import CollectionLayout from '../layout/collections/CollectionLayout.astro'
+
+export const prerender = !import.meta.env.DEV
+
+export async function getStaticPaths() {
+  return LOCALE_URL_PREFIX ? [] : getCmsStaticPaths()
+}
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>
+
+if (LOCALE_URL_PREFIX) {
+  return new Response(null, { status: 404 })
+}
+
+const { path } = Astro.params
+const { id, collection, paths } = Astro.props as Partial<Props>
+
+let result: PageByPathResult | null = null
+let resolvedPaths: LocalePaths | undefined = paths
+
+if (id && collection) {
+  result = await loadPageResult(collection, id, DEFAULT_LOCALE)
+} else {
+  // Dev-only branch: prerendered routes carry id/collection props, so this
+  // refetch runs only with prerender off (import.meta.env.DEV). The endpoint
+  // resolves the public path against DEFAULT_LOCALE and returns public paths.
+  const fullPath = path ? `/${path}` : '/'
+  const found = await getPageByPath(fullPath)
+  if (found) {
+    result = found
+    const items = await getStaticPathItems()
+    resolvedPaths = items.find(
+      (it) => it.collection === found.collection && it.id === found.data.id,
+    )?.paths
+  }
+}
+
+if (!result) {
+  return new Response(null, { status: 404 })
+}
+---
+
+<CollectionLayout result={result} paths={resolvedPaths} lang={DEFAULT_LOCALE} />

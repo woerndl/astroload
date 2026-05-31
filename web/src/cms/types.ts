@@ -13,6 +13,7 @@ export {
   LOCALE_URL_PREFIX,
   SITE_NAME,
 } from '@astroload/cms/src/site-config'
+export { stripLocalePath, stripLocalePathsDeep } from '@astroload/cms/src/stripLocalePath'
 export type PageData = Page | Post | Author
 
 export interface PreviewContext {
