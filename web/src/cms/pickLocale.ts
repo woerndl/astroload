@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, isLocale, type Locale } from '@astroload/cms/src/shared'
+import { DEFAULT_LOCALE, isLocale, type Locale } from './types'
 
 export function pickLocale(pathname: string, headerValue: string | null): Locale {
   return localeFromPath(pathname) ?? localeFromHeader(headerValue) ?? DEFAULT_LOCALE

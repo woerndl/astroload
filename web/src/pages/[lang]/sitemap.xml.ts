@@ -1,9 +1,7 @@
 import type { APIRoute, GetStaticPaths } from 'astro'
 
-import { DEFAULT_LOCALE, LOCALES } from '@astroload/cms/src/shared'
-
 import { getStaticPathItems } from '../../cms/getStaticPaths'
-import { isLocale, type Locale } from '../../cms/types'
+import { DEFAULT_LOCALE, isLocale, LOCALES, type Locale } from '../../cms/types'
 import { absoluteSiteURL } from '../../cms/urls'
 
 export const prerender = !import.meta.env.DEV

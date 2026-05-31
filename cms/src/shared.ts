@@ -1,10 +1,9 @@
 import type { Config } from './payload-types'
+import { LOCALES } from './site-config'
 
 export type Locale = Config['locale']
 
-export const LOCALES: readonly Locale[] = ['de', 'en']
-
-export const DEFAULT_LOCALE: Locale = 'en'
+export { LOCALES, DEFAULT_LOCALE, LOCALE_URL_PREFIX, SITE_NAME } from './site-config'
 
 export const isLocale = (value: unknown): value is Locale =>
   typeof value === 'string' && (LOCALES as readonly string[]).includes(value)
