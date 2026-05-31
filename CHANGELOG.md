@@ -8,6 +8,12 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-05-31
+
+### Changed
+
+- Pinned the dev/CI Node version to 22.22.3 (latest 22.x LTS) in `.nvmrc`, and switched CI to read it via `node-version-file` instead of a hardcoded version.
+
 ## [0.3.2] - 2026-05-31
 
 ### Changed
