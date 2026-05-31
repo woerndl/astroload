@@ -4,16 +4,20 @@ import {
   DEFAULT_LOCALE,
   isLocale,
   type Locale,
+  type LocalePaths,
   LOCALE_URL_PREFIX,
   LOCALES,
   type PageCollectionSlug,
   pageCollectionsSlugs,
 } from '../shared'
-import { stripLocalePath, stripLocalePathsDeep } from '../stripLocalePath'
+import { stripLocalePath, stripLocalePathsDeep, toPublicPaths } from '../stripLocalePath'
 
 interface PageByPathBody {
   collection: PageCollectionSlug
   data: unknown
+  // The matched doc's path in every locale, so the web layer resolves
+  // alternates and canonicals without a separate all-paths fetch.
+  paths: LocalePaths
 }
 
 // The pages-plugin `path` field is virtual and unindexed, so it can't be a
@@ -79,10 +83,29 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
       )
       if (!match) continue
 
-      const data = await req.payload.findByID({ collection, id: match.id, locale, draft: preview, req })
+      // Load the full doc at the request locale for rendering, and the same
+      // doc's `path` across every locale (cheap id lookup, virtual field only)
+      // so the response carries the alternate paths the web layer needs.
+      const [data, pathDoc] = await Promise.all([
+        req.payload.findByID({ collection, id: match.id, locale, draft: preview, req }),
+        req.payload.findByID({
+          collection,
+          id: match.id,
+          locale: 'all',
+          draft: preview,
+          select: { path: true },
+          depth: 0,
+          req,
+        }),
+      ])
+      const rawPaths = ((pathDoc as { path?: LocalePaths }).path ?? {}) as LocalePaths
       // Public single-locale requests get the doc, breadcrumbs, and populated
       // relations in public form; preview keeps the prefix.
-      const body: PageByPathBody = { collection, data: usePublicPath ? stripLocalePathsDeep(data) : data }
+      const body: PageByPathBody = {
+        collection,
+        data: usePublicPath ? stripLocalePathsDeep(data) : data,
+        paths: usePublicPath ? toPublicPaths(rawPaths) : rawPaths,
+      }
       return Response.json(body, { headers: { 'Cache-Control': 'no-cache' } })
     }
 

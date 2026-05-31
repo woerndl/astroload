@@ -1,8 +1,9 @@
 ---
 import type { InferGetStaticPropsType } from 'astro'
 
+import { getGlobalData } from '../cms/getGlobalData'
 import { getPageByPath, type PageByPathResult } from '../cms/getPageByPath'
-import { getStaticPaths as getCmsStaticPaths, getStaticPathItems } from '../cms/getStaticPaths'
+import { getStaticPaths as getCmsStaticPaths } from '../cms/getStaticPaths'
 import { loadPageResult } from '../cms/loadPage'
 import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type LocalePaths } from '../cms/types'
 import CollectionLayout from '../layout/collections/CollectionLayout.astro'
@@ -22,29 +23,33 @@ if (LOCALE_URL_PREFIX) {
 const { path } = Astro.params
 const { id, collection, paths } = Astro.props as Partial<Props>
 
+// Kick off global data now so it overlaps the page fetch; the layout awaits
+// the same Astro.locals memo (see getGlobalData).
+const globalData = getGlobalData({ locale: DEFAULT_LOCALE, preview: false, locals: Astro.locals })
+
 let result: PageByPathResult | null = null
 let resolvedPaths: LocalePaths | undefined = paths
 
 if (id && collection) {
   result = await loadPageResult(collection, id, DEFAULT_LOCALE)
 } else {
-  // Dev-only branch: prerendered routes carry id/collection props, so this
-  // refetch runs only with prerender off (import.meta.env.DEV). The endpoint
-  // resolves the public path against DEFAULT_LOCALE and returns public paths.
+  // Fallback for paths missing from the cached getStaticPaths snapshot (e.g. a
+  // page created mid dev-session).
   const fullPath = path ? `/${path}` : '/'
   const found = await getPageByPath(fullPath)
   if (found) {
     result = found
-    const items = await getStaticPathItems()
-    resolvedPaths = items.find(
-      (it) => it.collection === found.collection && it.id === found.data.id,
-    )?.paths
+    resolvedPaths = found.paths
   }
 }
 
 if (!result) {
+  // A 404 renders no layout, so nothing awaits the global-data fetch kicked
+  // off above; swallow it so a globals failure can't turn this into a 500.
+  void globalData.catch(() => {})
   return new Response(null, { status: 404 })
 }
+await globalData
 ---
 
 <CollectionLayout result={result} paths={resolvedPaths} lang={DEFAULT_LOCALE} />

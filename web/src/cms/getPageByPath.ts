@@ -3,11 +3,12 @@ import type { Author, Config, Page, Post } from '@astroload/cms/src/payload-type
 
 import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
+import type { LocalePaths } from './types'
 
 export type PageByPathResult =
-  | { collection: 'pages'; data: Page }
-  | { collection: 'posts'; data: Post }
-  | { collection: 'authors'; data: Author }
+  | { collection: 'pages'; data: Page; paths?: LocalePaths }
+  | { collection: 'posts'; data: Post; paths?: LocalePaths }
+  | { collection: 'authors'; data: Author; paths?: LocalePaths }
 
 export async function getPageByPath(
   fullPath: string,

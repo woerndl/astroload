@@ -19,9 +19,13 @@ const sections = data.sections ?? []
 const seo = resolveSeo(data)
 
 // Blocks render in Layout's slot, evaluated in this scope before Layout's
-// frontmatter, so Layout's labels can't reach them as props. The refetch hits
-// the shared LRU in production; dev and preview bypass it and pay a real fetch.
-const { labels } = await getGlobalData({ locale: lang, preview: Boolean(preview) })
+// frontmatter, so Layout's labels can't reach them as props. Passing
+// Astro.locals shares one request-scoped fetch with Layout (see getGlobalData).
+const { labels } = await getGlobalData({
+  locale: lang,
+  preview: Boolean(preview),
+  locals: Astro.locals,
+})
 ---
 
 <Layout

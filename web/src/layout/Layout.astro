@@ -27,6 +27,7 @@ const { title, description, image, result, lang, paths, preview } = Astro.props
 const { header, footer, labels, siteSettings } = await getGlobalData({
   locale: lang,
   preview: Boolean(preview),
+  locals: Astro.locals,
 })
 ---
 

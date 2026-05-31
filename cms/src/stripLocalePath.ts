@@ -1,3 +1,4 @@
+import type { LocalePaths } from './shared'
 import { DEFAULT_LOCALE, LOCALE_URL_PREFIX } from './site-config'
 
 // The pages-plugin always stores `path` as `/${locale}/...` while localization
@@ -21,6 +22,16 @@ export function stripLocalePath(path: string): string {
 export function stripLocalePathsDeep<T>(value: T): T {
   if (LOCALE_URL_PREFIX) return value
   return walk(value) as T
+}
+
+// Apply stripLocalePath across a per-locale path map; no-op in multi-locale mode.
+export function toPublicPaths(paths: LocalePaths): LocalePaths {
+  if (LOCALE_URL_PREFIX) return paths
+  const out: LocalePaths = {}
+  for (const [code, value] of Object.entries(paths) as [keyof LocalePaths, string | undefined][]) {
+    out[code] = value ? stripLocalePath(value) : value
+  }
+  return out
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

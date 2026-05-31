@@ -1,8 +1,9 @@
 ---
 import type { InferGetStaticPropsType } from 'astro'
 
+import { getGlobalData } from '../../cms/getGlobalData'
 import { getPageByPath, type PageByPathResult } from '../../cms/getPageByPath'
-import { getStaticPaths as getCmsStaticPaths, getStaticPathItems } from '../../cms/getStaticPaths'
+import { getStaticPaths as getCmsStaticPaths } from '../../cms/getStaticPaths'
 import { loadPageResult } from '../../cms/loadPage'
 import { isLocale, LOCALE_URL_PREFIX, type LocalePaths } from '../../cms/types'
 import CollectionLayout from '../../layout/collections/CollectionLayout.astro'
@@ -22,30 +23,33 @@ if (!LOCALE_URL_PREFIX || !isLocale(lang)) {
 const locale = lang
 const { id, collection, paths } = Astro.props as Partial<Props>
 
+// Kick off global data now so it overlaps the page fetch; the layout awaits
+// the same Astro.locals memo (see getGlobalData).
+const globalData = getGlobalData({ locale, preview: false, locals: Astro.locals })
+
 let result: PageByPathResult | null = null
 let resolvedPaths: LocalePaths | undefined = paths
 
 if (id && collection) {
   result = await loadPageResult(collection, id, locale)
 } else {
-  // Dev-only branch in practice: a prerendered build only serves routes from
-  // getStaticPaths, each carrying id/collection props, so it takes the branch
-  // above. This refetch runs when those props are absent, which today happens
-  // only with prerender off (import.meta.env.DEV).
+  // Fallback for paths missing from the cached getStaticPaths snapshot (e.g. a
+  // page created mid dev-session).
   const fullPath = path ? `/${lang}/${path}` : `/${lang}`
   const found = await getPageByPath(fullPath)
   if (found) {
     result = found
-    const items = await getStaticPathItems()
-    resolvedPaths = items.find(
-      (it) => it.collection === found.collection && it.id === found.data.id,
-    )?.paths
+    resolvedPaths = found.paths
   }
 }
 
 if (!result) {
+  // A 404 renders no layout, so nothing awaits the global-data fetch kicked
+  // off above; swallow it so a globals failure can't turn this into a 500.
+  void globalData.catch(() => {})
   return new Response(null, { status: 404 })
 }
+await globalData
 ---
 
 <CollectionLayout result={result} paths={resolvedPaths} lang={locale} />
