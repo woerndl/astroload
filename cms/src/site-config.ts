@@ -1,7 +1,7 @@
 import type { Locale } from './shared'
 
 // The locales this project ships. Single source of truth for both apps.
-// Kept as readonly Locale[] (not `as const`) so LOCALE_URL_PREFIX below is a
+// Kept as readonly Locale[] (not `as const`) so MULTIPLE_LOCALES below derives a
 // plain boolean and neither the single- nor multi-locale branch is typed as
 // dead code.
 export const LOCALES: readonly Locale[] = ['de', 'en']
@@ -20,8 +20,25 @@ export const LOCALE_LABELS: Record<string, string> = {
 // The public site renders the editable siteSettings.siteName instead.
 export const SITE_NAME = 'Astroload'
 
-// Multi-locale keeps the /{lang} URL prefix; single-locale drops it.
-export const LOCALE_URL_PREFIX: boolean = LOCALES.length > 1
+// Drives the multilingual UI (language switcher, hreflang alternates). Kept
+// separate from URL prefixing so a single-locale project can force the prefix
+// without also turning the switcher on.
+export const MULTIPLE_LOCALES: boolean = LOCALES.length > 1
+
+// Set to true to keep the /{locale} prefix on a project that ships one locale
+// today but may add more later, so its URLs survive that change with no
+// redirects. When left null, prefixing follows MULTIPLE_LOCALES. Forcing it
+// false while several locales ship is rejected below, since their un-prefixed
+// URLs would collide.
+const FORCE_URL_PREFIX: boolean | null = null
+
+export const LOCALE_URL_PREFIX: boolean = FORCE_URL_PREFIX ?? MULTIPLE_LOCALES
+
+if (!LOCALE_URL_PREFIX && MULTIPLE_LOCALES) {
+  throw new Error(
+    'URL prefixing cannot be off while more than one locale ships: un-prefixed multi-locale URLs would collide. Set FORCE_URL_PREFIX to true or leave it null.',
+  )
+}
 
 // DEFAULT_LOCALE must be one of LOCALES. Payload's defaultLocale, the URL-prefix
 // stripping, and the public page lookup all anchor on it, so a value outside the

@@ -12,6 +12,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 - `cms/src/site-config.ts` is the single source of truth for the shipped locale set (`LOCALES`, `DEFAULT_LOCALE`), the per-locale admin labels, the build-time `SITE_NAME`, and the derived `LOCALE_URL_PREFIX` flag (`LOCALES.length > 1`). Both apps read these four names through it — the CMS re-exports them from `shared.ts`, and the web app re-exports them from `web/src/cms/types.ts`.
 - A project that ships a single locale now serves un-prefixed public URLs (`/about` instead of `/de/about`). The CMS still stores the `/{locale}` path, which is normalized away at the web ingress by `stripLocalePath`, so switching a project between one and several locales is a config-only change with no content migration. Multi-locale projects keep the `/{locale}` prefix and are byte-for-byte unaffected.
+- An optional `FORCE_URL_PREFIX` override in `site-config.ts`. A single-locale project can set it to `true` to keep the `/{locale}` prefix, so its URLs survive adding a second locale later with no redirects. The language switcher and `hreflang`/`x-default` tags key off whether more than one locale ships (`MULTIPLE_LOCALES`) rather than off the prefix, so a forced-prefix single-locale site serves prefixed URLs without a single-option switcher or self-referential `hreflang`. Forcing the prefix off while several locales ship is rejected at import, since their un-prefixed URLs would collide.
 
 ### Changed
 
