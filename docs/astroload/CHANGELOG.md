@@ -11,6 +11,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 ### Changed
 
 - The SEO plugin reads its page-collection list from the shared `pageCollectionsSlugs` constant instead of repeating the slugs, so the list has one source of truth and a new page collection is covered for SEO without a second edit.
+- Moved the upstream docs into a single `docs/astroload/` subtree (the five reference docs, the docs index as `index.md`, and `CHANGELOG.md`), and parked the landing README at `docs/README.md`. GitHub renders `.github/README.md` or a repo-root `README.md` ahead of `docs/README.md`, so a derived project can add its own root `README.md`, `CHANGELOG.md`, and docs and have them take precedence. Those root locations are no longer occupied by the template, so a derived project can own its documentation without colliding with upstream files when it syncs.
 
 ## [0.3.3] - 2026-05-31
 
