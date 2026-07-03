@@ -35,6 +35,18 @@ export default defineConfig({
         access: 'public',
         optional: true,
       }),
+      // Stamped into every page the shared layout renders as
+      // <meta name="content-build-id">. Set it to a
+      // value that changes per deploy so a same-commit redeploy (a publish-driven
+      // rebuild on the same git SHA) produces different output. The actual cache
+      // bust comes from that value being part of the host's build-cache key (or
+      // from disabling build caching); the meta tag makes it observable and gives
+      // the build a real consumer. See maintenance.md for the host recipes.
+      CONTENT_BUILD_ID: envField.string({
+        context: 'server',
+        access: 'public',
+        optional: true,
+      }),
     },
   },
 })

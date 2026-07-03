@@ -11,6 +11,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 ### Added
 
 - A vitest setup in the web app, run with `pnpm test`. The first test covers the link sanitizer that keeps rich text from failing on a link the renderer cannot resolve.
+- An optional `CONTENT_BUILD_ID` build env, stamped into every page the shared layout renders as `<meta name="content-build-id">`. Pointed at a value that changes per deploy, it keeps a same-commit redeploy (a publish-driven rebuild on an unchanged git SHA) from replaying a cached build and serving stale prerendered HTML. Left unset, the tag is omitted. The maintenance guide carries the contract and per-host recipes.
 
 ### Changed
 
@@ -18,11 +19,13 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Moved the upstream docs into a single `docs/astroload/` subtree (the five reference docs, the docs index as `index.md`, and `CHANGELOG.md`), and parked the landing README at `docs/README.md`. GitHub renders `.github/README.md` or a repo-root `README.md` ahead of `docs/README.md`, so a derived project can add its own root `README.md`, `CHANGELOG.md`, and docs and have them take precedence. Those root locations are no longer occupied by the template, so a derived project can own its documentation without colliding with upstream files when it syncs.
 - Upgraded the web app to Astro 7, with the matching `@astrojs/node` 11 adapter and `astro-seo-schema` 7. `compressHTML` is pinned to `true` (the Astro 6 behavior) because Astro 7's new `'jsx'` default collapses inter-element whitespace and would change rendered output.
 - The default database is now MongoDB, through `@payloadcms/db-mongodb`, in place of Postgres. The adapter runs with transactions disabled (`transactionOptions: false`), so a single standalone `mongod` is enough, and `docker-compose.yml` ships one with a `mongosh` healthcheck. Document ids change from integers to MongoDB ObjectId strings, which the regenerated Payload types reflect. Postgres stays available as a documented alternative. The maintenance guide covers the switch-back steps and how to move existing data.
+- The build-time redirects fetch retries with backoff on a strict deploy build before giving up, so a CMS that is briefly unreachable while a coordinated deploy restarts it no longer aborts the build on the first error. A sustained outage still fails the strict build by design, which leaves the last good deploy serving rather than replacing it with a redirect-less one. Non-strict runs (dev, `astro check`, plain `astro build`) read a committed `web/src/cms/redirects.fallback.json`, empty by default, giving offline builds an optional place to keep a redirect table.
 - CI runs the web test suite (`pnpm test`) on every push and pull request, alongside the existing lint and typecheck steps.
 
 ### Fixed
 
 - Rich text renders without error when a draft has an empty body or contains a link to a document that is missing or unpublished. A link that cannot resolve is shown as its plain text instead of failing the page render.
+- A publish burst across many documents now coalesces into a single rate-limited build instead of one throttle window per document, so a multi-document publish can no longer fan out into overlapping builds. The deploy hook fires once on the first deploy-worthy save and at most once more per window while saves continue. Autosave draft writes, and global or always-deploy saves that change nothing but `updatedAt`, no longer trigger a build.
 
 ### Security
 

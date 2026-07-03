@@ -1,5 +1,6 @@
 ---
 import type { Media } from '@astroload/cms/src/payload-types'
+import { CONTENT_BUILD_ID } from 'astro:env/server'
 import { ClientRouter } from 'astro:transitions'
 
 import { getGlobalData } from '../cms/getGlobalData'
@@ -37,6 +38,7 @@ const { header, footer, labels, siteSettings } = await getGlobalData({
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
+    {CONTENT_BUILD_ID && <meta name="content-build-id" content={CONTENT_BUILD_ID} />}
     <SEOMetadata
       lang={lang}
       collection={result?.collection}

@@ -61,7 +61,7 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 **Operations**
 
 - Build-time redirects fetched from a `Redirects` collection, no runtime hop
-- Deploy webhook (`DEPLOY_HOOK_URL`) for Railway, Vercel, Coolify, or any plain endpoint, throttled per doc
+- Deploy webhook (`DEPLOY_HOOK_URL`) for Railway, Vercel, Coolify, or any plain endpoint, with edit bursts coalesced into a rate-limited build window
 - Optional integrations, each turning on when its env vars are set: S3 storage (falls back to the local filesystem under `cms/media/`) and Resend email (falls back to console logging)
 - Locale-aware custom 404 and 500 pages
 
@@ -183,7 +183,7 @@ Both apps are plain Node servers. No serverless adapter or provider-specific bui
 
 **Deploy webhook**
 
-- Setting `DEPLOY_HOOK_URL` in the CMS fires a POST whenever a draft is published, a published doc is deleted, or any global changes. Works with Railway, Vercel, Coolify, or any plain webhook endpoint as-is. Requests are throttled per doc and globals, with a trailing request at window close if more events arrive during the window. See `cms/.env.example` for URL shapes.
+- Setting `DEPLOY_HOOK_URL` in the CMS fires a POST whenever a draft is published, a published doc is deleted, or any global changes. Works with Railway, Vercel, Coolify, or any plain webhook endpoint as-is. A burst of edits is rate-limited to one build at a time, with a single trailing build at the window close if more events arrive while a build is in flight. See `cms/.env.example` for URL shapes and `docs/astroload/maintenance.md` for publish-to-live latency and the `CONTENT_BUILD_ID` cache-bust seam.
 
 ## Contributing
 
