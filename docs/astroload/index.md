@@ -14,5 +14,7 @@ below describe what is not obvious from reading the code.
   guard, and why submission requires JavaScript.
 - [`content-workflow.md`](./content-workflow.md): how to change content
   without leaving throwaway scripts in history.
+- [`deployment.md`](./deployment.md): the Docker images, the production
+  compose scaffold, and which env values are baked in at build.
 - [`security.md`](./security.md): threat model, what the template
   defends against, and what you should add before production.

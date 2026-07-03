@@ -165,7 +165,7 @@ Two Node processes, one MongoDB database. `cms/` owns the admin, the API, and th
 
 ## Deployment
 
-Both apps are plain Node servers. No serverless adapter or provider-specific build step, so any Node host works.
+Both apps are plain Node servers. No serverless adapter or provider-specific build step, so any Node host works. For containers, each app ships a Dockerfile and `deploy/docker-compose.production.yml` is a scaffold to copy. See [`astroload/deployment.md`](./astroload/deployment.md).
 
 **CMS**
 

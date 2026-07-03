@@ -17,6 +17,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Internal links inside the preview keep you in preview. A capture-phase click handler rewrites internal navigation to the matching `/preview/{lang}` route and carries the preview secret, so clicking through a draft no longer drops to the public, published page. It handles locale-prefixed and locale-stripped links alike.
 - A `content-workflow.md` doc and a gitignored `cms/src/scripts/scratch/` lane for one-off content-mutation scripts. The doc names the admin UI, MCP, and REST as the paths for changing content, and sorts the scripts that belong in the repo from the ones that never should.
 - Optional Umami analytics, on when `UMAMI_WEBSITE_ID` is set. The tracker script and the collect endpoint are proxied through first-party routes (`/u.js`, `/api/send`), pageviews are tracked explicitly per `astro:page-load` so view transitions report the right URL, and preview traffic is excluded. The proxy targets Umami Cloud by default; `UMAMI_HOST_URL` points it at a self-hosted instance. Umami is cookieless and stores nothing on the visitor's device.
+- A Dockerfile per app, a `deploy/docker-compose.production.yml` scaffold to copy, and a `deployment.md` guide. The CMS image builds Next in standalone mode (gated on `NEXT_OUTPUT=standalone` so the plain `next start` path stays warning-free) and stores uploads under a `MEDIA_DIR` volume. The web image bakes the built site in, so a content publish means a rebuild.
 
 ### Changed
 
@@ -42,6 +43,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Draft version history on pages, posts, and authors is now capped at 50 versions per document through a shared `draftVersions` config, so frequent autosaves no longer grow the stored history without bound.
 - The bare CMS root `/` now redirects to the admin panel instead of returning a 404.
 - The preview toolbar is sticky rather than fixed, so it reserves space in the layout instead of overlapping the page header.
+- The Media upload directory is pinned to an absolute path inside the cms package (overridable via `MEDIA_DIR`). Payload resolves a relative `staticDir` against the process working directory, so a server started from the repo root read and wrote a different directory than one started from `cms/`.
 - In a single-locale project, `/{anything}/sitemap.xml` returned a 500. The prerendered `[lang]` route patterns registered with zero generated files, and the Node adapter answers such a pattern with its error page instead of falling through to a 404. Single-locale builds now render the `[lang]` routes on demand, so their locale guards 404 those URLs.
 
 ### Security
