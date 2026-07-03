@@ -16,6 +16,8 @@ export const prerender = false
 Astro.response.headers.set('Cache-Control', 'no-store')
 
 const { data: posts, stale } = await staleOnError('latest-posts', async () => {
+  // This listing renders titles only. A read that renders document paths must
+  // go through findPublicDocs so the stored locale prefix is stripped.
   // cacheHeader(false) bypasses the cross-request LRU so each request is live.
   const result = await payloadSDK.find(
     {

@@ -1,0 +1,44 @@
+---
+import { LOCALES } from '../cms/types'
+---
+
+<script is:inline define:vars={{ locales: LOCALES }}>
+  if (!window.__previewNav) {
+    window.__previewNav = true
+
+    // A previewed page renders links in their stored form: locale-prefixed
+    // (breadcrumbs, in-content, language switcher) or locale-stripped (the
+    // header home and nav of a single-locale project). Either way a plain click
+    // lands on the public, published route and drops out of preview. Capture the
+    // click before the view-transitions router does, rewrite it to the matching
+    // /preview/{lang}/... url, and carry the secret along.
+    const currentLang = location.pathname.split('/').filter(Boolean)[1] // /preview/{lang}/...
+    const secret = new URLSearchParams(location.search).get('previewSecret')
+
+    const toPreview = (pathname) => {
+      const parts = pathname.split('/').filter(Boolean)
+      const prefixed = locales.includes(parts[0])
+      const lang = prefixed ? parts[0] : currentLang
+      const rest = (prefixed ? parts.slice(1) : parts).join('/')
+      return `/preview/${lang}${rest ? '/' + rest : ''}`
+    }
+
+    document.addEventListener(
+      'click',
+      (event) => {
+        if (event.defaultPrevented || event.button !== 0) return
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null
+        if (!anchor || (anchor.target && anchor.target !== '_self') || anchor.hasAttribute('download')) return
+        const url = new URL(anchor.href, location.href)
+        if (url.origin !== location.origin || url.pathname.startsWith('/preview/')) return
+
+        event.preventDefault()
+        const dest = new URL(toPreview(url.pathname) + url.search + url.hash, location.origin)
+        if (secret) dest.searchParams.set('previewSecret', secret)
+        location.assign(dest.toString())
+      },
+      true,
+    )
+  }
+</script>

@@ -35,6 +35,12 @@ const isHome = pathname === homePath || pathname === `${homePath}/`
 
 const graph: Thing[] = []
 
+// A generic Organization is the publisher for every page. A project that is a
+// physical business should emit LocalBusiness instead: add address, geo, and
+// contact fields to the SiteSettings global, then set '@type' to the matching
+// LocalBusiness subtype and map those fields here. The extra properties are
+// what earns the richer business result, so adding fields without emitting them
+// changes nothing.
 const organization: Organization = {
   '@type': 'Organization',
   name: siteSettings.siteName,

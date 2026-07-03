@@ -20,13 +20,16 @@ interface Props {
   description?: string
   image?: Media | null
   siteSettings: SiteSetting
+  preview?: boolean
 }
 
 // Keyed by string, not Locale, so the map can list locales a single-locale
-// build no longer ships without tripping the type checker.
+// build no longer ships without tripping the type checker. A locale missing
+// from the map omits the og:locale tag: the territory half cannot be derived
+// from the language (en maps to en_US, not en_EN), so add new locales here.
 const OG_LOCALE: Record<string, string> = { de: 'de_DE', en: 'en_US' }
 
-const { lang, collection, paths, title, description, image, siteSettings } = Astro.props
+const { lang, collection, paths, title, description, image, siteSettings, preview } = Astro.props
 
 const suffix = siteSettings.defaultSeo?.titleSuffix ?? ''
 const fullTitle = title ? `${title}${suffix}` : siteSettings.siteName
@@ -53,7 +56,8 @@ const allowIndexing = siteSettings.robots?.allowIndexing === true
 
 <title>{fullTitle}</title>
 {finalDescription && <meta name="description" content={finalDescription} />}
-<link rel="canonical" href={canonicalURL} />
+{/* Preview renders under /preview and must not declare itself canonical. */}
+{!preview && <link rel="canonical" href={canonicalURL} />}
 {!allowIndexing && <meta name="robots" content="noindex, nofollow" />}
 
 {MULTIPLE_LOCALES &&
@@ -72,7 +76,7 @@ const allowIndexing = siteSettings.robots?.allowIndexing === true
 {finalDescription && <meta property="og:description" content={finalDescription} />}
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:site_name" content={siteSettings.siteName} />
-<meta property="og:locale" content={ogLocale} />
+{ogLocale && <meta property="og:locale" content={ogLocale} />}
 {ogImageURL && (
   <>
     <meta property="og:image" content={ogImageURL} />

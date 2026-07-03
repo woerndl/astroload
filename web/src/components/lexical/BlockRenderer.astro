@@ -10,14 +10,24 @@ interface Props {
   inline?: boolean
 }
 
+// The lexical editor's BlocksFeature allows only these block types. Adding one
+// there means adding it here too: `satisfies` fails the build until every type
+// in the union has a renderer, so the map can't silently miss a union entry.
+type LexicalBlockType = 'image'
+
+const renderers = {
+  image: ImageBlock,
+} satisfies Record<LexicalBlockType, unknown>
+
 const { node } = Astro.props
 const { fields } = node
 
-if (fields.blockType !== 'image') {
+if (!(fields.blockType in renderers)) {
   throw new Error(`Lexical block "${fields.blockType}" not implemented`)
 }
 
-const imageFields = fields as unknown as ImageBlockType
+const Renderer = renderers[fields.blockType as LexicalBlockType]
+const blockFields = fields as unknown as ImageBlockType
 ---
 
-<ImageBlock {...imageFields} />
+<Renderer {...blockFields} />
