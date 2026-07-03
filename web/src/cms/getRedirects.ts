@@ -15,8 +15,8 @@ import fallbackRedirects from './redirects.fallback.json'
 //   - REDIRECTS_STRICT=1 (the deploy build): a failed fetch is retried with
 //     backoff to ride out a CMS that is briefly down during a coordinated
 //     deploy. If it is still unreachable after the retries, the build fails
-//     loudly rather than shipping a redirect-less site over the last good
-//     deploy that is already serving. A missing CMS_URL/PAYLOAD_READ_KEY throws
+//     rather than shipping a redirect-less site over the last good deploy
+//     that is already serving. A missing CMS_URL/PAYLOAD_READ_KEY throws
 //     the same way. The CMS is trusted when it answers, so an empty collection
 //     produces an empty table.
 //   - otherwise (dev, astro check, plain astro build): one attempt, then the
@@ -59,6 +59,8 @@ export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
   let lastError: unknown
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
+      // Redirects key off sourcePath/destinationPath, not a localized `path`, so
+      // this read skips findPublicDocs and does not strip a locale prefix.
       const result = await sdk.find({
         collection: 'redirects',
         limit: 0,
@@ -85,10 +87,10 @@ export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
   }
 
   // Out of attempts. A coordinated cms+web deploy can leave the CMS briefly
-  // unreachable while it restarts; the retries above cover that gap. A longer
-  // outage on a strict build fails loudly, which leaves the last good deploy
-  // serving rather than replacing it with a redirect-less build. Non-strict runs
-  // fall back to the committed table so dev and CI still ship.
+  // unreachable while it restarts, and the retries above cover that gap. A
+  // longer outage fails the strict build, which leaves the last good deploy
+  // serving rather than replacing it with a redirect-less build. Non-strict
+  // runs fall back to the committed table so dev and CI still ship.
   if (strict) {
     throw new Error(
       '[getRedirects] CMS unreachable after retries during a strict build; refusing to ' +

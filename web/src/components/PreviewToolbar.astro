@@ -17,7 +17,7 @@ const adminHref = absoluteCmsURL(`/admin/collections/${collection}/${id}`)
 {
   !insideIframe && (
     <div
-      class="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 shadow"
+      class="sticky top-0 z-50 flex items-center justify-between border-b border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 shadow"
       role="status"
     >
       <span>{labels.editingDraft}</span>
