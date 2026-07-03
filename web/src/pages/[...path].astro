@@ -8,7 +8,7 @@ import { loadPageResult } from '../cms/loadPage'
 import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type LocalePaths } from '../cms/types'
 import CollectionLayout from '../layout/collections/CollectionLayout.astro'
 
-export const prerender = !import.meta.env.DEV
+export const prerender = true
 
 export async function getStaticPaths() {
   return LOCALE_URL_PREFIX ? [] : getCmsStaticPaths()
@@ -23,7 +23,7 @@ if (LOCALE_URL_PREFIX) {
 const { path } = Astro.params
 const { id, collection, paths } = Astro.props as Partial<Props>
 
-// Kick off global data now so it overlaps the page fetch; the layout awaits
+// Kick off global data now so it overlaps the page fetch. The layout awaits
 // the same Astro.locals memo (see getGlobalData).
 const globalData = getGlobalData({ locale: DEFAULT_LOCALE, preview: false, locals: Astro.locals })
 
@@ -33,8 +33,9 @@ let resolvedPaths: LocalePaths | undefined = paths
 if (id && collection) {
   result = await loadPageResult(collection, id, DEFAULT_LOCALE)
 } else {
-  // Fallback for paths missing from the cached getStaticPaths snapshot (e.g. a
-  // page created mid dev-session).
+  // Dev renders this route on demand (see prerenderOverrides in
+  // astro.config.mjs) and gets no getStaticPaths props, so every dev request
+  // resolves by path here, against the live CMS.
   const fullPath = path ? `/${path}` : '/'
   const found = await getPageByPath(fullPath)
   if (found) {
@@ -45,7 +46,7 @@ if (id && collection) {
 
 if (!result) {
   // A 404 renders no layout, so nothing awaits the global-data fetch kicked
-  // off above; swallow it so a globals failure can't turn this into a 500.
+  // off above. Swallow it so a globals failure can't turn this into a 500.
   void globalData.catch(() => {})
   return new Response(null, { status: 404 })
 }

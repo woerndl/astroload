@@ -5,7 +5,7 @@ import { sitemapHeaders, urlEntry, urlsetDocument } from '../cms/sitemap'
 import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, LOCALES } from '../cms/types'
 import { absoluteSiteURL } from '../cms/urls'
 
-export const prerender = !import.meta.env.DEV
+export const prerender = true
 
 export const GET: APIRoute = async () => {
   // Single-locale: one un-prefixed URL set. Multi-locale: an index pointing at
