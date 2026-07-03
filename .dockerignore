@@ -1,0 +1,17 @@
+# Keep build contexts minimal. Dependencies are installed and outputs built
+# inside the images.
+.git
+.github
+docs
+deploy
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/.astro
+**/*.log
+**/*.tsbuildinfo
+cms/media
+**/.env
+**/.env.*
+!**/.env.example

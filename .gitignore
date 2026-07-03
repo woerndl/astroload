@@ -35,6 +35,9 @@ yarn-error.log*
 coverage/
 .nyc_output/
 
+# Runtime env for the production compose scaffold
+deploy/*.env
+
 # Payload
 cms/media/
 cms/payload-types.ts.bak

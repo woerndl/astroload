@@ -1,4 +1,6 @@
+import path from 'path'
 import type { CollectionConfig } from 'payload'
+import { fileURLToPath } from 'url'
 
 import { isAdmin } from '../access/isAdmin'
 import {
@@ -11,6 +13,14 @@ import { CollectionGroups } from '../shared'
 // scrapers still do not render a WebP og:image.
 const toWebp = { format: 'webp' as const, options: { quality: 80 } }
 const ogJpeg = { format: 'jpeg' as const, options: { quality: 82 } }
+
+// Payload resolves a relative staticDir against the process working directory,
+// so a server started from the repo root would read and write a different
+// directory than one started from cms/. Pin the path to this package.
+// MEDIA_DIR overrides it where the package path is not the right place for
+// persistent files, such as a container with a volume mount.
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+const mediaDir = process.env.MEDIA_DIR ?? path.resolve(dirname, '../../media')
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -44,6 +54,7 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
+    staticDir: mediaDir,
     mimeTypes: ['image/*'],
     adminThumbnail: 'xs',
     formatOptions: toWebp,

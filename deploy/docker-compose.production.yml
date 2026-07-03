@@ -1,0 +1,92 @@
+# Production scaffold. Copy it and adapt. It is a starting point, not a
+# turnkey stack, and deliberately separate from the dev docker-compose.yml at
+# the repo root.
+#
+# The web image bakes public env values and reads page content from the CMS at
+# build time, so it cannot be built before the CMS is up. First boot:
+#
+#   docker compose -f deploy/docker-compose.production.yml up -d mongo cms
+#   docker compose -f deploy/docker-compose.production.yml build web
+#   docker compose -f deploy/docker-compose.production.yml up -d web
+#
+# The web build reads PAYLOAD_READ_KEY through a BuildKit secret. Compose
+# takes it from the shell environment or a .env file next to this compose
+# file. web.env below only reaches the running container, not the build.
+#
+# A content publish repeats the last two steps. Point DEPLOY_HOOK_URL at
+# whatever runs them (a CI job, a Coolify service, a shell hook).
+#
+# The build runs outside the compose network, so CMS_URL must be reachable
+# from the host: the public CMS origin once DNS is up, or
+# http://host.docker.internal:3000 against the published port below.
+#
+# TLS and response compression are not handled here. Put a reverse proxy or
+# CDN in front of both apps (see docs/astroload/deployment.md).
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cms:
+    build:
+      context: ..
+      dockerfile: cms/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URI: mongodb://mongo:27017/astroload
+    # PAYLOAD_SECRET, SERVER_URL, WEBSITE_URL, PREVIEW_SECRET, and the
+    # optional integrations. deploy/*.env is gitignored.
+    env_file: cms.env
+    volumes:
+      - media:/app/media
+    healthcheck:
+      test: ['CMD', 'wget', '-qO/dev/null', 'http://127.0.0.1:3000/admin']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+      args:
+        CMS_URL: ${CMS_URL:?public CMS origin, baked into the build}
+        WEBSITE_URL: ${WEBSITE_URL:?public web origin, baked into the build}
+      # Sourced from the shell env or .env, not web.env (see header comment).
+      secrets:
+        - payload_read_key
+    restart: unless-stopped
+    depends_on:
+      cms:
+        condition: service_healthy
+    ports:
+      - '4321:4321'
+    # PAYLOAD_READ_KEY, PAYLOAD_PREVIEW_KEY, PREVIEW_SECRET.
+    env_file: web.env
+    healthcheck:
+      test: ['CMD', 'wget', '-qO/dev/null', 'http://127.0.0.1:4321/robots.txt']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+secrets:
+  payload_read_key:
+    environment: PAYLOAD_READ_KEY
+
+volumes:
+  mongodata:
+  media:
