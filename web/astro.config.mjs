@@ -7,6 +7,9 @@ import { getRedirects } from './src/cms/getRedirects'
 
 export default defineConfig({
   adapter: node({ mode: 'standalone' }),
+  // Astro 7 defaults compressHTML to 'jsx', which collapses inter-element
+  // whitespace. Pin the Astro 6 behavior so templates render unchanged.
+  compressHTML: true,
   trailingSlash: 'never',
   redirects: await getRedirects(),
   vite: {

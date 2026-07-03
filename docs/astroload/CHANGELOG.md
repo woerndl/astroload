@@ -16,6 +16,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 - The SEO plugin reads its page-collection list from the shared `pageCollectionsSlugs` constant instead of repeating the slugs, so the list has one source of truth and a new page collection is covered for SEO without a second edit.
 - Moved the upstream docs into a single `docs/astroload/` subtree (the five reference docs, the docs index as `index.md`, and `CHANGELOG.md`), and parked the landing README at `docs/README.md`. GitHub renders `.github/README.md` or a repo-root `README.md` ahead of `docs/README.md`, so a derived project can add its own root `README.md`, `CHANGELOG.md`, and docs and have them take precedence. Those root locations are no longer occupied by the template, so a derived project can own its documentation without colliding with upstream files when it syncs.
+- Upgraded the web app to Astro 7, with the matching `@astrojs/node` 11 adapter and `astro-seo-schema` 7. `compressHTML` is pinned to `true` (the Astro 6 behavior) because Astro 7's new `'jsx'` default collapses inter-element whitespace and would change rendered output.
 - CI runs the web test suite (`pnpm test`) on every push and pull request, alongside the existing lint and typecheck steps.
 
 ### Fixed
