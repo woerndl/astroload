@@ -10,7 +10,7 @@ import {
   triggerDeployAfterChange,
   triggerDeployAfterDelete,
 } from '../hooks/triggerDeploy'
-import { AUTOSAVE_INTERVAL, livePreviewBreakpoints } from '../shared'
+import { draftVersions, livePreviewBreakpoints } from '../shared'
 
 export const Pages: PageCollectionConfig = {
   slug: 'pages',
@@ -19,12 +19,7 @@ export const Pages: PageCollectionConfig = {
     defaultColumns: ['title', 'path', 'updatedAt', '_status'],
     livePreview: { breakpoints: [...livePreviewBreakpoints] },
   },
-  versions: {
-    drafts: {
-      autosave: { interval: AUTOSAVE_INTERVAL },
-      schedulePublish: false,
-    },
-  },
+  versions: draftVersions,
   hooks: {
     afterChange: [triggerDeployAfterChange],
     afterDelete: [triggerDeployAfterDelete],
