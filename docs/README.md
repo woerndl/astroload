@@ -62,7 +62,7 @@ Astroload is an Astro 7 + Payload CMS starter template and boilerplate, built as
 
 - Build-time redirects fetched from a `Redirects` collection, no runtime hop
 - Deploy webhook (`DEPLOY_HOOK_URL`) for Railway, Vercel, Coolify, or any plain endpoint, with edit bursts coalesced into a rate-limited build window
-- Optional integrations, each turning on when its env vars are set: S3 storage (falls back to the local filesystem under `cms/media/`) and Resend email (falls back to console logging)
+- Optional integrations, each turning on when its env vars are set: S3 storage (falls back to the local filesystem under `cms/media/`), Resend email (falls back to console logging), and Umami analytics, Cloud or self-hosted (cookieless, proxied through first-party routes so content blockers keyed on the Umami hosts miss it)
 - Locale-aware custom 404 and 500 pages
 
 ## Stack
@@ -140,8 +140,8 @@ Variables are declared in `cms/.env.example` and `web/.env.example`, which are t
 - `PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY` minted by the seed.
 - `PREVIEW_SECRET` matches the CMS value.
 - `CMS_URL`, `WEBSITE_URL` origins.
-- `PLAUSIBLE_DOMAIN` optional.
-- `CMS_URL`, `WEBSITE_URL`, and `PLAUSIBLE_DOMAIN` are public, build-time-baked values. Build the web app with production values. Injecting them only at runtime has no effect. See [Deployment](#deployment).
+- `UMAMI_WEBSITE_ID` optional.
+- `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are public, build-time-baked values. Build the web app with production values. Injecting them only at runtime has no effect. See [Deployment](#deployment).
 
 ## Architecture
 
@@ -176,14 +176,20 @@ Both apps are plain Node servers. No serverless adapter or provider-specific bui
 **Web**
 
 - `pnpm --filter @astroload/web build` then `pnpm --filter @astroload/web start`. The `start` script binds `0.0.0.0:4321` by default. Container hosts (Railway, Coolify, Fly) inject `HOST` and `PORT` to override that.
-- Build env is deploy env. `CMS_URL`, `WEBSITE_URL`, and `PLAUSIBLE_DOMAIN` are `astro:env/client` public values, inlined into the output at `astro build`. The web app must be built with the production values. Injecting them only at `start` has no effect.
-- The Astro standalone server does not auto-load `.env`, unlike the CMS's `next start`. The host injects the runtime server vars (`PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `PREVIEW_SECRET`). For local production testing, export them or run `node --env-file=.env ./dist/server/entry.mjs`.
+- Build env is deploy env. `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are `astro:env/client` public values, inlined into the output at `astro build`. The web app must be built with the production values. Injecting them only at `start` has no effect.
+- The Astro standalone server does not auto-load `.env`, unlike the CMS's `next start`. The host injects the runtime server vars (`PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `PREVIEW_SECRET`, plus `UMAMI_HOST_URL` for a self-hosted Umami). For local production testing, export them or run `node --env-file=.env ./dist/server/entry.mjs`.
 - Pages and sitemap routes are prerendered. The `/preview` route is SSR. A client-side script POSTs form submissions as JSON to Payload's `/api/form-submissions` endpoint, so no Web-side submission route is needed. Submission requires JavaScript.
 - `astro build` reads redirects from the `Redirects` collection through the CMS REST API. The CMS must be reachable during build.
 
 **Deploy webhook**
 
-- Setting `DEPLOY_HOOK_URL` in the CMS fires a POST whenever a draft is published, a published doc is deleted, or any global changes. Works with Railway, Vercel, Coolify, or any plain webhook endpoint as-is. A burst of edits is rate-limited to one build at a time, with a single trailing build at the window close if more events arrive while a build is in flight. See `cms/.env.example` for URL shapes and `docs/astroload/maintenance.md` for publish-to-live latency and the `CONTENT_BUILD_ID` cache-bust seam.
+- Setting `DEPLOY_HOOK_URL` in the CMS fires a POST whenever a draft is published, a published doc is deleted, or any global changes. Works with Railway, Vercel, Coolify, or any plain webhook endpoint as-is. A burst of edits coalesces to one leading build plus at most one trailing build per throttle window while edits continue. See `cms/.env.example` for URL shapes and `docs/astroload/maintenance.md` for publish-to-live latency and the `CONTENT_BUILD_ID` cache-bust seam.
+
+## Not included by design
+
+- Response compression on the web server. The Astro Node server sends uncompressed responses, and gzip or brotli is expected from the host's proxy or CDN. The host cutover runbook in [`astroload/maintenance.md`](./astroload/maintenance.md) shows how to verify it, and a host that does not compress needs a compressing proxy in front.
+- A bundled rate limiter. Rate limiting belongs at the edge or in front of the CMS, see [`astroload/security.md`](./astroload/security.md).
+- Admin panel branding and date-format helpers. Payload's own `admin` config covers both when a project wants them.
 
 ## Contributing
 

@@ -13,6 +13,7 @@ import LivePreviewListener from '../components/LivePreviewListener.astro'
 import PreviewNav from '../components/PreviewNav.astro'
 import PreviewToolbar from '../components/PreviewToolbar.astro'
 import SEOMetadata from '../components/SEOMetadata.astro'
+import Umami from '../components/Umami.astro'
 import '../styles/app.css'
 
 interface Props {
@@ -60,6 +61,8 @@ const { header, footer, labels, siteSettings } = await getGlobalData({
         siteSettings={siteSettings}
       />
     )}
+    {/* Preview is editor traffic, keep it out of the stats. */}
+    {!preview && <Umami />}
     <ClientRouter />
   </head>
   <body class="bg-white text-gray-900 antialiased">

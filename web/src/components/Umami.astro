@@ -1,0 +1,57 @@
+---
+import { UMAMI_WEBSITE_ID } from 'astro:env/client'
+
+// Umami tag, loaded through the first-party proxies at /u.js and /api/send so
+// a content blocker keyed on the Umami hosts strips neither half.
+// data-host-url="/" points collect at the proxy: without it the tracker posts
+// to gateway.umami.is directly and skips /api/send. Auto-track is off because
+// <ClientRouter /> turns navigations into in-place swaps the tracker cannot
+// see. The script below fires one pageview per navigation instead.
+---
+
+{
+  UMAMI_WEBSITE_ID && (
+    <script
+      is:inline
+      defer
+      src="/u.js"
+      data-website-id={UMAMI_WEBSITE_ID}
+      data-host-url="/"
+      data-auto-track="false"
+    />
+  )
+}
+
+<script>
+  import { UMAMI_WEBSITE_ID } from 'astro:env/client'
+
+  // One pageview per navigation, sent on astro:page-load (which also fires on
+  // the initial load). With auto-track off the tracker never patches history,
+  // so its internal url stays frozen at the entry page. track() therefore gets
+  // the live path passed in through its function form. The per-url guard
+  // absorbs double fires, and the load-event retry covers the deferred tracker
+  // not having loaded by the first page-load.
+  type TrackFn = (transform: (payload: Record<string, unknown>) => Record<string, unknown>) => void
+
+  let lastTrackedUrl: string | null = null
+
+  function sendPageview() {
+    const url = location.pathname + location.search
+    const track = (window as { umami?: { track: TrackFn } }).umami?.track
+    if (lastTrackedUrl === url || typeof track !== 'function') return
+    track((payload) => ({ ...payload, url }))
+    lastTrackedUrl = url
+  }
+
+  function trackPageview() {
+    sendPageview()
+    if (lastTrackedUrl === location.pathname + location.search) return
+    document
+      .querySelector('script[data-website-id]')
+      ?.addEventListener('load', sendPageview, { once: true })
+  }
+
+  if (UMAMI_WEBSITE_ID) {
+    document.addEventListener('astro:page-load', trackPageview)
+  }
+</script>

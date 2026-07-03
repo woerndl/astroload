@@ -30,10 +30,21 @@ export default defineConfig({
         access: 'public',
         default: 'http://localhost:4321',
       }),
-      PLAUSIBLE_DOMAIN: envField.string({
+      // Umami website id. When set, every page loads the tracker through the
+      // first-party proxy routes (see src/components/Umami.astro). Unset ships
+      // no analytics at all.
+      UMAMI_WEBSITE_ID: envField.string({
         context: 'client',
         access: 'public',
         optional: true,
+      }),
+      // Origin the proxy routes fetch the tracker from and forward events to.
+      // Point it at a self-hosted Umami instead of Umami Cloud. Runtime env,
+      // unlike the baked-in client values above.
+      UMAMI_HOST_URL: envField.string({
+        context: 'server',
+        access: 'public',
+        default: 'https://cloud.umami.is',
       }),
       // Stamped into every page the shared layout renders as
       // <meta name="content-build-id">. Set it to a

@@ -1301,10 +1301,6 @@ export interface SiteSetting {
     description?: string | null;
     image?: (string | null) | Media;
   };
-  /**
-   * Domain registered in Plausible. Leave blank to disable analytics.
-   */
-  plausibleDomain?: string | null;
   robots?: {
     /**
      * Off in dev/staging by default. Turn on once the site is ready for search engines.
@@ -1414,7 +1410,6 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         description?: T;
         image?: T;
       };
-  plausibleDomain?: T;
   robots?:
     | T
     | {
