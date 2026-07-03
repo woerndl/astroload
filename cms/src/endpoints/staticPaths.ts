@@ -32,6 +32,7 @@ export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
           locale: 'all',
           select: { path: true, updatedAt: true },
           where: { _status: { equals: 'published' } },
+          overrideAccess: false,
           req,
         }),
       ),

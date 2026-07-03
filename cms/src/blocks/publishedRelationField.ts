@@ -21,14 +21,19 @@ export const publishedRelationField = ({
   admin: { hidden: true },
   hooks: {
     afterRead: [
-      async ({ req: { payload, locale } }) => {
-        const { docs } = await payload.find({
+      // Passing req keeps the find inside the request's transaction. It keeps
+      // Payload's default access bypass on purpose: the where clause already
+      // pins published docs, and the seed reads run without a user, which
+      // `overrideAccess: false` would turn into a Forbidden error.
+      async ({ req }) => {
+        const { docs } = await req.payload.find({
           collection: relationTo,
           limit: 0,
           pagination: false,
-          locale,
+          locale: req.locale,
           where: { _status: { equals: 'published' } },
           sort,
+          req,
         })
         return docs.map((doc) => doc.id)
       },
