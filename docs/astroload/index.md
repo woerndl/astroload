@@ -12,5 +12,7 @@ below describe what is not obvious from reading the code.
   obvious from reading the code.
 - [`forms.md`](./forms.md): the forms surface, cross-origin POST, spam
   guard, and why submission requires JavaScript.
+- [`content-workflow.md`](./content-workflow.md): how to change content
+  without leaving throwaway scripts in history.
 - [`security.md`](./security.md): threat model, what the template
   defends against, and what you should add before production.

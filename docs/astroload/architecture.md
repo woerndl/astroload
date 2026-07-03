@@ -25,6 +25,16 @@ Calls go over HTTP even in dev, so neither side may assume single-process
 semantics. The Astro app holds no database connection. Either side can be
 replaced as long as the API shape is preserved.
 
+The boundary is also as thin as it looks: blocks an editor composes in
+Payload render through components the Astro app types directly from the
+generated `payload-types.ts` (`SectionBlock.astro`,
+`lexical/BlockRenderer.astro`). There is deliberately no adapter or
+view-model layer between the two apps. Such a layer restates every CMS
+type by hand, drifts from the schema on the first collection change, and
+doubles the surface every change has to cross. When a shape needs
+massaging, do it in the CMS response (a hook or an endpoint) or in the
+component that consumes it, never in a translation layer between them.
+
 ## How content reaches the public site
 
 The frontend reads content in three modes:
@@ -37,7 +47,7 @@ The frontend reads content in three modes:
 2. Request-time, SSR. The `/preview` route and any route that opts in with
    `prerender = false` runs on each request. Editor previews go through
    this path so changes appear without a redeploy. A public route can opt
-   in the same way to stay always-current; with the `staleOnError` helper
+   in the same way to stay always-current. With the `staleOnError` helper
    it serves the last good response when the CMS is unreachable, so the
    outage degrades that one route instead of failing it. On a cold start
    with nothing cached yet the request surfaces the error as usual. See
