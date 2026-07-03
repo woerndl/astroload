@@ -1,18 +1,23 @@
 ---
 import type { Media } from '@astroload/cms/src/payload-types'
 
-import { absoluteCmsURL } from '../cms/urls'
+import { versionedMediaURL } from '../cms/urls'
 
-type SizeKey = 'xs' | 'sm' | 'md' | 'lg' | 'og'
+type SizeKey = 'xs' | 'sm' | 'md' | 'lg'
 
 interface Props {
   image: Media
   size?: SizeKey
+  sizes?: string
   class?: string
   loading?: 'lazy' | 'eager'
 }
 
-const { image, size = 'md', class: className, loading = 'lazy' } = Astro.props
+// Width-ascending variants for the responsive srcset. og is a fixed social crop
+// with a different aspect ratio, so it is left out.
+const SRCSET_KEYS: SizeKey[] = ['xs', 'sm', 'md', 'lg']
+
+const { image, size = 'md', sizes = '100vw', class: className, loading = 'lazy' } = Astro.props
 
 const variant = image.sizes?.[size]
 const url = variant?.url ?? image.url
@@ -23,12 +28,17 @@ if (!url) {
   throw new Error(`Media ${image.id} has no url`)
 }
 
-const src = absoluteCmsURL(url)
+const srcset = SRCSET_KEYS.map((key) => image.sizes?.[key]).flatMap((v) =>
+  v?.url && v.width ? [`${versionedMediaURL(v.url, image.updatedAt)} ${v.width}w`] : [],
+)
+const src = versionedMediaURL(url, image.updatedAt)
 ---
 
 <img
   src={src}
-  alt={image.alt}
+  srcset={srcset.length ? srcset.join(', ') : undefined}
+  sizes={srcset.length ? sizes : undefined}
+  alt={image.alt ?? ''}
   width={width}
   height={height}
   loading={loading}

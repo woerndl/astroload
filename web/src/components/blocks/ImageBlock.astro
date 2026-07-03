@@ -13,7 +13,7 @@ const media = isPopulated(image) ? image : null
 {
   media && (
     <figure class="my-6">
-      <Img image={media} size="md" class="w-full" />
+      <Img image={media} size="md" class="w-full" sizes="(min-width: 768px) 736px, 100vw" />
       {caption && <figcaption class="mt-2 text-gray-600">{caption}</figcaption>}
     </figure>
   )

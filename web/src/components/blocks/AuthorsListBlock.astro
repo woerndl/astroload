@@ -22,7 +22,12 @@ const items = (authors ?? []).filter((a): a is Author => isPopulated(a))
             <a href={author.path} class="flex gap-4 group items-center">
               {photo && (
                 <div class="w-20 shrink-0">
-                  <Img image={photo} size="sm" class="aspect-square w-full rounded-full object-cover" />
+                  <Img
+                    image={photo}
+                    size="sm"
+                    class="aspect-square w-full rounded-full object-cover"
+                    sizes="80px"
+                  />
                 </div>
               )}
               <div class="flex-1">

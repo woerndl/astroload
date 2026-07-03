@@ -5,7 +5,7 @@ import type { Article, Distance, Graph, Organization, Person, Thing, WebPage, We
 
 import type { PageByPathResult } from '../cms/getPageByPath'
 import { isPopulated, stripLocalePath, type Locale } from '../cms/types'
-import { absoluteCmsURL, absoluteSiteURL } from '../cms/urls'
+import { absoluteSiteURL, versionedMediaURL } from '../cms/urls'
 
 interface Props {
   result: PageByPathResult
@@ -24,9 +24,11 @@ const pageURL = absoluteSiteURL(pathname)
 
 const defaultImage = isPopulated(siteSettings.defaultSeo?.image) ? siteSettings.defaultSeo.image : null
 
-function mediaURL(media: { url?: string | null } | null | undefined): string | undefined {
+function mediaURL(
+  media: { url?: string | null; updatedAt?: string | null } | null | undefined,
+): string | undefined {
   if (!media?.url) return undefined
-  return absoluteCmsURL(media.url)
+  return versionedMediaURL(media.url, media.updatedAt)
 }
 
 const isHome = pathname === homePath || pathname === `${homePath}/`
@@ -72,7 +74,7 @@ if (isHome) {
   if (ogVariant?.url && ogVariant.width && ogVariant.height) {
     article.image = {
       '@type': 'ImageObject',
-      url: absoluteCmsURL(ogVariant.url),
+      url: versionedMediaURL(ogVariant.url, cover?.updatedAt),
       // schema-dts types these as Distance/QuantitativeValue; Google wants a bare integer.
       width: ogVariant.width as unknown as Distance,
       height: ogVariant.height as unknown as Distance,

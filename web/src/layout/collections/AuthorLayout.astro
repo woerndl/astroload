@@ -31,7 +31,9 @@ const seo = resolveSeo(data)
 >
   <article>
     <header class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-      {photo && <Img image={photo} size="sm" class="h-24 w-24 rounded-full object-cover" />}
+      {photo && (
+        <Img image={photo} size="sm" class="h-24 w-24 rounded-full object-cover" sizes="96px" />
+      )}
       <div>
         <h1 class="text-3xl font-semibold">{data.name}</h1>
         {data.role && <p class="mt-1 text-gray-600">{data.role}</p>}
