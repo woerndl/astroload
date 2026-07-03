@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   // pnpm-workspace fix: turbopack.root + outputFileTracingRoot must point at the
   // workspace root, not cms/, or Turbopack can't resolve next/package.json from src/app.
   outputFileTracingRoot: workspaceRoot,
+  // The CMS is admin-only; send the bare root to the admin panel instead of 404.
+  async redirects() {
+    return [{ source: '/', destination: '/admin', permanent: false }]
+  },
   images: {
     localPatterns: [
       {

@@ -8,7 +8,7 @@ import {
   triggerDeployAfterDelete,
 } from '../hooks/triggerDeploy'
 import { lexicalEditorWithSafeLinks } from '../lexical/editor'
-import { AUTOSAVE_INTERVAL, livePreviewBreakpoints } from '../shared'
+import { draftVersions, livePreviewBreakpoints } from '../shared'
 
 export const Posts: PageCollectionConfig = {
   slug: 'posts',
@@ -17,12 +17,7 @@ export const Posts: PageCollectionConfig = {
     defaultColumns: ['title', 'path', 'updatedAt', '_status'],
     livePreview: { breakpoints: [...livePreviewBreakpoints] },
   },
-  versions: {
-    drafts: {
-      autosave: { interval: AUTOSAVE_INTERVAL },
-      schedulePublish: false,
-    },
-  },
+  versions: draftVersions,
   hooks: {
     afterChange: [triggerDeployAfterChange],
     afterDelete: [triggerDeployAfterDelete],
@@ -35,7 +30,8 @@ export const Posts: PageCollectionConfig = {
       sharedDocument: true,
     },
   },
-  // bio is heavy and localized, so leave it out of post-list author populates.
+  // The authors populate stays bio-free through Authors' defaultPopulate,
+  // which carries the rationale.
   defaultPopulate: {
     title: true,
     path: true,

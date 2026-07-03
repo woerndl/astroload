@@ -81,10 +81,23 @@ Two exceptions exist by design. Decide on each before production:
   They carry editorial copy, not draft article bodies, but a draft
   change there is visible immediately.
 
-If you add a new collection that holds drafts, give it
-`readPublishedOrDraft` (or equivalent). A regression here is hard to
-spot through manual testing. The starter does not ship an automated
-draft-leakage test. Add one when you set up your test runner.
+`read` alone does not close the leak. Payload generates `/versions`
+endpoints for every versioned collection, and their access rule is
+`readVersions`, not `read`. Left unset, `readVersions` allows any
+authenticated requester, including the read-only API key, to fetch
+draft versions. The shipped collections pin `readVersions: isPanelUser`
+through the shared `contentAccess` object
+([`cms/src/access/contentAccess.ts`](../../cms/src/access/contentAccess.ts)).
+
+If you add a new collection that holds drafts, spread `contentAccess`
+(or set both `read: readPublishedOrDraft` and `readVersions` yourself).
+If you add a custom endpoint that reads draftable content, pass
+`overrideAccess: false` to its Local API calls and gate it the way
+[`cms/src/endpoints/canPreview.ts`](../../cms/src/endpoints/canPreview.ts)
+does, because the Local API skips access control by default. A
+regression here is hard to spot through manual testing. The starter
+does not ship an automated draft-leakage test. Add one when you set up
+your test runner.
 
 ## The preview route and the preview API key
 
@@ -152,6 +165,11 @@ The form time-trap is client-controlled, so it is not a strong abuse
 control. See [`forms.md`](./forms.md) for the shipped checks and
 production gaps.
 
+Stored submissions hold visitor PII, so their access rules are pinned in
+the plugin overrides: read is limited to panel users, update is blocked,
+and delete is admin-only. Without the explicit rules, the read-only API
+key could fetch submissions.
+
 There is no body-size limit on `/api/form-submissions` beyond Payload's
 defaults. If your forms accept long-text fields, add an explicit cap.
 
@@ -179,12 +197,12 @@ document holds, so an unfiltered `javascript:` or `data:` URL would render
 as a clickable XSS vector. Astroload closes this in two layers:
 
 - At the schema layer
-  ([`cms/src/lexical/editor.ts`](../cms/src/lexical/editor.ts)), the link
+  ([`cms/src/lexical/editor.ts`](../../cms/src/lexical/editor.ts)), the link
   feature's `url` validator allows only `http`, `https`, `mailto`, `tel`,
   and relative/schemeless URLs, rejecting the rest at save time for every
   editor that inherits the global feature set.
 - The renderer
-  ([`web/src/components/lexical/sanitizeLinks.ts`](../web/src/components/lexical/sanitizeLinks.ts))
+  ([`web/src/components/lexical/sanitizeLinks.ts`](../../web/src/components/lexical/sanitizeLinks.ts))
   unwraps link nodes whose `url` carries a disallowed scheme to plain text
   before rendering, covering content that predates the validator.
 

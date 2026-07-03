@@ -80,19 +80,6 @@ There is no per-IP or per-form rate limit on `/api/form-submissions`,
 so a motivated attacker can post until the table fills. See
 [`security.md`](./security.md) for the recommended posture.
 
-## JS-off behaviour
-
-The form does not work without JavaScript. The Payload endpoint at
-`/api/form-submissions` expects a JSON body of the shape
-`{ form: <id>, submissionData: [...] }`, and that payload is built by
-the bundled `<script>`. A plain HTML form post would send a
-form-encoded body that the endpoint does not accept.
-
-If your project needs a no-JS path, add an Astro server route on the
-public site that accepts the form-encoded body, builds the JSON shape,
-forwards it to the CMS, and renders a confirmation page on success.
-The template does not ship that wrapper.
-
 ## Accessibility
 
 The renderer wires up a few baseline patterns:
@@ -126,7 +113,25 @@ There is no upper bound on `_rendered_at`. A stale prefetched form
 posted hours later still passes the time check as long as the elapsed
 delta is at least 1.5 seconds.
 
-The hook is wired through
-`formBuilderPlugin({ formSubmissionOverrides: { hooks: { beforeChange: [spamGuard] } } })`
+A second `beforeChange` hook, `validateSubmission`
+(`cms/src/hooks/validateSubmission.ts`), runs after `spamGuard`. It
+rejects a submission that omits a required field of its referenced form,
+posts a duplicate field name, or references a form id that does not
+exist, all with the same generic 400. It checks presence only: value
+shapes (an email field holding a non-email, a select value outside its
+options) are not validated, because submissions land in a review queue.
+
+Both hooks are wired through
+`formBuilderPlugin({ formSubmissionOverrides: { hooks: { beforeChange: [spamGuard, validateSubmission] } } })`
 in `cms/src/payload.config.ts`. If you change the field shape, update
-the hook in lockstep.
+the hooks in lockstep.
+
+The same overrides pin the submission access rules. Submissions hold
+visitor PII, so anyone may create one, only panel users (admins and
+editors) may read them, nobody may update one, and only admins may
+delete. Without the explicit rules, read would be open to any
+authenticated requester, including the web app's read-only api key.
+
+The starter ships no integration test for this path. When you set up a
+CMS-side test runner, cover it with forged POSTs asserting the rejects
+above.

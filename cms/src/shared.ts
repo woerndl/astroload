@@ -1,3 +1,5 @@
+import type { CollectionConfig } from 'payload'
+
 import type { Config } from './payload-types'
 import { LOCALES } from './site-config'
 
@@ -14,7 +16,17 @@ export type PageCollectionSlug = (typeof pageCollectionsSlugs)[number]
 
 export type LocalePaths = Partial<Record<Locale, string>>
 
-export const AUTOSAVE_INTERVAL = 1500
+const AUTOSAVE_INTERVAL = 1500
+
+// Shared draft config for the page-like collections. maxPerDoc caps the stored
+// version history so autosave does not grow it without bound.
+export const draftVersions = {
+  maxPerDoc: 50,
+  drafts: {
+    autosave: { interval: AUTOSAVE_INTERVAL },
+    schedulePublish: false,
+  },
+} satisfies CollectionConfig['versions']
 
 export const livePreviewBreakpoints = [
   { name: 'mobile', label: 'Mobile', width: 390, height: 844 },

@@ -9,6 +9,8 @@ import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { isAdmin } from './access/isAdmin'
+import { isPanelUser } from './access/isPanelUser'
 import { ApiKeys } from './collections/ApiKeys'
 import { Authors } from './collections/Authors'
 import { Media } from './collections/Media'
@@ -22,6 +24,7 @@ import { getStaticPaths } from './endpoints/staticPaths'
 import { env } from './env'
 import { lexicalEditorWithSafeLinks } from './lexical/editor'
 import { spamGuard } from './hooks/spamGuard'
+import { validateSubmission } from './hooks/validateSubmission'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Labels } from './globals/Labels'
@@ -119,9 +122,18 @@ export default buildConfig({
         admin: { group: CollectionGroups.System },
       },
       formSubmissionOverrides: {
+        // Submissions hold visitor PII. Without this, read is open to any
+        // authenticated requester (including the web app's api keys) and
+        // delete falls back to the same, because the plugin sets no rule.
+        access: {
+          create: () => true,
+          read: isPanelUser,
+          update: () => false,
+          delete: isAdmin,
+        },
         admin: { group: CollectionGroups.System },
         hooks: {
-          beforeChange: [spamGuard],
+          beforeChange: [spamGuard, validateSubmission],
         },
       },
     }),

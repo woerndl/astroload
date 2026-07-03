@@ -29,11 +29,15 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Replacing or deleting a media file triggers a site rebuild. The Media collection wired no deploy hook, so an updated or removed image left the prerendered pages pointing at the old file until an unrelated publish rebuilt them. Media now fires the same rate-limited deploy webhook the content collections use, coalesced through the existing build window.
 - Rich text renders without error when a draft has an empty body or contains a link to a document that is missing or unpublished. A link that cannot resolve is shown as its plain text instead of failing the page render.
 - A publish burst across many documents now coalesces into a single rate-limited build instead of one throttle window per document, so a multi-document publish can no longer fan out into overlapping builds. The deploy hook fires once on the first deploy-worthy save and at most once more per window while saves continue. Autosave draft writes, and global or always-deploy saves that change nothing but `updatedAt`, no longer trigger a build.
+- Draft version history on pages, posts, and authors is now capped at 50 versions per document through a shared `draftVersions` config, so frequent autosaves no longer grow the stored history without bound.
+- The bare CMS root `/` now redirects to the admin panel instead of returning a 404.
 
 ### Security
 
 - The `page-by-path`, `global-data`, and `static-paths` endpoints now run their CMS reads with access control enabled (`overrideAccess: false`) instead of letting the Local API bypass it. A read-only API key is held to published content, and `page-by-path` and `global-data` answer a `?preview=true` request from a key that may not read drafts with a 403 rather than serving the draft.
 - Version history is restricted to panel users through a `readVersions` rule on Pages, Posts, and Authors. Payload leaves version reads open to any authenticated requester when the rule is unset, and version documents are not filtered by publish status, so a read-only API key could reach drafts through the generated `/versions` routes.
+- Form submissions are validated against their referenced form on the server, so a submission that omits a required field is rejected with a 400 instead of stored. A required checkbox must be ticked and every other required field must carry a non-empty value. A duplicate field name or an unknown form id gets the same generic rejection. The check runs after the existing spam guard.
+- Form-submission access rules are pinned in the plugin overrides. Submissions hold visitor PII, and the plugin's defaults leave read open to any authenticated requester (including the web app's read-only API key) and set no delete rule at all. Read is now limited to panel users and delete to admins, with update blocked as before.
 
 ## [0.3.3] - 2026-05-31
 
