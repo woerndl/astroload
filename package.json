@@ -1,7 +1,7 @@
 {
   "name": "astroload",
   "version": "0.0.0",
-  "description": "Astro 7 + Payload 3 + Postgres starter.",
+  "description": "Astro 7 + Payload 3 + MongoDB starter.",
   "private": true,
   "type": "module",
   "scripts": {

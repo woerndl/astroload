@@ -1,23 +1,21 @@
-# Local Postgres for the astroload starter. Dev only, never production.
-# CMS and Astro run natively via `pnpm --filter @astroload/cms dev` and
-# `pnpm --filter @astroload/web dev`.
+# Local MongoDB for the astroload starter. Dev only, never production.
+# Standalone mongod, no replica set: the CMS disables transactions
+# (transactionOptions: false in cms/src/payload.config.ts), so a single
+# node is enough. CMS and Astro run natively via
+# `pnpm --filter @astroload/cms dev` and `pnpm --filter @astroload/web dev`.
 services:
-  postgres:
-    image: postgres:17-alpine
+  mongo:
+    image: mongo:7
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: astroload
-      POSTGRES_PASSWORD: astroload
-      POSTGRES_DB: astroload
     ports:
-      - '5432:5432'
+      - '27017:27017'
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mongodata:/data/db
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U astroload -d astroload']
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  pgdata:
+  mongodata:

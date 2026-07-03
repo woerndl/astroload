@@ -191,7 +191,7 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${name}`
         const response = await fetch(action, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ form: Number(formId), submissionData }),
+          body: JSON.stringify({ form: formId, submissionData }),
         })
         if (!response.ok) {
           let detail = ''

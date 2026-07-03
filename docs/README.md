@@ -7,12 +7,12 @@
 [![Astro](https://img.shields.io/badge/Astro-6-FF5D01?logo=astro&logoColor=white)](https://astro.build)
 [![Payload](https://img.shields.io/badge/Payload-3-000000?logo=payloadcms&logoColor=white)](https://payloadcms.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Postgres](https://img.shields.io/badge/Postgres-17-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
 [![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
-Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as a pnpm workspace on Postgres. It includes live preview, single- or multi-locale routing, SEO output, S3 storage, spam-protected forms, build-time redirects, deploy webhooks, and a typed CMS data layer with LRU caching.
+Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as a pnpm workspace on MongoDB. It includes live preview, single- or multi-locale routing, SEO output, S3 storage, spam-protected forms, build-time redirects, deploy webhooks, and a typed CMS data layer with LRU caching.
 
 > [!NOTE]
 > This template is in active development. Production deployment is untested. Expect the API, content model, and project structure to change between releases. Pin a tag or commit if you build on top of it. Changes per release are tracked in [`astroload/CHANGELOG.md`](./astroload/CHANGELOG.md).
@@ -69,7 +69,7 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 
 - Astro 6 with the Node adapter (`@astrojs/node`)
 - Payload 3 on Next 16 and React 19
-- Postgres 17 via `@payloadcms/db-postgres`
+- MongoDB 7 via `@payloadcms/db-mongodb`, standalone (transactions disabled). Postgres remains available as a documented alternative, see [`astroload/maintenance.md`](./astroload/maintenance.md)
 - Tailwind CSS v4 via `@tailwindcss/vite`
 - TypeScript 5.7
 - pnpm 10 workspaces
@@ -87,7 +87,7 @@ cd astroload
 # 2. Install dependencies
 pnpm install
 
-# 3. Start local Postgres
+# 3. Start local MongoDB
 docker compose up -d
 
 # 4. Set up env files
@@ -126,7 +126,7 @@ Variables are declared in `cms/.env.example` and `web/.env.example`, which are t
 
 **CMS (`cms/.env`)**
 
-- `DATABASE_URI` Postgres connection string. The docker-compose service uses `postgres://astroload:astroload@127.0.0.1:5432/astroload`.
+- `DATABASE_URI` MongoDB connection string. The docker-compose service uses `mongodb://127.0.0.1:27017/astroload`.
 - `PAYLOAD_SECRET` admin session secret.
 - `SERVER_URL` origin the admin is served from. Must match the browser origin for csrf.
 - `WEBSITE_URL` Astro frontend origin used by `generatePageURL`.
@@ -148,18 +148,18 @@ Variables are declared in `cms/.env.example` and `web/.env.example`, which are t
 ```mermaid
 flowchart LR
     Editor -->|HTTPS| CMS["cms<br/>Payload + Next.js admin"]
-    CMS <-->|SQL| Postgres[(Postgres)]
+    CMS <-->|mongoose| Mongo[(MongoDB)]
     CMS -->|REST / GraphQL| Web["web<br/>Astro + Node adapter"]
     Visitor -->|HTTPS| Web
 ```
 
-Two Node processes, one Postgres database. `cms/` owns the admin, the API, and the schema. `web/` reads from the CMS over HTTP at build time (for prerendered pages and redirects) and at request time (for `/preview` and any opted-in SSR route). See [`astroload/architecture.md`](./astroload/architecture.md) for the longer version.
+Two Node processes, one MongoDB database. `cms/` owns the admin, the API, and the schema. `web/` reads from the CMS over HTTP at build time (for prerendered pages and redirects) and at request time (for `/preview` and any opted-in SSR route). See [`astroload/architecture.md`](./astroload/architecture.md) for the longer version.
 
 ```
 .
 ├── cms/                  Payload application (admin, REST and GraphQL)
 ├── web/                  Astro frontend (public site and /preview)
-├── docker-compose.yml    Local Postgres
+├── docker-compose.yml    Local MongoDB
 └── pnpm-workspace.yaml
 ```
 

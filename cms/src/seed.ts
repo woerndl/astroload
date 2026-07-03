@@ -19,7 +19,7 @@ const placeholderImagePath = path.resolve(dirname, 'placeholder.webp')
 
 const richText = (text: string) => buildEditorState({ text })
 
-const richTextWithImageBlock = (text: string, imageId: number, caption: string) =>
+const richTextWithImageBlock = (text: string, imageId: string | number, caption: string) =>
   buildEditorState<SerializedBlockNode>({
     text,
     nodes: [

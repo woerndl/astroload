@@ -16,7 +16,7 @@ through generated TypeScript and a small SDK layer.
 ```mermaid
 flowchart LR
     Editor -->|HTTPS| CMS["cms<br/>Payload + Next.js admin"]
-    CMS <-->|SQL| Postgres[(Postgres)]
+    CMS <-->|mongoose| Mongo[(MongoDB)]
     CMS -->|REST / GraphQL| Web["web<br/>Astro + Node adapter"]
     Visitor -->|HTTPS| Web
 ```
