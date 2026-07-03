@@ -30,5 +30,8 @@ jobs:
       - name: Lint (cms eslint)
         run: pnpm lint
 
-      - name: Typecheck (web astro check)
+      - name: Typecheck (cms tsc, web astro check)
         run: pnpm check
+
+      - name: Test (web vitest)
+        run: pnpm test
