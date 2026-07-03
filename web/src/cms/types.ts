@@ -22,12 +22,14 @@ export interface PreviewContext {
   id: string | number
 }
 
-export function isPopulated<T extends object>(value: number | T | null | undefined): value is T {
+export function isPopulated<T extends object>(
+  value: string | number | T | null | undefined,
+): value is T {
   return typeof value === 'object' && value !== null
 }
 
 type NavLink = {
-  page: { value: number | Page | Post | Author }
+  page: { value: string | number | Page | Post | Author }
   label: string
 }
 

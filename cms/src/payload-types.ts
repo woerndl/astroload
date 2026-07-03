@@ -109,7 +109,7 @@ export interface Config {
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: number;
+    defaultIDType: string;
   };
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('de' | 'en') | ('de' | 'en')[];
   globals: {
@@ -175,10 +175,10 @@ export interface UserAuthOperations {
  * via the `definition` "pages".
  */
 export interface Page {
-  id: number;
+  id: string;
   isRootPage?: boolean | null;
   slug: string;
-  parent?: (number | null) | Page;
+  parent?: (string | null) | Page;
   path: string;
   breadcrumbs: Breadcrumbs;
   title: string;
@@ -189,7 +189,7 @@ export interface Page {
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
-    image?: (number | null) | Media;
+    image?: (string | null) | Media;
   };
   updatedAt: string;
   createdAt: string;
@@ -224,7 +224,7 @@ export interface RichTextBlock {
  * via the `definition` "ImageBlock".
  */
 export interface ImageBlock {
-  image: number | Media;
+  image: string | Media;
   caption?: string | null;
   id?: string | null;
   blockName?: string | null;
@@ -235,7 +235,7 @@ export interface ImageBlock {
  * via the `definition` "media".
  */
 export interface Media {
-  id: number;
+  id: string;
   alt: string;
   caption?: string | null;
   updatedAt: string;
@@ -297,7 +297,7 @@ export interface Media {
  * via the `definition` "FormBlock".
  */
 export interface FormBlock {
-  form: number | Form;
+  form: string | Form;
   introContent?: {
     root: {
       type: string;
@@ -322,7 +322,7 @@ export interface FormBlock {
  * via the `definition` "forms".
  */
 export interface Form {
-  id: number;
+  id: string;
   title: string;
   fields?:
     | (
@@ -478,7 +478,7 @@ export interface Form {
  * via the `definition` "PostsListBlock".
  */
 export interface PostsListBlock {
-  posts?: (number | Post)[] | null;
+  posts?: (string | Post)[] | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'postsList';
@@ -488,16 +488,16 @@ export interface PostsListBlock {
  * via the `definition` "posts".
  */
 export interface Post {
-  id: number;
+  id: string;
   slug: string;
-  parent: number | Page;
+  parent: string | Page;
   path: string;
   breadcrumbs: Breadcrumbs;
-  authors: (number | Author)[];
+  authors: (string | Author)[];
   publishedAt?: string | null;
   title: string;
   excerpt: string;
-  image: number | Media;
+  image: string | Media;
   content: {
     root: {
       type: string;
@@ -519,7 +519,7 @@ export interface Post {
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
-    image?: (number | null) | Media;
+    image?: (string | null) | Media;
   };
   updatedAt: string;
   createdAt: string;
@@ -530,14 +530,14 @@ export interface Post {
  * via the `definition` "authors".
  */
 export interface Author {
-  id: number;
+  id: string;
   slug: string;
-  parent: number | Page;
+  parent: string | Page;
   path: string;
   breadcrumbs: Breadcrumbs;
   name: string;
   role?: string | null;
-  photo?: (number | null) | Media;
+  photo?: (string | null) | Media;
   bio?: {
     root: {
       type: string;
@@ -559,7 +559,7 @@ export interface Author {
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
-    image?: (number | null) | Media;
+    image?: (string | null) | Media;
   };
   updatedAt: string;
   createdAt: string;
@@ -570,7 +570,7 @@ export interface Author {
  * via the `definition` "AuthorsListBlock".
  */
 export interface AuthorsListBlock {
-  authors?: (number | Author)[] | null;
+  authors?: (string | Author)[] | null;
   id?: string | null;
   blockName?: string | null;
   blockType: 'authorsList';
@@ -580,7 +580,7 @@ export interface AuthorsListBlock {
  * via the `definition` "api-keys".
  */
 export interface ApiKey {
-  id: number;
+  id: string;
   name: string;
   type: 'read-only' | 'preview';
   updatedAt: string;
@@ -595,7 +595,7 @@ export interface ApiKey {
  * via the `definition` "redirects".
  */
 export interface Redirect {
-  id: number;
+  id: string;
   sourcePath: string;
   destinationPath: string;
   type: 'permanent' | 'temporary';
@@ -608,7 +608,7 @@ export interface Redirect {
  * via the `definition` "users".
  */
 export interface User {
-  id: number;
+  id: string;
   firstName: string;
   lastName: string;
   roles: ('editor' | 'admin')[];
@@ -636,8 +636,8 @@ export interface User {
  * via the `definition` "form-submissions".
  */
 export interface FormSubmission {
-  id: number;
-  form: number | Form;
+  id: string;
+  form: string | Form;
   submissionData?:
     | {
         field: string;
@@ -653,7 +653,7 @@ export interface FormSubmission {
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: number;
+  id: string;
   key: string;
   data:
     | {
@@ -670,53 +670,53 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: number;
+  id: string;
   document?:
     | ({
         relationTo: 'pages';
-        value: number | Page;
+        value: string | Page;
       } | null)
     | ({
         relationTo: 'posts';
-        value: number | Post;
+        value: string | Post;
       } | null)
     | ({
         relationTo: 'authors';
-        value: number | Author;
+        value: string | Author;
       } | null)
     | ({
         relationTo: 'media';
-        value: number | Media;
+        value: string | Media;
       } | null)
     | ({
         relationTo: 'api-keys';
-        value: number | ApiKey;
+        value: string | ApiKey;
       } | null)
     | ({
         relationTo: 'redirects';
-        value: number | Redirect;
+        value: string | Redirect;
       } | null)
     | ({
         relationTo: 'users';
-        value: number | User;
+        value: string | User;
       } | null)
     | ({
         relationTo: 'forms';
-        value: number | Form;
+        value: string | Form;
       } | null)
     | ({
         relationTo: 'form-submissions';
-        value: number | FormSubmission;
+        value: string | FormSubmission;
       } | null);
   globalSlug?: string | null;
   user:
     | {
         relationTo: 'api-keys';
-        value: number | ApiKey;
+        value: string | ApiKey;
       }
     | {
         relationTo: 'users';
-        value: number | User;
+        value: string | User;
       };
   updatedAt: string;
   createdAt: string;
@@ -726,15 +726,15 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: number;
+  id: string;
   user:
     | {
         relationTo: 'api-keys';
-        value: number | ApiKey;
+        value: string | ApiKey;
       }
     | {
         relationTo: 'users';
-        value: number | User;
+        value: string | User;
       };
   key?: string | null;
   value?:
@@ -754,7 +754,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: number;
+  id: string;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -1195,21 +1195,21 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  * via the `definition` "header".
  */
 export interface Header {
-  id: number;
+  id: string;
   links?:
     | {
         page:
           | {
               relationTo: 'pages';
-              value: number | Page;
+              value: string | Page;
             }
           | {
               relationTo: 'posts';
-              value: number | Post;
+              value: string | Post;
             }
           | {
               relationTo: 'authors';
-              value: number | Author;
+              value: string | Author;
             };
         label: string;
         id?: string | null;
@@ -1223,7 +1223,7 @@ export interface Header {
  * via the `definition` "footer".
  */
 export interface Footer {
-  id: number;
+  id: string;
   columns?:
     | {
         heading: string;
@@ -1232,15 +1232,15 @@ export interface Footer {
               page:
                 | {
                     relationTo: 'pages';
-                    value: number | Page;
+                    value: string | Page;
                   }
                 | {
                     relationTo: 'posts';
-                    value: number | Post;
+                    value: string | Post;
                   }
                 | {
                     relationTo: 'authors';
-                    value: number | Author;
+                    value: string | Author;
                   };
               label: string;
               id?: string | null;
@@ -1258,7 +1258,7 @@ export interface Footer {
  * via the `definition` "labels".
  */
 export interface Labels {
-  id: number;
+  id: string;
   global: {
     home: string;
     language: string;
@@ -1294,12 +1294,12 @@ export interface Labels {
  * via the `definition` "site-settings".
  */
 export interface SiteSetting {
-  id: number;
+  id: string;
   siteName: string;
   defaultSeo?: {
     titleSuffix?: string | null;
     description?: string | null;
-    image?: (number | null) | Media;
+    image?: (string | null) | Media;
   };
   /**
    * Domain registered in Plausible. Leave blank to disable analytics.

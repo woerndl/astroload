@@ -1,5 +1,5 @@
 import { payloadPagesPlugin } from '@jhb.software/payload-pages-plugin'
-import { postgresAdapter } from '@payloadcms/db-postgres'
+import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { resendAdapter } from '@payloadcms/email-resend'
 import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import { seoPlugin } from '@payloadcms/plugin-seo'
@@ -65,10 +65,12 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  db: postgresAdapter({
-    pool: {
-      connectionString: env.DATABASE_URI,
-    },
+  db: mongooseAdapter({
+    url: env.DATABASE_URI,
+    // Transactions require a replica set. Turning them off lets a single
+    // standalone mongod work, and also sidesteps the WriteConflict retries
+    // a replica set would otherwise need. See docs/astroload/maintenance.md.
+    transactionOptions: false,
   }),
   ...(resendConfigured
     ? {

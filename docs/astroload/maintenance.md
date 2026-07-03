@@ -220,6 +220,57 @@ exactly for that reason. If you are editing in admin and not seeing
 changes on `localhost:4321`, check whether the route is prerendered in
 dev.
 
+## Database is MongoDB, with Postgres as an option
+
+The CMS runs on MongoDB through `@payloadcms/db-mongodb`. The adapter sets
+`transactionOptions: false`, which turns transactions off. Transactions need a
+replica set, so disabling them lets the starter run a single standalone
+`mongod` (the `mongo` service in `docker-compose.yml`) with no replica-set
+setup, and avoids the WriteConflict retries a replica set would otherwise need
+under concurrent writes.
+
+If you do want transactions, run Mongo as a single-node replica set
+(`mongod --replSet rs0`, then `rs.initiate()` once), point `DATABASE_URI` at it
+with `?replicaSet=rs0`, and remove the `transactionOptions: false` line in
+`cms/src/payload.config.ts`.
+
+### Moving data between Mongo databases
+
+Document ids are MongoDB ObjectId strings, so a dump from one Mongo database
+restores cleanly into another:
+
+```bash
+mongodump    --uri "$DATABASE_URI" --out ./dump
+mongorestore --uri "$TARGET_URI"   ./dump
+```
+
+There is no automatic path from Postgres rows to Mongo documents. To carry
+existing Postgres data over, export it and re-import it through Payload's API
+or a one-off script, the same way the seed writes content.
+
+### Staying on Postgres
+
+Postgres is still a first-class option. To switch back:
+
+1. In `cms/package.json`, replace `@payloadcms/db-mongodb` with
+   `@payloadcms/db-postgres` at the same Payload version, then `pnpm install`.
+2. In `cms/src/payload.config.ts`, swap the import and the `db` adapter:
+
+   ```ts
+   import { postgresAdapter } from '@payloadcms/db-postgres'
+
+   db: postgresAdapter({
+     pool: { connectionString: env.DATABASE_URI },
+   }),
+   ```
+
+3. Point `DATABASE_URI` at Postgres
+   (`postgres://astroload:astroload@127.0.0.1:5432/astroload`) and restore a
+   Postgres service in `docker-compose.yml`.
+4. Re-run `pnpm --filter @astroload/cms generate:types`. Ids switch from
+   `string` back to `number`. The web app types ids as `string | number`, so
+   no frontend code changes.
+
 ## Cutting a release
 
 Versions follow SemVer, and `CHANGELOG.md` follows Keep a Changelog:
