@@ -35,6 +35,17 @@ Every Astro route in the template uses one of two prerender shapes:
   The root redirect, the 404 and 500 pages, and anything under
   `/preview` are in this group.
 
+A small subset of the second shape is the on-demand opt-in: a public route
+that must reflect the latest content without waiting for a rebuild (a live
+listing, a dashboard). It uses the same `prerender = false`, wraps its CMS
+read in the `staleOnError` helper (`web/src/cms/staleOnError.ts`), and sets
+`Cache-Control: no-store`. The helper serves the last good response when the
+CMS is unreachable, so a CMS outage degrades that one route instead of
+failing it. On a cold start with nothing cached the error still propagates,
+so the route shows its normal error page rather than a blank success.
+`web/src/pages/latest.astro` is the worked example. Keep this set small;
+static prerendering stays the default for everything else.
+
 Astro also supports `export const prerender = true;` for routes that
 should be static even in dev. The template does not currently use it
 because every prerendered route here reads from the CMS, and forcing

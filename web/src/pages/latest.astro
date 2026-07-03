@@ -1,0 +1,48 @@
+---
+import { payloadSDK } from '../cms/sdk'
+import { cacheHeader } from '../cms/sdk/cachedFetch'
+import { staleOnError } from '../cms/staleOnError'
+import { DEFAULT_LOCALE } from '../cms/types'
+
+// On-demand SSR opt-in. Unlike the static default, this route renders on every
+// request, so it always reflects the latest published content without waiting
+// for a rebuild. Copy this shape for the few routes that must stay current
+// (live listings, dashboards); everything else stays static. The freshness
+// classes are documented in docs/astroload/conventions.md.
+export const prerender = false
+
+// An on-demand route must not be cached at the edge, or it stops being live.
+// Set before the await so a cold-start failure response stays uncacheable too.
+Astro.response.headers.set('Cache-Control', 'no-store')
+
+const { data: posts, stale } = await staleOnError('latest-posts', async () => {
+  // cacheHeader(false) bypasses the cross-request LRU so each request is live.
+  const result = await payloadSDK.find(
+    {
+      collection: 'posts',
+      locale: DEFAULT_LOCALE,
+      where: { _status: { equals: 'published' } },
+      sort: '-publishedAt',
+      limit: 5,
+      pagination: false,
+    },
+    { headers: cacheHeader(false) },
+  )
+  return result.docs
+})
+---
+
+<!doctype html>
+<html lang={DEFAULT_LOCALE}>
+  <head>
+    <meta charset="utf-8" />
+    <title>Latest posts</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    {stale && <p data-stale>Showing the last known content; the CMS is currently unreachable.</p>}
+    <ul>
+      {posts.map((post) => <li>{post.title}</li>)}
+    </ul>
+  </body>
+</html>
