@@ -12,6 +12,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 - A vitest setup in the web app, run with `pnpm test`. The first test covers the link sanitizer that keeps rich text from failing on a link the renderer cannot resolve.
 - An optional `CONTENT_BUILD_ID` build env, stamped into every page the shared layout renders as `<meta name="content-build-id">`. Pointed at a value that changes per deploy, it keeps a same-commit redeploy (a publish-driven rebuild on an unchanged git SHA) from replaying a cached build and serving stale prerendered HTML. Left unset, the tag is omitted. The maintenance guide carries the contract and per-host recipes.
+- An opt-in pattern for the few public routes that must stay current without waiting for a rebuild: `prerender = false`, a read through the new `staleOnError` helper, and `Cache-Control: no-store`. Such a route renders on demand and serves the last good response when the CMS read fails. `web/src/pages/latest.astro` is the worked example. Static rendering stays the default for every other route.
 
 ### Changed
 

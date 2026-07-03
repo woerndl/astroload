@@ -36,7 +36,12 @@ The frontend reads content in three modes:
    be automatic.
 2. Request-time, SSR. The `/preview` route and any route that opts in with
    `prerender = false` runs on each request. Editor previews go through
-   this path so changes appear without a redeploy.
+   this path so changes appear without a redeploy. A public route can opt
+   in the same way to stay always-current; with the `staleOnError` helper
+   it serves the last good response when the CMS is unreachable, so the
+   outage degrades that one route instead of failing it. On a cold start
+   with nothing cached yet the request surfaces the error as usual. See
+   [`conventions.md`](./conventions.md) for the freshness classes.
 3. Astro config evaluation. Redirects are fetched from the CMS once when
    `astro.config.mjs` is evaluated. The result is baked into the server
    manifest, so request-time has no extra round-trip. See
