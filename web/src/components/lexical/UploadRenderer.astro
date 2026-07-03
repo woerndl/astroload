@@ -13,6 +13,11 @@ const { node } = Astro.props
 
 {
   node.relationTo === 'media' && isPopulated(node.value) ? (
-    <Img image={node.value as unknown as Media} size="md" class="my-6 w-full" />
+    <Img
+      image={node.value as unknown as Media}
+      size="md"
+      class="my-6 w-full"
+      sizes="(min-width: 768px) 736px, 100vw"
+    />
   ) : null
 }

@@ -143,6 +143,29 @@ Leaving `CONTENT_BUILD_ID` unset omits the meta tag and disables the seam.
 That is fine when the host already rebuilds cleanly per deploy; set it only
 if you observe a same-commit redeploy serving stale HTML.
 
+## Media is served WebP and cached hard, busted by a version marker
+
+The Media collection converts uploads to WebP (`xs` through `lg` and the main
+file), keeping the `og` social-card crop as JPEG because some scrapers still do
+not render a WebP `og:image`. `Img.astro` emits a responsive `srcset` from the
+generated widths, so pass a `sizes` that matches the rendered box (the call
+sites already do).
+
+The media file route sends `Cache-Control: public, max-age=2592000`, so a CDN
+or browser may cache a media url for 30 days. That is only safe because every
+media url the web app emits carries a `?v=<updatedAt>` marker
+(`versionedMediaURL`), which changes when the file changes and so produces a new
+url. The header is deliberately not `immutable`: the max-age bounds the one case
+the marker cannot see, a script that regenerates variant bytes without touching
+the document's `updatedAt`. Two operational consequences:
+
+- A CDN in front of the CMS must keep the query string in its cache key. If it
+  strips query strings, an updated image keeps serving stale because every
+  version resolves to the same cached key. Most CDNs include the query string by
+  default. Confirm before fronting media.
+- Any new code that builds a media url must go through `versionedMediaURL`, not
+  `absoluteCmsURL`, or it opts that url out of cache busting.
+
 ## Redirects load at Astro config evaluation, not at request time
 
 `web/src/cms/getRedirects.ts` runs from `astro.config.mjs` and fetches the

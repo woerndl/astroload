@@ -10,7 +10,7 @@ import {
   type LocalePaths,
   type PageCollectionSlug,
 } from '../cms/types'
-import { absoluteCmsURL, absoluteSiteURL } from '../cms/urls'
+import { absoluteSiteURL, versionedMediaURL } from '../cms/urls'
 
 interface Props {
   lang: Locale
@@ -37,7 +37,7 @@ const defaultImage = isPopulated<Media>(siteSettings.defaultSeo?.image) ? siteSe
 const ogMedia = image ?? defaultImage
 const ogVariant = ogMedia?.sizes?.og
 const ogUrlPath = ogVariant?.url ?? ogMedia?.url ?? null
-const ogImageURL = ogUrlPath ? absoluteCmsURL(ogUrlPath) : null
+const ogImageURL = ogUrlPath ? versionedMediaURL(ogUrlPath, ogMedia?.updatedAt) : null
 const ogImageWidth = ogVariant?.width ?? ogMedia?.width ?? null
 const ogImageHeight = ogVariant?.height ?? ogMedia?.height ?? null
 const ogImageAlt = ogMedia?.alt ?? title

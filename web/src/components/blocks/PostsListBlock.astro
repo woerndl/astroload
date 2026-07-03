@@ -25,7 +25,12 @@ const items = (posts ?? []).filter((p): p is Post => isPopulated(p))
             <a href={post.path} class="flex gap-4 group">
               {image && (
                 <div class="w-32 shrink-0 sm:w-40">
-                  <Img image={image} size="sm" class="aspect-[4/3] w-full rounded object-cover" />
+                  <Img
+                    image={image}
+                    size="sm"
+                    class="aspect-[4/3] w-full rounded object-cover"
+                    sizes="(min-width: 640px) 160px, 128px"
+                  />
                 </div>
               )}
               <div class="flex-1">

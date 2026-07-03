@@ -45,7 +45,15 @@ const seo = resolveSeo(data)
         </p>
       )}
     </header>
-    {cover && <Img image={cover} size="lg" class="mb-8 w-full" loading="eager" />}
+    {cover && (
+      <Img
+        image={cover}
+        size="lg"
+        class="mb-8 w-full"
+        loading="eager"
+        sizes="(min-width: 768px) 736px, 100vw"
+      />
+    )}
     <LexicalContent content={data.content} />
   </article>
 </Layout>
