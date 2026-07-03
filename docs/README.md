@@ -2,9 +2,9 @@
   <img src="../.github/banner.webp" alt="astroload" />
 </p>
 
-# 🧑‍🚀 Astroload: Astro 6 + Payload Starter Template
+# 🧑‍🚀 Astroload: Astro 7 + Payload Starter Template
 
-[![Astro](https://img.shields.io/badge/Astro-6-FF5D01?logo=astro&logoColor=white)](https://astro.build)
+[![Astro](https://img.shields.io/badge/Astro-7-FF5D01?logo=astro&logoColor=white)](https://astro.build)
 [![Payload](https://img.shields.io/badge/Payload-3-000000?logo=payloadcms&logoColor=white)](https://payloadcms.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
@@ -12,7 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
-Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as a pnpm workspace on MongoDB. It includes live preview, single- or multi-locale routing, SEO output, S3 storage, spam-protected forms, build-time redirects, deploy webhooks, and a typed CMS data layer with LRU caching.
+Astroload is an Astro 7 + Payload CMS starter template and boilerplate, built as a pnpm workspace on MongoDB. It includes live preview, single- or multi-locale routing, SEO output, S3 storage, spam-protected forms, build-time redirects, deploy webhooks, and a typed CMS data layer with LRU caching.
 
 > [!NOTE]
 > This template is in active development. Production deployment is untested. Expect the API, content model, and project structure to change between releases. Pin a tag or commit if you build on top of it. Changes per release are tracked in [`astroload/CHANGELOG.md`](./astroload/CHANGELOG.md).
@@ -29,7 +29,7 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 
 **Frontend rendering**
 
-- Astro 6 with prerendered pages in production and an SSR fallback in dev so CMS edits show up without restarts
+- Astro 7 with prerendered pages in production and an SSR fallback in dev so CMS edits show up without restarts
 - Tailwind v4 via `@tailwindcss/vite`, no PostCSS layer
 - View transitions via `<ClientRouter />`
 - Lexical rich text with custom block and upload renderers
@@ -67,7 +67,7 @@ Astroload is an Astro 6 + Payload CMS starter template and boilerplate, built as
 
 ## Stack
 
-- Astro 6 with the Node adapter (`@astrojs/node`)
+- Astro 7 with the Node adapter (`@astrojs/node`)
 - Payload 3 on Next 16 and React 19
 - MongoDB 7 via `@payloadcms/db-mongodb`, standalone (transactions disabled). Postgres remains available as a documented alternative, see [`astroload/maintenance.md`](./astroload/maintenance.md)
 - Tailwind CSS v4 via `@tailwindcss/vite`
@@ -187,7 +187,7 @@ Both apps are plain Node servers. No serverless adapter or provider-specific bui
 
 ## Contributing
 
-Issues and pull requests are welcome. Run `pnpm lint` and `pnpm check` before opening a PR.
+Issues and pull requests are welcome. Run `pnpm lint`, `pnpm check`, and `pnpm test` before opening a PR.
 
 ## Acknowledgements
 

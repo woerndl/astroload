@@ -253,6 +253,44 @@ vars. Splitting individual server-only consumers onto `astro:env/server` is
 a separate, optional decision and does not remove the need to build with
 correct public URLs.
 
+## Host cutover runbook
+
+Taking the site live, or moving it to a new host, touches two public hostnames
+and one build-cache trap. Work through these in order.
+
+Two hostnames are public, not one. The web origin (`WEBSITE_URL`) serves visitors.
+The CMS origin (`CMS_URL`) is also public: every media url the web app emits
+points at it, so each `<img>`, the `og:image`, and the sitemap resolve through
+the CMS host. A CMS reachable only on a private network renders a site with broken
+images and social cards. Both hostnames must resolve over HTTPS from the public
+internet.
+
+1. Build with production values. `CMS_URL`, `WEBSITE_URL`, and `PLAUSIBLE_DOMAIN`
+   are inlined at `astro build` (see [Public web env is baked in at build
+   time](#public-web-env-is-baked-in-at-build-time)). Set them to the production
+   hostnames before the build, not at `start`.
+2. Set the CMS origin on both sides. The CMS service must run with
+   `SERVER_URL=https://<cms-host>`, which Payload uses as its own public origin
+   for admin csrf and absolute urls. The web build's `CMS_URL` must point at the
+   same host. A mismatch breaks the admin session or sends the site's media and
+   API at the wrong origin.
+3. Point DNS at each host. The web app and the CMS each need their hostname
+   resolving to the right host. On Railway a custom domain also needs the
+   `_railway-verify.<domain>` TXT record shown in the service's domain settings,
+   in addition to the CNAME. The domain stays unverified and unserved until that
+   TXT resolves, and a CNAME alone is the common reason a fresh domain returns
+   nothing.
+4. Guard the build cache. A publish-driven redeploy runs on the same git commit
+   as the last one, so a host that caches build output by commit can replay stale
+   HTML. Set `CONTENT_BUILD_ID` per deploy (see [Same-commit redeploys and the
+   content build id](#same-commit-redeploys-and-the-content-build-id)).
+5. Verify the cutover. Load the public web origin over HTTPS. Confirm an image
+   renders, which proves `CMS_URL` is publicly reachable and built in correctly.
+   Publish a content change and confirm the live site updates and the
+   `content-build-id` meta tag changes
+   (`curl -s https://your-site/ | grep content-build-id`), which proves the
+   redeploy rebuilt rather than served a cached build.
+
 ## Lexical internal links do not switch to the preview URL
 
 The rich text renderer does not pass a `resolveInternalLink` callback to
@@ -274,9 +312,11 @@ stay inside preview, pass a resolver to the renderer that prepends
 ## Lexical blocks supported in this starter
 
 `web/src/components/lexical/BlockRenderer.astro` only renders the `image`
-block. Other block types added to the Lexical editor will throw at render
-time with `Lexical block "<type>" not implemented`. Add a case to the
-renderer when you introduce a new inline block.
+block. Other block types added to the Lexical editor throw at render time with
+`Lexical block "<type>" not implemented`. The renderer keeps a typed map of the
+block types it handles, so adding a type without a renderer fails the build
+before it can throw at runtime. See the block-to-renderer coupling note in
+[`conventions.md`](./conventions.md) when you introduce a new block.
 
 ## Divergent locale slugs in seed content
 
