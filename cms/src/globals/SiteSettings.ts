@@ -41,15 +41,6 @@ export const SiteSettings: GlobalConfig = {
       ],
     },
     {
-      name: 'plausibleDomain',
-      type: 'text',
-      // Hidden until an analytics renderer reads it.
-      admin: {
-        hidden: true,
-        description: 'Domain registered in Plausible. Leave blank to disable analytics.',
-      },
-    },
-    {
       name: 'robots',
       type: 'group',
       fields: [

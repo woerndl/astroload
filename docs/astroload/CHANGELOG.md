@@ -16,6 +16,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Uploaded images are converted to WebP (the `xs` through `lg` variants and the main file), and `Img.astro` emits a responsive `srcset` with a `sizes` per call site. The `og` social-card crop stays JPEG for scraper compatibility, for sources smaller than the crop too. Every media url carries a `?v=updatedAt` marker and the media route sends a 30-day `Cache-Control` (deliberately not `immutable`, so the max-age bounds the one case the marker cannot see, a variant regeneration that leaves `updatedAt` untouched), so an updated file gets a fresh url and is never served stale. The maintenance guide notes the CDN query-string requirement this relies on.
 - Internal links inside the preview keep you in preview. A capture-phase click handler rewrites internal navigation to the matching `/preview/{lang}` route and carries the preview secret, so clicking through a draft no longer drops to the public, published page. It handles locale-prefixed and locale-stripped links alike.
 - A `content-workflow.md` doc and a gitignored `cms/src/scripts/scratch/` lane for one-off content-mutation scripts. The doc names the admin UI, MCP, and REST as the paths for changing content, and sorts the scripts that belong in the repo from the ones that never should.
+- Optional Umami analytics, on when `UMAMI_WEBSITE_ID` is set. The tracker script and the collect endpoint are proxied through first-party routes (`/u.js`, `/api/send`), pageviews are tracked explicitly per `astro:page-load` so view transitions report the right URL, and preview traffic is excluded. The proxy targets Umami Cloud by default; `UMAMI_HOST_URL` points it at a self-hosted instance. Umami is cookieless and stores nothing on the visitor's device.
 
 ### Changed
 
@@ -28,6 +29,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - The lexical block renderer dispatches through a typed map of the block types it handles, so adding a type to the union without a renderer fails the build. A block added only on the editor side still throws at render time until both are added together, which the conventions doc now spells out.
 - `JsonLd.astro` documents the upgrade path from the generic Organization publisher to LocalBusiness, for projects that are a physical business.
 - CI runs the web test suite (`pnpm test`) on every push and pull request, alongside the existing lint and typecheck steps.
+
+### Removed
+
+- The hidden `plausibleDomain` SiteSettings field and the `PLAUSIBLE_DOMAIN` web env. Both were inert placeholders that nothing rendered. Analytics is now the Umami integration above.
 
 ### Fixed
 

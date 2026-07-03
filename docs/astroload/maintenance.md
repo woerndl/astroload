@@ -67,8 +67,10 @@ The deploy hook (`cms/src/hooks/triggerDeploy.ts`) coalesces bursts with a
 single process-global window, not one window per document. The first
 deploy-worthy save fires the webhook immediately. Every further save during
 the window collapses into one pending deploy that fires when the window
-closes. A publish burst across many documents costs at most two builds: one
-leading, one trailing.
+closes. A burst inside one window costs at most two builds: one leading, one
+trailing. Saves that keep arriving after a trailing fire open a fresh window,
+so sustained activity costs one build per window for as long as deploy-worthy
+saves continue, not a flat cap of two.
 
 The hook fires whenever the published output changes: a doc that is or was
 published changed (publish, re-publish, or unpublish), a published doc
@@ -89,8 +91,8 @@ button, or `curl -X POST "$DEPLOY_HOOK_URL"`). A manual rebuild always picks
 up the current published state.
 
 Edit bursts: a long editing session coalesces to the leading build plus one
-trailing build at the window close. Edits made after the trailing build
-fires are not deployed until the next deploy-worthy save or a manual
+trailing build per window while it lasts. Edits made after the last trailing
+build fires are not deployed until the next deploy-worthy save or a manual
 rebuild. When you finish a burst, confirm the live site reflects your last
 change and rebuild if it does not.
 
@@ -140,7 +142,7 @@ Host recipes:
   equivalent unique value at build time.
 
 Leaving `CONTENT_BUILD_ID` unset omits the meta tag and disables the seam.
-That is fine when the host already rebuilds cleanly per deploy; set it only
+That is fine when the host already rebuilds cleanly per deploy. Set it only
 if you observe a same-commit redeploy serving stale HTML.
 
 ## Media is served WebP and cached hard, busted by a version marker
@@ -238,7 +240,7 @@ changes.
 
 ## Public web env is baked in at build time
 
-`CMS_URL`, `WEBSITE_URL`, and `PLAUSIBLE_DOMAIN` are declared as
+`CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are declared as
 `astro:env/client` public values in `web/astro.config.mjs`. Astro inlines
 public values into the build output at `astro build`. Running the built
 standalone server later with a different env does not change them, because
@@ -265,7 +267,7 @@ the CMS host. A CMS reachable only on a private network renders a site with brok
 images and social cards. Both hostnames must resolve over HTTPS from the public
 internet.
 
-1. Build with production values. `CMS_URL`, `WEBSITE_URL`, and `PLAUSIBLE_DOMAIN`
+1. Build with production values. `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID`
    are inlined at `astro build` (see [Public web env is baked in at build
    time](#public-web-env-is-baked-in-at-build-time)). Set them to the production
    hostnames before the build, not at `start`.
@@ -290,6 +292,18 @@ internet.
    `content-build-id` meta tag changes
    (`curl -s https://your-site/ | grep content-build-id`), which proves the
    redeploy rebuilt rather than served a cached build.
+6. Check response compression. The web app's Node server sends uncompressed
+   responses and relies on the host's proxy or CDN to compress. Confirm with
+   `curl -sI -H 'Accept-Encoding: gzip, br' https://your-site/ | grep -i content-encoding`.
+   If nothing comes back, the host does not compress at the edge and needs a
+   compressing proxy in front, or every page ships uncompressed HTML.
+7. Verify analytics, when `UMAMI_WEBSITE_ID` is set. In a browser, confirm
+   exactly one POST to the first-party `/api/send` per page view. A request to
+   the Umami host (`gateway.umami.is` or `cloud.umami.is` on Cloud) instead
+   means the tag's `data-host-url` did not take. Confirm the realtime dashboard shows the
+   visitor's correct country and that no cookies are set. Every visitor
+   reporting the server's country means the host exposes the client IP under a
+   header other than `x-real-ip` (see `web/src/pages/api/send.ts`).
 
 ## Lexical internal links do not switch to the preview URL
 
@@ -298,25 +312,26 @@ The rich text renderer does not pass a `resolveInternalLink` callback to
 the pages plugin stored on the linked document (for example, `/en/about`).
 In published mode that path is correct.
 
-In preview mode the same internal link still points at `/en/about`, not
-`/preview/en/about`. Clicking it from a preview pane navigates the editor
-away from the preview session into the published site. The preview route
-itself keeps working. Only inline links inside rich text content slip out.
-
-This is acceptable for the starter because the seeded content does not
-include cross-page Lexical links. If a downstream project relies on
-internal links in body content and editors expect preview navigation to
-stay inside preview, pass a resolver to the renderer that prepends
-`/preview` when the page is rendered in preview mode.
+In preview mode the same internal link still renders `/en/about`, not
+`/preview/en/about`. The click is caught anyway:
+`web/src/components/PreviewNav.astro` intercepts internal navigation on
+preview pages and rewrites it to the matching `/preview` route with the
+secret attached, so following the link stays inside preview. Only the
+rendered href is the published path, which matters if a link is copied out
+of the page rather than clicked. To make the markup itself preview-aware,
+pass a resolver to the renderer that prepends `/preview` when the page is
+rendered in preview mode.
 
 ## Lexical blocks supported in this starter
 
 `web/src/components/lexical/BlockRenderer.astro` only renders the `image`
 block. Other block types added to the Lexical editor throw at render time with
 `Lexical block "<type>" not implemented`. The renderer keeps a typed map of the
-block types it handles, so adding a type without a renderer fails the build
-before it can throw at runtime. See the block-to-renderer coupling note in
-[`conventions.md`](./conventions.md) when you introduce a new block.
+block types it handles: adding a type to that map's union without a renderer
+fails the build, but a block added only on the CMS side is invisible to the
+compiler and still throws at runtime. Add the editor block, the union entry,
+and the renderer in the same change. See the block-to-renderer coupling note
+in [`conventions.md`](./conventions.md).
 
 ## Divergent locale slugs in seed content
 
