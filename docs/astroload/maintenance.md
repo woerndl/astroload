@@ -54,25 +54,94 @@ survive adding a second locale later with no redirects, set `FORCE_URL_PREFIX`
 to `true` in `site-config.ts`. Forcing it off while several locales ship is
 rejected at import, because their un-prefixed URLs would collide.
 
-## Deploy webhook throttles per document
+## Publishing to a live static build
 
-The deploy hook (`cms/src/hooks/triggerDeploy.ts`) coalesces bursts. The
-first publish event fires immediately. Subsequent events for the same
-document during the window update a pending slot. The window close fires
-that pending payload. Continuous editor activity caps at one POST per
-window per document.
+The web app ships prerendered HTML. Publishing in admin does not change
+the live site on its own. It posts to `DEPLOY_HOOK_URL`, the host rebuilds
+and redeploys, and the new build goes live. Publish-to-live latency is the
+host's build and deploy time, on the order of minutes, not instant. There
+is no per-request CMS read on the published path, which is the trade for
+that latency.
 
-The window is set in code, not env. The default is tuned for hosts that
-bill per build minute, where editors publishing in bursts should not
-trigger one build per save. If you want faster or stricter behaviour,
-change the constant. If the throttle window is shorter than the build,
-you get overlapping builds.
+The deploy hook (`cms/src/hooks/triggerDeploy.ts`) coalesces bursts with a
+single process-global window, not one window per document. The first
+deploy-worthy save fires the webhook immediately. Every further save during
+the window collapses into one pending deploy that fires when the window
+closes. A publish burst across many documents costs at most two builds: one
+leading, one trailing.
 
-The hook fires whenever the published output changes: a doc that is or
-was published changed (publish, re-publish, or unpublish), a published
-doc deleted, and any global changed. Pure draft saves are skipped. It
-targets `DEPLOY_HOOK_URL` and posts a small JSON payload with no auth
-header.
+The hook fires whenever the published output changes: a doc that is or was
+published changed (publish, re-publish, or unpublish), a published doc
+deleted, and any global or always-deploy collection (Redirects) changed.
+Saves that cannot change the live output are skipped: autosave draft writes
+on a published doc, and global or always-deploy saves that leave the
+document identical apart from `updatedAt`. The skip check errs toward
+firing, since a missed change ships a stale site while a redundant fire only
+wastes a build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body
+and no auth header.
+
+The window (`WINDOW_MS`) is set in code, not env. The default suits hosts
+that bill per build minute. Shorten it for faster publishing, lengthen it to
+batch harder. A window shorter than the build time can overlap builds.
+
+Rebuild now: to skip the wait, trigger the host's redeploy (its dashboard
+button, or `curl -X POST "$DEPLOY_HOOK_URL"`). A manual rebuild always picks
+up the current published state.
+
+Edit bursts: a long editing session coalesces to the leading build plus one
+trailing build at the window close. Edits made after the trailing build
+fires are not deployed until the next deploy-worthy save or a manual
+rebuild. When you finish a burst, confirm the live site reflects your last
+change and rebuild if it does not.
+
+Time-relative content: a static build freezes content at build time. Pages
+that show relative dates ("posted 3 days ago") or that should reveal a
+future-dated post drift until the next build. Schedule a periodic rebuild on
+the host (a daily cron hitting `DEPLOY_HOOK_URL`) so time-sensitive output
+stays current without an editor action.
+
+Restart hazard and latch recipe: the throttle window lives in process
+memory. A trailing deploy queued when the CMS process restarts (a redeploy
+of the CMS itself, a crash, a scale-to-zero) is lost. The leading deploy is
+not affected because it fires synchronously. To guarantee no publish is
+dropped without adding database-backed deploy state, latch a low-frequency
+scheduled rebuild on the host as a backstop: a periodic `DEPLOY_HOOK_URL`
+POST eventually ships any change a lost trailing deploy missed. The same
+cron that covers time-relative content covers this.
+
+## Same-commit redeploys and the content build id
+
+A publish-driven rebuild runs on the same git commit as the last one, only
+the CMS content differs. Hosts that cache build output keyed on the commit
+SHA can serve the previous build for that second deploy, so the new content
+never reaches the edge. The site looks stuck on stale HTML even though the
+deploy "succeeded".
+
+The seam against this is `CONTENT_BUILD_ID`. Set it to a value that changes
+every deploy and the web build stamps it into every page as
+`<meta name="content-build-id">`, so the output genuinely differs build over
+build. The contract for an operator:
+
+- Pass a fresh `CONTENT_BUILD_ID` on each deploy (the host's deploy id, a
+  timestamp, the build number). Most hosts hash build env vars into the
+  build cache key, so a changing value forces a real rebuild. Where the host
+  does not, disable build caching for the web service instead.
+- Verify after a publish-driven deploy by reading the meta tag
+  (`curl -s https://your-site/ | grep content-build-id`). A changed value
+  confirms the redeploy rebuilt rather than replayed a cached build.
+
+Host recipes:
+
+- Railway: set `CONTENT_BUILD_ID=${{ RAILWAY_DEPLOYMENT_ID }}` (or another
+  per-deploy variable) on the web service.
+- Vercel/Netlify: set `CONTENT_BUILD_ID` to the deploy id env the platform
+  exposes, or turn off build cache for the project.
+- Coolify/Docker hosts: pass `--build-arg CONTENT_BUILD_ID=$(date +%s)` or an
+  equivalent unique value at build time.
+
+Leaving `CONTENT_BUILD_ID` unset omits the meta tag and disables the seam.
+That is fine when the host already rebuilds cleanly per deploy; set it only
+if you observe a same-commit redeploy serving stale HTML.
 
 ## Redirects load at Astro config evaluation, not at request time
 
@@ -87,8 +156,9 @@ deploy. The Redirects collection registers
 `triggerDeployAlwaysAfterChange` on save and
 `triggerDeployAlwaysAfterDelete` on delete. These fire unconditionally
 on any save or delete in that collection, not on a draft-to-published
-transition (Redirects do not use drafts). The webhook call still goes
-through the same per-document throttle as `triggerDeploy`, so editor
+transition (Redirects do not use drafts), but a save that leaves the
+document unchanged apart from `updatedAt` is skipped. The webhook call goes
+through the same global throttle as every other deploy trigger, so editor
 bursts coalesce. A configured `DEPLOY_HOOK_URL` means redirects refresh
 automatically. An unset hook means an editor must trigger a manual
 deploy.
@@ -101,40 +171,41 @@ undefined at the moment `getRedirects()` runs, the function returns
 on disk. Anything else added to `astro.config.mjs` that reads
 `process.env` needs the same treatment.
 
-The fetch handles missing env vars and a failed CMS read the same way,
-keyed on the `REDIRECTS_STRICT` flag:
+The fetch keys its behaviour on the `REDIRECTS_STRICT` flag, which the
+`build` script in `web/package.json` sets so a normal
+`pnpm --filter @astroload/web build` is strict:
 
-- With `REDIRECTS_STRICT=1`, both a missing `CMS_URL`/`PAYLOAD_READ_KEY`
-  and a failed CMS fetch throw, so the build fails with an error instead of
-  shipping an empty redirect table. The `build` script in
-  `web/package.json` sets the flag, so a normal
-  `pnpm --filter @astroload/web build` is strict.
-- Without it (dev, `astro check`, or a plain `astro build`), a missing
-  env var returns `{}` with no warning, and a failed fetch logs a
-  warning and returns `{}` so the run still succeeds. A non-strict build
-  boots with no redirects.
+- A failed CMS fetch retries with backoff under strict (six attempts over
+  roughly a minute and a half), to ride out a CMS that is briefly down while
+  a coordinated deploy restarts it. Non-strict makes a single attempt.
+- If the CMS is still unreachable after the strict retries, the build fails
+  loudly rather than shipping a redirect-less site. The last good deploy is
+  already serving, so failing leaves it in place instead of replacing it with
+  a build that 404s every removed URL. A missing `CMS_URL`/`PAYLOAD_READ_KEY`
+  fails the same way, since that is a wiring error, not an outage.
+- A non-strict run (dev, `astro check`, plain `astro build`) makes one
+  attempt and then returns the committed fallback so the run still ships.
+- The CMS is trusted when it answers. An empty Redirects collection produces
+  an empty table, in strict and non-strict alike, so deleting every redirect
+  takes effect rather than being overridden.
 
 Strictness keys on the flag instead of `NODE_ENV` because `astro check`
 forces `NODE_ENV=production` while resolving the config. Keying on
 `NODE_ENV` would then make a type-check abort on a transient CMS outage.
-The flag scopes strictness to the deploy build alone.
+The flag scopes the retry effort and the fail-loud policy to the deploy build
+alone.
 
-This is a build-time policy, independent of runtime resilience. The
-running standalone server has no request-time dependency on the CMS for
-redirects or prerendered content (see above), so a CMS outage does not
-take the live site down. Failing a strict build during an outage is the
-safer choice: it leaves the last good deploy serving instead of replacing
-it with a redirect-less one.
+This is a build-time policy, independent of runtime resilience. The running
+standalone server has no request-time dependency on the CMS for redirects or
+prerendered content (see above), so a CMS outage does not take the live site
+down.
 
-If you need deploys to succeed during a CMS outage without dropping
-redirects unnoticed, generate a committed last-known-good snapshot (for
-example `redirects.fallback.json`) and have `getRedirects()` read it when
-the fetch fails. That trades build-time CMS coupling for the discipline of
-keeping the snapshot fresh, so it is left as a downstream option, not
-wired in by default.
-
-If you want a warning in dev too, add a `console.warn` to the no-env-vars
-branch in `getRedirects.ts`.
+`redirects.fallback.json` is the committed redirect table for non-strict runs
+(offline dev and CI). It ships empty, which a fresh project loses nothing by.
+It also doubles as an availability backstop: an operator who would rather
+keep a deploy alive through a CMS outage than fail it can populate the file
+(export the Redirects collection into it) and return `fallback` instead of
+throwing in the final strict branch of `getRedirects.ts`.
 
 Source paths in the collection must be the exact string the URL router
 sees, locale prefix included. There is no pattern matching at this layer.

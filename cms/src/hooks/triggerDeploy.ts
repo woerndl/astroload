@@ -7,143 +7,122 @@ import type {
 
 import { env } from '../env'
 
-// Per-doc throttle window for webhook POSTs.
+// One process-global throttle window for deploy webhook POSTs. A burst of
+// publishes coalesces into a single leading fire plus at most one trailing fire
+// per window. The webhook body is a bare
+// trigger: a build hook (Railway, Vercel, Coolify) only needs the POST.
+//
+// State is process-local. A trailing deploy queued when the process restarts is
+// lost; maintenance.md documents a latch recipe for hosts that need durability.
 const WINDOW_MS = 300_000
-
-type DeployPayload = {
-  collection?: string
-  global?: string
-  id?: string | number
-  locale?: string
-  op: 'change' | 'delete'
-}
 
 type Logger = PayloadRequest['payload']['logger']
 
-type Entry = {
-  pending?: { body: DeployPayload; logger: Logger }
-  timer: NodeJS.Timeout
-}
-
-const inFlight = new Map<string, Entry>()
-
-function fire(key: string, body: DeployPayload, logger: Logger): void {
+function fire(logger: Logger): void {
   fetch(env.DEPLOY_HOOK_URL!, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ trigger: 'cms-change' }),
   })
     .then((res) => {
-      if (res.ok) {
-        logger.info(`deploy webhook fired for ${key}: ${res.status}`)
-      } else {
-        logger.error(`deploy webhook failed for ${key}: ${res.status} ${res.statusText}`)
-      }
+      if (res.ok) logger.info(`deploy webhook fired: ${res.status}`)
+      else logger.error(`deploy webhook failed: ${res.status} ${res.statusText}`)
     })
     .catch((err) => {
-      const message = err instanceof Error ? err.message : String(err)
-      logger.error(`deploy webhook errored for ${key}: ${message}`)
+      logger.error(`deploy webhook errored: ${err instanceof Error ? err.message : String(err)}`)
     })
 }
 
-function startTimer(key: string): NodeJS.Timeout {
+let windowTimer: NodeJS.Timeout | null = null
+let pending: Logger | null = null
+
+function arm(): void {
   const timer = setTimeout(() => {
-    const entry = inFlight.get(key)
-    if (!entry) return
-    if (entry.pending) {
-      const { body, logger } = entry.pending
-      fire(key, body, logger)
-      inFlight.set(key, { timer: startTimer(key) })
-    } else {
-      inFlight.delete(key)
+    windowTimer = null
+    if (pending) {
+      const logger = pending
+      pending = null
+      fire(logger)
+      arm()
     }
   }, WINDOW_MS)
   timer.unref?.()
-  return timer
+  windowTimer = timer
 }
 
-function schedulePost(key: string, body: DeployPayload, logger: Logger): void {
+function scheduleDeploy(logger: Logger): void {
   if (!env.DEPLOY_HOOK_URL) return
-
-  const existing = inFlight.get(key)
-  if (!existing) {
-    fire(key, body, logger)
-    inFlight.set(key, { timer: startTimer(key) })
+  if (windowTimer) {
+    pending = logger
     return
   }
-  existing.pending = { body, logger }
+  fire(logger)
+  arm()
 }
 
-const localeOf = (req: PayloadRequest): string | undefined =>
-  typeof req.locale === 'string' ? req.locale : undefined
-
-function post(req: PayloadRequest, slug: string, id: string | number, op: DeployPayload['op']): void {
-  schedulePost(
-    `${slug}:${id}`,
-    { collection: slug, id, locale: localeOf(req), op },
-    req.payload.logger,
-  )
+// True only when doc and previousDoc are identical apart from updatedAt, which
+// Payload bumps on every save. A genuine save always differs elsewhere, so this
+// errs toward firing: a missed change ships a stale site, a redundant fire only
+// wastes a build.
+function unchanged(doc: unknown, previousDoc: unknown): boolean {
+  if (!doc || !previousDoc) return false
+  return stable(doc) === stable(previousDoc)
 }
 
-export const triggerDeployAfterChange: CollectionAfterChangeHook = ({
+function stable(value: unknown): string {
+  if (!value || typeof value !== 'object') return JSON.stringify(value)
+  const { updatedAt: _updatedAt, ...rest } = value as Record<string, unknown>
+  return JSON.stringify(rest)
+}
+
+export const triggerDeployAfterChange: CollectionAfterChangeHook = ({ doc, previousDoc, req }) => {
+  // Autosave writes a draft version every ~1.5s while an editor types. The
+  // published output the static build serves is untouched by a draft save, so an
+  // autosave must never consume the leading deploy. Payload's Autosave element is
+  // the only caller that sends ?autosave=true, always with _status: 'draft'. The
+  // REST endpoint coerces the query flag to a boolean before the hook runs;
+  // accept the string too for any path that skips that coercion.
+  const isAutosave = req.query?.autosave === true || req.query?.autosave === 'true'
+  if (isAutosave && doc?._status === 'draft') return doc
+
+  // A deploy is warranted only when the published output changes: a first
+  // publish, a re-publish of a live doc, or an unpublish that retracts it.
+  const affectsPublished = doc?._status === 'published' || previousDoc?._status === 'published'
+  if (!affectsPublished) return doc
+
+  scheduleDeploy(req.payload.logger)
+  return doc
+}
+
+export const triggerDeployAfterDelete: CollectionAfterDeleteHook = ({ doc, req }) => {
+  if (doc?._status !== 'published') return doc
+
+  scheduleDeploy(req.payload.logger)
+  return doc
+}
+
+// For collections without drafts/publishing (e.g. redirects). Every change to
+// the published surface needs a rebuild because the data is baked into the
+// static output. A save that changes nothing is skipped.
+export const triggerDeployAlwaysAfterChange: CollectionAfterChangeHook = ({
   doc,
   previousDoc,
   req,
-  collection,
 }) => {
-  // Rebuild whenever the published output changes: a first publish, a re-publish
-  // of a live doc, or an unpublish that retracts it. Pure draft saves are skipped;
-  // the per-doc throttle coalesces autosave churn.
-  const affectsPublished =
-    doc?._status === 'published' || previousDoc?._status === 'published'
-  if (!affectsPublished) return doc
+  if (unchanged(doc, previousDoc)) return doc
 
-  post(req, collection.slug, doc.id, 'change')
+  scheduleDeploy(req.payload.logger)
   return doc
 }
 
-export const triggerDeployAfterDelete: CollectionAfterDeleteHook = ({
-  doc,
-  req,
-  collection,
-  id,
-}) => {
-  if (doc?._status !== 'published') return doc
-
-  post(req, collection.slug, id, 'delete')
+export const triggerDeployAlwaysAfterDelete: CollectionAfterDeleteHook = ({ doc, req }) => {
+  scheduleDeploy(req.payload.logger)
   return doc
 }
 
-// For collections without drafts/publishing (e.g. redirects). Every save and
-// delete needs a rebuild because the data is baked into the static output.
-export const triggerDeployAlwaysAfterChange: CollectionAfterChangeHook = ({
-  doc,
-  req,
-  collection,
-}) => {
-  post(req, collection.slug, doc.id, 'change')
-  return doc
-}
+export const triggerDeployGlobalAfterChange: GlobalAfterChangeHook = ({ doc, previousDoc, req }) => {
+  if (unchanged(doc, previousDoc)) return doc
 
-export const triggerDeployAlwaysAfterDelete: CollectionAfterDeleteHook = ({
-  doc,
-  req,
-  collection,
-  id,
-}) => {
-  post(req, collection.slug, id, 'delete')
-  return doc
-}
-
-export const triggerDeployGlobalAfterChange: GlobalAfterChangeHook = ({
-  doc,
-  req,
-  global,
-}) => {
-  schedulePost(
-    `global:${global.slug}`,
-    { global: global.slug, locale: localeOf(req), op: 'change' },
-    req.payload.logger,
-  )
+  scheduleDeploy(req.payload.logger)
   return doc
 }
