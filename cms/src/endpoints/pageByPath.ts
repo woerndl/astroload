@@ -11,6 +11,7 @@ import {
   pageCollectionsSlugs,
 } from '../shared'
 import { stripLocalePath, stripLocalePathsDeep, toPublicPaths } from '../stripLocalePath'
+import { canPreview } from './canPreview'
 
 interface PageByPathBody {
   collection: PageCollectionSlug
@@ -38,6 +39,9 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
   }
 
   const preview = req.query.preview === 'true'
+  if (preview && !canPreview(req)) {
+    return new Response('Forbidden', { status: 403 })
+  }
   // Single-locale projects request public, un-prefixed paths; preview keeps the
   // prefixed scheme end to end so the live-preview route is unchanged.
   const usePublicPath = !LOCALE_URL_PREFIX && !preview
@@ -64,6 +68,7 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
           collection,
           locale,
           draft: preview,
+          overrideAccess: false,
           where: {
             slug: { equals: slug },
             _status: preview ? { in: ['draft', 'published'] } : { equals: 'published' },
@@ -87,12 +92,20 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
       // doc's `path` across every locale (cheap id lookup, virtual field only)
       // so the response carries the alternate paths the web layer needs.
       const [data, pathDoc] = await Promise.all([
-        req.payload.findByID({ collection, id: match.id, locale, draft: preview, req }),
+        req.payload.findByID({
+          collection,
+          id: match.id,
+          locale,
+          draft: preview,
+          overrideAccess: false,
+          req,
+        }),
         req.payload.findByID({
           collection,
           id: match.id,
           locale: 'all',
           draft: preview,
+          overrideAccess: false,
           select: { path: true },
           depth: 0,
           req,

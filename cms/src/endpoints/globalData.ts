@@ -4,6 +4,7 @@ import { APIError, type PayloadRequest } from 'payload'
 import type { Footer, Header, Labels, SiteSetting } from '../payload-types'
 import { isLocale, LOCALES, pageCollectionsSlugs } from '../shared'
 import { stripLocalePathsDeep } from '../stripLocalePath'
+import { canPreview } from './canPreview'
 
 export interface GlobalData {
   footer: Footer
@@ -25,7 +26,10 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
   }
 
   const preview = req.query.preview === 'true'
-  const baseOptions = { draft: preview, locale, req }
+  if (preview && !canPreview(req)) {
+    return new Response('Forbidden', { status: 403 })
+  }
+  const baseOptions = { draft: preview, locale, overrideAccess: false, req }
   const populatePagePaths = Object.fromEntries(
     pageCollectionsSlugs.map((slug) => [slug, { path: true }]),
   )
@@ -38,7 +42,7 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
       req.payload.findGlobal({ slug: 'site-settings', ...baseOptions }),
     ])
 
-    // Header and Footer carry populated nav-link paths; published responses
+    // Header and Footer carry populated nav-link paths. Published responses
     // serve every populated path un-prefixed in single-locale mode. Preview
     // keeps the prefix so the admin live-preview routes still resolve.
     const body: GlobalData = preview
@@ -46,7 +50,9 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
       : stripLocalePathsDeep({ footer, header, labels, siteSettings })
     const json = JSON.stringify(body)
     const etag = createHash('md5').update(json).digest('hex')
-    const cacheControl = preview ? 'no-cache' : `public, max-age=${PUBLIC_MAX_AGE_SECONDS}`
+    // private: the response requires an API key, so a shared cache must not
+    // serve it across clients.
+    const cacheControl = preview ? 'no-cache' : `private, max-age=${PUBLIC_MAX_AGE_SECONDS}`
 
     if (req.headers.get('if-none-match') === etag) {
       return new Response(null, {
