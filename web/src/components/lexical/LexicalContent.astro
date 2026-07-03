@@ -7,18 +7,23 @@ import { sanitizeLexicalLinks } from './sanitizeLinks'
 import UploadRenderer from './UploadRenderer.astro'
 
 interface Props {
-  content: {
-    root: {
-      children: LexicalNode[]
-      [k: string]: unknown
-    }
-    [k: string]: unknown
-  }
+  content:
+    | {
+        root: {
+          children: LexicalNode[]
+          [k: string]: unknown
+        }
+        [k: string]: unknown
+      }
+    | null
+    | undefined
   class?: string
 }
 
 const { content, class: className } = Astro.props
-const nodes = sanitizeLexicalLinks(content.root.children)
+// A draft with an untouched body has no content yet; render nothing rather than
+// dereferencing a null root.
+const nodes = sanitizeLexicalLinks(content?.root?.children ?? [])
 ---
 
 <RichTextLexical

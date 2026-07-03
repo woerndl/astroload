@@ -15,19 +15,52 @@ function isDangerousHref(url: string): boolean {
   }
 }
 
-// Sink-side guard for links that never hit the CMS validator
-// (cms/src/lexical/editor.ts): seeds, imports, DB restores, or a richtext field
-// added without lexicalEditorWithSafeLinks. Unwrap to plain text rather than
-// blank the href, which the renderer throws on.
+type LinkFields = {
+  linkType?: 'custom' | 'internal'
+  url?: string
+  doc?: { value?: unknown } | null
+}
+
+// LinkComponent throws during SSR rendering on any link it can't resolve to an
+// href. Mirror its accept conditions: true for anything it would reject.
+function isUnrenderableLink(fields: LinkFields | undefined): boolean {
+  if (!fields) return true
+  if (fields.linkType === 'internal') {
+    const value = fields.doc?.value
+    return !(value && typeof value === 'object' && typeof (value as { path?: unknown }).path === 'string')
+  }
+  if (fields.linkType !== 'custom') return true
+  // Check the raw value, not a trimmed copy: the renderer does not trim, so
+  // ' /blog' fails its startsWith('/') and throws in its new URL().
+  const url = typeof fields.url === 'string' ? fields.url : ''
+  if (!url) return true
+  if (isDangerousHref(url)) return true
+  if (url.startsWith('/')) return false
+  try {
+    new URL(url)
+    return false
+  } catch {
+    return true
+  }
+}
+
+// Sink-side guard for links that bypass the CMS validator
+// (cms/src/lexical/editor.ts): draft autosave, seeds, imports, DB restores, or a
+// richtext field wired without lexicalEditorWithSafeLinks. Unwrap unrenderable
+// links to plain text, and drop a malformed node list or null entry, rather than
+// letting the renderer throw on them.
 export function sanitizeLexicalLinks(nodes: LexicalNode[]): LexicalNode[] {
+  if (!Array.isArray(nodes)) return []
   return nodes.flatMap((node) => {
+    if (!node || typeof node !== 'object') return []
     const children = Array.isArray(node.children)
       ? sanitizeLexicalLinks(node.children)
       : node.children
     const isLink = node.type === 'link' || node.type === 'autolink'
-    const url = (node.fields as { url?: string } | undefined)?.url
-    if (isLink && typeof url === 'string' && isDangerousHref(url)) {
-      return children ?? []
+    if (isLink) {
+      if (isUnrenderableLink(node.fields as LinkFields | undefined)) {
+        return children ?? []
+      }
     }
     return children === node.children ? node : { ...node, children }
   })
