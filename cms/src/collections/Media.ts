@@ -1,6 +1,10 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin } from '../access/isAdmin'
+import {
+  triggerDeployAlwaysAfterChange,
+  triggerDeployAlwaysAfterDelete,
+} from '../hooks/triggerDeploy'
 import { CollectionGroups } from '../shared'
 
 // Convert generated images to WebP. og stays JPEG because some social-card
@@ -21,6 +25,10 @@ export const Media: CollectionConfig = {
     useAsTitle: 'alt',
     defaultColumns: ['alt', 'mimeType', 'filesize', 'updatedAt'],
     group: CollectionGroups.Media,
+  },
+  hooks: {
+    afterChange: [triggerDeployAlwaysAfterChange],
+    afterDelete: [triggerDeployAlwaysAfterDelete],
   },
   fields: [
     {

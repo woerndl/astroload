@@ -26,6 +26,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ### Fixed
 
+- Replacing or deleting a media file triggers a site rebuild. The Media collection wired no deploy hook, so an updated or removed image left the prerendered pages pointing at the old file until an unrelated publish rebuilt them. Media now fires the same rate-limited deploy webhook the content collections use, coalesced through the existing build window.
 - Rich text renders without error when a draft has an empty body or contains a link to a document that is missing or unpublished. A link that cannot resolve is shown as its plain text instead of failing the page render.
 - A publish burst across many documents now coalesces into a single rate-limited build instead of one throttle window per document, so a multi-document publish can no longer fan out into overlapping builds. The deploy hook fires once on the first deploy-worthy save and at most once more per window while saves continue. Autosave draft writes, and global or always-deploy saves that change nothing but `updatedAt`, no longer trigger a build.
 
