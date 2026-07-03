@@ -7,9 +7,10 @@ import { pickLocale } from '../cms/pickLocale'
 import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type LocalePaths } from '../cms/types'
 import CollectionLayout from '../layout/collections/CollectionLayout.astro'
 
-// Multi-locale redirects to the locale home (needs the request, so SSR);
-// single-locale prerenders the home page at the site root.
-export const prerender = LOCALE_URL_PREFIX ? false : !import.meta.env.DEV
+// Single-locale prerenders the home page at the site root. Multi-locale
+// redirects to the locale home, which needs the request, so prerenderOverrides
+// in astro.config.mjs flips this route to on-demand in that mode.
+export const prerender = true
 
 const localeRedirect = LOCALE_URL_PREFIX
   ? `/${pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))}`
@@ -18,7 +19,7 @@ if (localeRedirect) {
   return Astro.redirect(localeRedirect, 302)
 }
 
-// Kick off global data now so it overlaps the page fetch; the layout awaits
+// Kick off global data now so it overlaps the page fetch. The layout awaits
 // the same Astro.locals memo (see getGlobalData).
 const globalData = getGlobalData({ locale: DEFAULT_LOCALE, preview: false, locals: Astro.locals })
 
@@ -42,7 +43,7 @@ if (import.meta.env.DEV) {
 
 if (!result) {
   // A 404 renders no layout, so nothing awaits the global-data fetch kicked
-  // off above; swallow it so a globals failure can't turn this into a 500.
+  // off above. Swallow it so a globals failure can't turn this into a 500.
   void globalData.catch(() => {})
   return new Response(null, { status: 404 })
 }

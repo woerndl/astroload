@@ -4,13 +4,16 @@ import { getStaticPathItems } from '../../cms/getStaticPaths'
 import { escapedSiteURL, sitemapHeaders, urlEntry, urlsetDocument } from '../../cms/sitemap'
 import { DEFAULT_LOCALE, isLocale, LOCALE_URL_PREFIX, LOCALES, type Locale } from '../../cms/types'
 
-export const prerender = !import.meta.env.DEV
+export const prerender = true
 
 export const getStaticPaths: GetStaticPaths = () =>
   LOCALE_URL_PREFIX ? LOCALES.map((code) => ({ params: { lang: code } })) : []
 
 export const GET: APIRoute = async ({ params }) => {
-  if (!isLocale(params.lang)) {
+  // Single-locale renders this route on demand (see prerenderOverrides in
+  // astro.config.mjs). The sitemap lives at /sitemap.xml, so every /{lang}
+  // variant 404s rather than serving a duplicate.
+  if (!LOCALE_URL_PREFIX || !isLocale(params.lang)) {
     return new Response('Not found', { status: 404 })
   }
   const lang = params.lang

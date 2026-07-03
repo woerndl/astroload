@@ -26,14 +26,24 @@ unicode arrows or smart quotes. Banner-style separator comments
 
 ## Render-mode choices live at the top of the file
 
-Every Astro route in the template uses one of two prerender shapes:
+Astro only honors a bare literal in a prerender export. Anything
+conditional (`!import.meta.env.DEV`, a ternary on config) is silently
+ignored and the route falls back to the default. So every route in the
+template uses one of two literal shapes:
 
-- `export const prerender = !import.meta.env.DEV;` for routes that should
-  be SSR in dev (for instant feedback) and SSG in prod. The localized
-  content catch-all, the sitemaps, and `robots.txt` use this.
-- `export const prerender = false;` for routes that must run per request.
-  The root redirect, the 404 and 500 pages, and anything under
-  `/preview` are in this group.
+- `export const prerender = true` for routes that are static in prod.
+  The content catch-alls, the home page, the sitemaps, and `robots.txt`
+  use this.
+- `export const prerender = false` for routes that must run per request.
+  The 404 and 500 pages and anything under `/preview` are in this group.
+
+Every conditional case lives in the `prerenderOverrides` integration in
+`astro.config.mjs`, the seam Astro provides for per-route overrides. It
+renders everything on demand in dev (so admin edits show up without a
+restart), the `[lang]` routes on demand in a single-locale build, and
+the root on demand in a multi-locale build (the Accept-Language
+redirect needs the request). If a new route needs a conditional render
+mode, extend that integration rather than computing the export.
 
 A small subset of the second shape is the on-demand opt-in: a public route
 that must reflect the latest content without waiting for a rebuild (a live
@@ -43,15 +53,8 @@ read in the `staleOnError` helper (`web/src/cms/staleOnError.ts`), and sets
 CMS is unreachable, so a CMS outage degrades that one route instead of
 failing it. On a cold start with nothing cached the error still propagates,
 so the route shows its normal error page rather than a blank success.
-`web/src/pages/latest.astro` is the worked example. Keep this set small;
-static prerendering stays the default for everything else.
-
-Astro also supports `export const prerender = true;` for routes that
-should be static even in dev. The template does not currently use it
-because every prerendered route here reads from the CMS, and forcing
-static in dev would mean the dev server cannot show edits without a
-restart. If you add a route whose output never depends on the CMS,
-that shape is the right one for it.
+`web/src/pages/latest.astro` is the worked example. Keep this set small.
+Static prerendering stays the default for everything else.
 
 If you add a new route, pick the right shape and write it at the top of
 the file.

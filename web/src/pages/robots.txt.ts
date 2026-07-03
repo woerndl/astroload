@@ -4,7 +4,7 @@ import { DEFAULT_LOCALE } from '../cms/types'
 import { getGlobalData } from '../cms/getGlobalData'
 import { absoluteSiteURL } from '../cms/urls'
 
-export const prerender = !import.meta.env.DEV
+export const prerender = true
 
 export const GET: APIRoute = async () => {
   const { siteSettings } = await getGlobalData({ locale: DEFAULT_LOCALE, preview: false })

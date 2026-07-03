@@ -42,6 +42,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Draft version history on pages, posts, and authors is now capped at 50 versions per document through a shared `draftVersions` config, so frequent autosaves no longer grow the stored history without bound.
 - The bare CMS root `/` now redirects to the admin panel instead of returning a 404.
 - The preview toolbar is sticky rather than fixed, so it reserves space in the layout instead of overlapping the page header.
+- In a single-locale project, `/{anything}/sitemap.xml` returned a 500. The prerendered `[lang]` route patterns registered with zero generated files, and the Node adapter answers such a pattern with its error page instead of falling through to a 404. Single-locale builds now render the `[lang]` routes on demand, so their locale guards 404 those URLs.
 
 ### Security
 

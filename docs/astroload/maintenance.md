@@ -135,7 +135,10 @@ build. The contract for an operator:
 Host recipes:
 
 - Railway: set `CONTENT_BUILD_ID=${{ RAILWAY_DEPLOYMENT_ID }}` (or another
-  per-deploy variable) on the web service.
+  per-deploy variable) on the web service. Unverified whether Railpack
+  hashes build env into its build-layer cache key, so check the meta tag
+  after the first publish-driven redeploy and disable build caching for
+  the service if the value did not change.
 - Vercel/Netlify: set `CONTENT_BUILD_ID` to the deploy id env the platform
   exposes, or turn off build cache for the project.
 - Coolify/Docker hosts: pass `--build-arg CONTENT_BUILD_ID=$(date +%s)` or an
@@ -362,12 +365,15 @@ first seed, mirror them in `web/.env`, and leave them there.
 In `astro dev`, prerendered routes don't re-run `getStaticPaths` on
 every request, and the SDK has its own response cache. Live content
 edits do not propagate to dev pages until the dev server is restarted,
-unless the route opts into SSR with `export const prerender = !import.meta.env.DEV;`.
+unless the route renders on demand in dev.
 
-The content catch-all in this template uses `!import.meta.env.DEV`
-exactly for that reason. If you are editing in admin and not seeing
-changes on `localhost:4321`, check whether the route is prerendered in
-dev.
+The `prerenderOverrides` integration in `astro.config.mjs` therefore
+flips every route to on-demand while the dev server runs. Note that a
+conditional prerender export (`!import.meta.env.DEV` and the like)
+does not do this: Astro's route scanner only honors a bare literal and
+silently ignores anything else, so the override has to happen in the
+integration. If you are editing in admin and not seeing changes on
+`localhost:4321`, check whether the route is prerendered in dev.
 
 ## Database is MongoDB, with Postgres as an option
 
