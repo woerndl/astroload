@@ -56,25 +56,27 @@ const allowIndexing = siteSettings.robots?.allowIndexing === true
 
 <title>{fullTitle}</title>
 {finalDescription && <meta name="description" content={finalDescription} />}
-{/* Preview renders under /preview and must not declare itself canonical. */}
+{/* Preview renders under /preview and must not present itself as the public
+    page: no canonical, no hreflang alternates, no og:url. */}
 {!preview && <link rel="canonical" href={canonicalURL} />}
 {!allowIndexing && <meta name="robots" content="noindex, nofollow" />}
 
-{MULTIPLE_LOCALES &&
+{!preview &&
+  MULTIPLE_LOCALES &&
   paths &&
   LOCALES.map((code) => {
     const altPath = paths[code]
     if (!altPath) return null
     return <link rel="alternate" hreflang={code} href={absoluteSiteURL(altPath)} />
   })}
-{MULTIPLE_LOCALES && paths?.[DEFAULT_LOCALE] && (
+{!preview && MULTIPLE_LOCALES && paths?.[DEFAULT_LOCALE] && (
   <link rel="alternate" hreflang="x-default" href={absoluteSiteURL(paths[DEFAULT_LOCALE]!)} />
 )}
 
 <meta property="og:type" content={ogType} />
 <meta property="og:title" content={fullTitle} />
 {finalDescription && <meta property="og:description" content={finalDescription} />}
-<meta property="og:url" content={canonicalURL} />
+{!preview && <meta property="og:url" content={canonicalURL} />}
 <meta property="og:site_name" content={siteSettings.siteName} />
 {ogLocale && <meta property="og:locale" content={ogLocale} />}
 {ogImageURL && (

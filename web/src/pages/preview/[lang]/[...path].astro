@@ -51,4 +51,6 @@ for (const [name, value] of Object.entries(previewResponseHeaders)) {
 }
 ---
 
-<CollectionLayout result={result} lang={lang} preview={true} />
+{/* paths feeds the language switcher. PreviewNav rewrites the switch target
+    back into /preview. SEOMetadata suppresses alternates in preview. */}
+<CollectionLayout result={result} paths={result.paths} lang={lang} preview={true} />
