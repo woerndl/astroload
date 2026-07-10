@@ -45,7 +45,9 @@ of silently producing wrong paths and a wrong `hreflang="x-default"` link
 in production sitemaps.
 
 To swap the default, or to change which locales ship, edit
-`site-config.ts`. Nothing else changes in lockstep.
+`site-config.ts`, then regenerate the CMS types
+(`pnpm --filter @astroload/cms generate:types`) so the generated `locale`
+union tracks the new set. Nothing else changes in lockstep.
 
 By default a project carries the `/{locale}` URL prefix only when it ships more
 than one locale. To keep the prefix on a single-locale project, so its URLs
