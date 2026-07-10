@@ -251,8 +251,8 @@ documented in [`maintenance.md`](./maintenance.md).
 The Payload version is pinned in lockstep across `@payloadcms/*`
 packages. `pnpm audit` will show advisories from time to time. Triage
 them against the installed tree before acting: an advisory in a
-transitive dependency of `drizzle-kit` or the Astro language server
-does not ship to the public site, while an advisory on a runtime
+transitive dependency of `eslint-config-next` or the Astro language
+server does not ship to the public site, while an advisory on a runtime
 dependency of `web/` is a release blocker. Accept admin-only or
 build-only advisories in lockstep with the Payload pin and clear them
 at the next coordinated bump.
