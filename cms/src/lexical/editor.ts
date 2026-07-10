@@ -1,18 +1,25 @@
 import { LinkFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 import type { FeatureProviderServer } from '@payloadcms/richtext-lexical'
 
-const ALLOWED_LINK_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:']
+import { ALLOWED_LINK_SCHEMES } from '../shared'
 
-// Relative paths and anchors are allowed. Protocol-relative `//host` is rejected
-// (off-origin). Absolute URLs must use an allowed scheme, rejecting javascript:/data:.
+// The web renderer resolves exactly two link shapes: a root-relative path and
+// an absolute URL with an allowed scheme. Everything else (anchors, queries,
+// bare hostnames, protocol-relative `//host`) is unwrapped to plain text by
+// the web sanitizer, so it is rejected here at save time instead of stored
+// and silently dropped. ASCII control characters are rejected because
+// browsers strip them while resolving a URL, which would let '/\t/evil.com'
+// navigate off-origin as '//evil.com'.
 function isAllowedLinkUrl(value: string): boolean {
   const url = value.trim()
+  if (!url) return false
+  if (/[\u0000-\u001f]/.test(url)) return false
   if (url.startsWith('//')) return false
-  if (!url || /^[/#?]/.test(url)) return true
+  if (url.startsWith('/')) return true
   try {
     return ALLOWED_LINK_SCHEMES.includes(new URL(url).protocol)
   } catch {
-    return true
+    return false
   }
 }
 
@@ -31,7 +38,7 @@ const safeLinkFeature = LinkFeature({
             return 'Invalid URL'
           }
           if (!isAllowedLinkUrl(value)) {
-            return 'Links must use http, https, mailto, tel, or a relative path.'
+            return 'Links must be a root-relative path (/like/this) or an absolute http, https, mailto, or tel URL.'
           }
           return true
         },

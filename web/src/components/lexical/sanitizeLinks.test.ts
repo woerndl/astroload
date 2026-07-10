@@ -23,6 +23,10 @@ describe('sanitizeLexicalLinks', () => {
       link({ linkType: 'custom', url: '#anchor' }), // bare fragment
       link({ linkType: 'custom', url: 'just words' }), // not a url
       link({ linkType: 'custom', url: 'javascript:alert(1)' }), // dangerous scheme
+      link({ linkType: 'custom', url: '//evil.com' }), // protocol-relative, off-origin
+      link({ linkType: 'custom', url: '/\t/evil.com' }), // tab smuggle: browsers resolve it as //evil.com
+      link({ linkType: 'custom', url: '/\n/evil.com' }), // newline smuggle
+      link({ linkType: 'custom', url: 'java\tscript:alert(1)' }), // control char hides the scheme
       link({ linkType: 'internal', doc: null }), // unpopulated internal link
       link({ linkType: undefined as unknown as string }), // unknown linkType
     ]

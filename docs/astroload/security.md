@@ -198,13 +198,17 @@ as a clickable XSS vector. Astroload closes this in two layers:
 
 - At the schema layer
   ([`cms/src/lexical/editor.ts`](../../cms/src/lexical/editor.ts)), the link
-  feature's `url` validator allows only `http`, `https`, `mailto`, `tel`,
-  and relative/schemeless URLs, rejecting the rest at save time for every
-  editor that inherits the global feature set.
+  feature's `url` validator allows exactly what the web renderer resolves: a
+  root-relative path or an absolute `http`, `https`, `mailto`, or `tel` URL.
+  It rejects ASCII control characters (browsers strip them while resolving,
+  so `/\t/evil.com` would navigate off-origin as `//evil.com`) and rejects
+  the rest at save time for every editor that inherits the global feature
+  set. Both layers share the scheme list from `cms/src/shared.ts`.
 - The renderer
   ([`web/src/components/lexical/sanitizeLinks.ts`](../../web/src/components/lexical/sanitizeLinks.ts))
-  unwraps link nodes whose `url` carries a disallowed scheme to plain text
-  before rendering, covering content that predates the validator.
+  unwraps link nodes whose `url` carries a disallowed scheme, a
+  protocol-relative host, or a control character to plain text before
+  rendering, covering content that predates or bypasses the validator.
 
 If you add a richtext editor that does not inherit the global feature set,
 pass it through `lexicalEditorWithSafeLinks` so the validator applies.
