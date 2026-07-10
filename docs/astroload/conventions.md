@@ -52,9 +52,10 @@ that must reflect the latest content without waiting for a rebuild (a live
 listing, a dashboard). It uses the same `prerender = false`, wraps its CMS
 read in the `staleOnError` helper (`web/src/cms/staleOnError.ts`), and sets
 `Cache-Control: no-store`. The helper serves the last good response when the
-CMS is unreachable, so a CMS outage degrades that one route instead of
-failing it. On a cold start with nothing cached the error still propagates,
-so the route shows its normal error page rather than a blank success.
+CMS read fails, so an outage degrades that one route instead of failing it,
+and logs the swallowed error so the failing read stays visible. On a cold
+start with nothing cached the error still propagates, so the route shows its
+normal error page rather than a blank success.
 `web/src/pages/latest.astro` is the worked example. Keep this set small.
 Static prerendering stays the default for everything else.
 
