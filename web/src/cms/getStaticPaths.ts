@@ -1,14 +1,11 @@
+import type { StaticPathItem } from '@astroload/cms/src/endpoints/staticPaths'
+
 import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
 import { LOCALE_URL_PREFIX } from './types'
 import type { Locale, PageCollectionSlug } from './types'
 
-export interface StaticPathItem {
-  collection: PageCollectionSlug
-  id: string | number
-  paths: Partial<Record<Locale, string>>
-  updatedAt: string
-}
+export type { StaticPathItem }
 
 export interface StaticPageParams {
   params: { lang?: string; path: string | undefined }
@@ -20,15 +17,12 @@ export interface StaticPageParams {
 }
 
 export async function getStaticPathItems(): Promise<StaticPathItem[]> {
+  // The SDK throws on any non-ok response, so there is no status branch here.
   const response = await payloadSDK.request({
     method: 'GET',
     path: '/static-paths',
     init: { headers: cacheHeader(true) },
   })
-
-  if (!response.ok) {
-    throw new Error(`static-paths fetch failed: ${response.status} ${response.statusText}`)
-  }
 
   return (await response.json()) as StaticPathItem[]
 }
@@ -43,10 +37,10 @@ export async function getStaticPaths(): Promise<StaticPageParams[]> {
       const props = { id: item.id, collection: item.collection, paths: item.paths }
       if (LOCALE_URL_PREFIX) {
         const prefix = `/${lang}`
-        const trimmed = fullPath.startsWith(prefix)
-          ? fullPath.slice(prefix.length) || undefined
-          : fullPath
-        out.push({ params: { lang, path: trimmed }, props })
+        const trimmed = fullPath.startsWith(prefix) ? fullPath.slice(prefix.length) : fullPath
+        // Rest params carry no leading slash. The locale home ('/de') maps to
+        // an undefined rest param.
+        out.push({ params: { lang, path: trimmed.replace(/^\//, '') || undefined }, props })
       } else {
         // The endpoint already stripped the prefix. '/' is the home page, which
         // index.astro owns, so the catch-all route skips it.

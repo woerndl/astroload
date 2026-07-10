@@ -1,16 +1,11 @@
-import type { Footer, Header, Labels, SiteSetting } from '@astroload/cms/src/payload-types'
+import type { GlobalData } from '@astroload/cms/src/endpoints/globalData'
 
 import { previewPayloadSDK } from './previewSdk'
 import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
 import type { Locale } from './types'
 
-export interface GlobalData {
-  footer: Footer
-  header: Header
-  labels: Labels
-  siteSettings: SiteSetting
-}
+export type { GlobalData }
 
 async function fetchGlobalData(locale: Locale, preview: boolean): Promise<GlobalData> {
   const query = new URLSearchParams({ locale, preview: String(preview) })

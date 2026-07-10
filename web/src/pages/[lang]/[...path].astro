@@ -1,11 +1,9 @@
 ---
 import type { InferGetStaticPropsType } from 'astro'
 
-import { getGlobalData } from '../../cms/getGlobalData'
-import { getPageByPath, type PageByPathResult } from '../../cms/getPageByPath'
 import { getStaticPaths as getCmsStaticPaths } from '../../cms/getStaticPaths'
-import { loadPageResult } from '../../cms/loadPage'
-import { isLocale, LOCALE_URL_PREFIX, type LocalePaths } from '../../cms/types'
+import { loadCatchAllPage } from '../../cms/loadPage'
+import { isLocale, LOCALE_URL_PREFIX } from '../../cms/types'
 import CollectionLayout from '../../layout/collections/CollectionLayout.astro'
 
 export const prerender = true
@@ -20,37 +18,17 @@ const { lang, path } = Astro.params
 if (!LOCALE_URL_PREFIX || !isLocale(lang)) {
   return new Response(null, { status: 404 })
 }
-const locale = lang
-const { id, collection, paths } = Astro.props as Partial<Props>
 
-// Kick off global data now so it overlaps the page fetch. The layout awaits
-// the same Astro.locals memo (see getGlobalData).
-const globalData = getGlobalData({ locale, preview: false, locals: Astro.locals })
+const loaded = await loadCatchAllPage({
+  locale: lang,
+  fullPath: path ? `/${lang}/${path}` : `/${lang}`,
+  props: Astro.props as Partial<Props>,
+  locals: Astro.locals,
+})
 
-let result: PageByPathResult | null = null
-let resolvedPaths: LocalePaths | undefined = paths
-
-if (id && collection) {
-  result = await loadPageResult(collection, id, locale)
-} else {
-  // Dev renders this route on demand (see prerenderOverrides in
-  // astro.config.mjs) and gets no getStaticPaths props, so every dev request
-  // resolves by path here, against the live CMS.
-  const fullPath = path ? `/${lang}/${path}` : `/${lang}`
-  const found = await getPageByPath(fullPath)
-  if (found) {
-    result = found
-    resolvedPaths = found.paths
-  }
-}
-
-if (!result) {
-  // A 404 renders no layout, so nothing awaits the global-data fetch kicked
-  // off above. Swallow it so a globals failure can't turn this into a 500.
-  void globalData.catch(() => {})
+if (!loaded) {
   return new Response(null, { status: 404 })
 }
-await globalData
 ---
 
-<CollectionLayout result={result} paths={resolvedPaths} lang={locale} />
+<CollectionLayout result={loaded.result} paths={loaded.paths} lang={lang} />

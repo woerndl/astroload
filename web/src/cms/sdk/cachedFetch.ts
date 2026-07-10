@@ -13,27 +13,25 @@ export const cacheHeader = (useCache: boolean): Record<string, string> => ({
 const hashAuth = (value: string): string =>
   value ? createHash('sha256').update(value).digest('hex').slice(0, 16) : ''
 
-const createCacheKey = (url: string, init?: RequestInit): string => {
-  const method = init?.method ?? 'GET'
-  const body = init?.body ? String(init.body) : ''
-  const headers = init?.headers ? new Headers(init.headers) : null
-  const auth = hashAuth(headers?.get('authorization') ?? '')
-  return `${method}:${url}:${body}:${auth}`
-}
-
 export function createCachedFetch(baseFetch: typeof fetch): typeof fetch {
   return async function cachedFetch(input, init) {
     const url =
       typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
     const method = init?.method ?? 'GET'
-    const useCache = new Headers(init?.headers).get(USE_CACHE_HEADER) === 'true'
+
+    // The marker is SDK-internal routing, not part of the CMS request.
+    const headers = new Headers(init?.headers)
+    const useCache = headers.get(USE_CACHE_HEADER) === 'true'
+    headers.delete(USE_CACHE_HEADER)
+    const cleanInit = { ...init, headers }
 
     // Disabled in dev so CMS edits propagate without an Astro restart.
     const shouldCache = useCache && method === 'GET' && !import.meta.env.DEV
 
-    if (!shouldCache) return baseFetch(input, init)
+    if (!shouldCache) return baseFetch(input, cleanInit)
 
-    const key = createCacheKey(url, init)
+    // Only GETs are cached, so the URL plus the auth identity is the whole key.
+    const key = `${url}:${hashAuth(headers.get('authorization') ?? '')}`
     const cached = cache.get(key)
     if (cached !== undefined) {
       return new Response(cached, {
@@ -42,7 +40,7 @@ export function createCachedFetch(baseFetch: typeof fetch): typeof fetch {
       })
     }
 
-    const response = await baseFetch(input, init)
+    const response = await baseFetch(input, cleanInit)
     if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
       const text = await response.clone().text()
       cache.set(key, text)

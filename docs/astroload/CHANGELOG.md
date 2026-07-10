@@ -10,6 +10,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ### Changed
 
+- The web data layer single-sources its wire types from the CMS endpoints (`GlobalData`, `StaticPathItem`) instead of restating them, and the two catch-all page routes share one `loadCatchAllPage` helper instead of duplicating the id/path resolution and global-data overlap. The `global-data` and `static-paths` endpoints dropped their ETag/304 machinery, which no client ever sent an `If-None-Match` against, and `cachedFetch` strips the internal `X-Use-Cache` marker before the CMS request and keys the cache on url plus auth identity only (GET-only, so method and body were constant).
 - The dev and production compose files run MongoDB 8 instead of 7. The adapter setup is unchanged (standalone, transactions disabled), and the README stack notes follow.
 - The CI workflow pins its actions to commit SHAs (with the version in a comment) so a moved tag cannot swap the code the workflow runs, and grants the default token `contents: read` only.
 
