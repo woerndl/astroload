@@ -10,6 +10,7 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { isAdmin } from './access/isAdmin'
+import { isAdminOrEditor } from './access/isAdminOrEditor'
 import { isPanelUser } from './access/isPanelUser'
 import { ApiKeys } from './collections/ApiKeys'
 import { Authors } from './collections/Authors'
@@ -24,6 +25,10 @@ import { getStaticPaths } from './endpoints/staticPaths'
 import { env } from './env'
 import { lexicalEditorWithSafeLinks } from './lexical/editor'
 import { spamGuard } from './hooks/spamGuard'
+import {
+  triggerDeployAlwaysAfterChange,
+  triggerDeployAlwaysAfterDelete,
+} from './hooks/triggerDeploy'
 import { validateFormFields } from './hooks/validateFormFields'
 import { validateSubmission } from './hooks/validateSubmission'
 import { Footer } from './globals/Footer'
@@ -116,13 +121,30 @@ export default buildConfig({
         country: false,
         date: false,
         payment: false,
+        // The web field renderer has no radio branch and would show a radio
+        // group as a text input.
+        radio: false,
         state: false,
         upload: false,
       },
       formOverrides: {
+        // The plugin sets no write rules, so writes fall back to any
+        // authenticated requester, including the web app's api keys: a leaked
+        // read-only key could rewrite a form's emails, confirmation, and
+        // redirect, or delete the form. API keys carry no roles, so the role
+        // gate shuts them out.
+        access: {
+          create: isAdminOrEditor,
+          update: isAdminOrEditor,
+          delete: isAdminOrEditor,
+        },
         admin: { group: CollectionGroups.System },
         hooks: {
           beforeValidate: [validateFormFields],
+          // Forms are baked into the prerendered pages that embed them, so a
+          // form edit needs a rebuild like any other content change.
+          afterChange: [triggerDeployAlwaysAfterChange],
+          afterDelete: [triggerDeployAlwaysAfterDelete],
         },
       },
       formSubmissionOverrides: {

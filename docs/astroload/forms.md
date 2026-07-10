@@ -9,8 +9,8 @@ field renderer that submits to the CMS over HTTP.
 plugin emits. Supported field types are text, email, number, textarea,
 select, checkbox, and message. The plugin is configured to drop the
 field types that are not curated in the starter (country, state,
-payment, date, upload). If you want any of those, add a case to the
-renderer and remove the plugin scoping.
+payment, date, upload, radio). If you want any of those, add a case to
+the renderer and remove the plugin scoping.
 
 Each field has an explicit `<label for>` and matching input `id` of the
 form `form-${formId}-${instance}-${fieldName}`, where `instance` is a
@@ -141,6 +141,15 @@ visitor PII, so anyone may create one, only panel users (admins and
 editors) may read them, nobody may update one, and only admins may
 delete. Without the explicit rules, read would be open to any
 authenticated requester, including the web app's read-only api key.
+
+The Forms collection itself is write-gated the same way as the content
+collections (`isAdminOrEditor`): the plugin sets no write rules, so
+writes would otherwise fall back to any authenticated requester,
+including the api keys. Form reads stay anonymous (the plugin's
+default), which [`security.md`](./security.md) lists with the other
+public-read surfaces. Form saves and deletions fire the deploy webhook,
+since the rendered fields, labels, and confirmation are baked into the
+prerendered pages that embed the form.
 
 The starter ships no integration test for this path. When you set up a
 CMS-side test runner, cover it with forged POSTs asserting the rejects
