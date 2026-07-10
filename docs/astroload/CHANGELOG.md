@@ -11,6 +11,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 ### Fixed
 
 - The `/preview` route renders again. The 0.4.0 key scoping made the global-data endpoint reject preview reads from the read-only key, but the web layer still requested preview globals with that key, so every preview render failed. Global-data preview reads now use the preview-scoped SDK, the same key the page read already uses.
+- Preview renders no longer leak `/preview/...` URLs into the page head: JSON-LD and `og:url` are omitted in preview, alongside the canonical link that already was. The language switcher inside preview now targets the document's translation instead of the locale home, and hreflang alternates stay suppressed there.
 
 ## [0.4.0] - 2026-07-10
 

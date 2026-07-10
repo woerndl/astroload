@@ -53,7 +53,8 @@ const { header, footer, labels, siteSettings } = await getGlobalData({
       siteSettings={siteSettings}
       preview={Boolean(preview)}
     />
-    {result && (
+    {/* Structured data describes the public page. A preview render would bake /preview URLs into it. */}
+    {result && !preview && (
       <JsonLd
         result={result}
         lang={lang}

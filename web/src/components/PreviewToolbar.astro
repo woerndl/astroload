@@ -10,6 +10,9 @@ interface Props extends PreviewContext {
 
 const { collection, id, labels } = Astro.props
 
+// Safari before 16.4 sends no Sec-Fetch-Dest, so there the toolbar also
+// renders inside the admin live-preview iframe. Acceptable degradation for an
+// editor-only surface.
 const insideIframe = Astro.request.headers.get('sec-fetch-dest') === 'iframe'
 const adminHref = absoluteCmsURL(`/admin/collections/${collection}/${id}`)
 ---
