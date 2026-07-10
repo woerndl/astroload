@@ -10,6 +10,13 @@ export { LOCALES, DEFAULT_LOCALE, LOCALE_URL_PREFIX, SITE_NAME } from './site-co
 export const isLocale = (value: unknown): value is Locale =>
   typeof value === 'string' && (LOCALES as readonly string[]).includes(value)
 
+// Schemes a rich-text link may use. The CMS validator
+// (cms/src/lexical/editor.ts) rejects everything else at authoring, and the
+// web sanitizer (web/src/components/lexical/sanitizeLinks.ts) unwraps
+// anything that slips past it (imports, seeds, autosaved drafts). Both sides
+// key off this list.
+export const ALLOWED_LINK_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:']
+
 export const pageCollectionsSlugs = ['pages', 'posts', 'authors'] as const
 
 export type PageCollectionSlug = (typeof pageCollectionsSlugs)[number]
