@@ -10,11 +10,12 @@ export interface StaleResult<T> {
   stale: boolean
 }
 
-// Fetch fresh on every call. If the fetch throws (CMS down, timeout), serve the
-// last good value for this key instead, flagged stale. On a cold start with no
-// prior value the error propagates, because there is nothing to fall back to.
-// Concurrent calls are not deduped, so "last good" is whichever fetch completes
-// last. That is fine here because every fetch is a live read of the same data.
+// Fetch fresh on every call. If the fetch throws (the CMS read fails for any
+// reason), serve the last good value for this key instead, flagged stale. On a
+// cold start with no prior value the error propagates, because there is nothing
+// to fall back to. Concurrent calls are not deduped, so "last good" is whichever
+// fetch completes last. That is fine here because every fetch is a live read of
+// the same data.
 export async function staleOnError<T>(
   key: string,
   fetcher: () => Promise<T>,
@@ -25,6 +26,9 @@ export async function staleOnError<T>(
     return { data, stale: false }
   } catch (err) {
     if (!lastGood.has(key)) throw err
+    // Serving stale hides the failure from the response, so log it: a CMS that
+    // keeps failing is invisible otherwise, since the page still renders.
+    console.error(`[astroload] staleOnError serving stale '${key}':`, err)
     return { data: lastGood.get(key) as T, stale: true }
   }
 }

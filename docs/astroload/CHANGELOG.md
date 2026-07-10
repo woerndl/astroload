@@ -10,6 +10,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ### Changed
 
+- The `staleOnError` helper logs the read failure it swallows, so a CMS that keeps failing while a route serves its last good response is visible in the server logs instead of silent. The `latest.astro` stale notice no longer asserts the CMS is unreachable, since the read can fail for other reasons.
 - Posts stamp `publishedAt` with the current time on their first publish when the field is left blank, instead of publishing with an empty date. A later publish keeps whatever value is set.
 - A half-configured S3 or Resend env group now logs a startup warning naming the missing variables, instead of silently leaving the integration off when one variable of the group is set. The integration still turns on only when its whole group is present.
 - The Header and Footer share one nav-link field definition, and the CMS dropped a handful of inert config (`dbName` on the Labels global, `saveToJWT` on the API-key type, an unused `SITE_NAME` re-export). The list-block published-relation lookup reads at `depth: 0` with an id-only select, since it uses only the ids.

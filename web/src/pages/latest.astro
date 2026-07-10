@@ -42,7 +42,7 @@ const { data: posts, stale } = await staleOnError('latest-posts', async () => {
     <meta name="robots" content="noindex" />
   </head>
   <body>
-    {stale && <p data-stale>Showing the last known content; the CMS is currently unreachable.</p>}
+    {stale && <p data-stale>Showing the last known content. The latest could not be loaded.</p>}
     <ul>
       {posts.map((post) => <li>{post.title}</li>)}
     </ul>
