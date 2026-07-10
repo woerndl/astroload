@@ -11,6 +11,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 ### Changed
 
 - The dev and production compose files run MongoDB 8 instead of 7. The adapter setup is unchanged (standalone, transactions disabled), and the README stack notes follow.
+- The CI workflow pins its actions to commit SHAs (with the version in a comment) so a moved tag cannot swap the code the workflow runs, and grants the default token `contents: read` only.
 
 ### Removed
 
