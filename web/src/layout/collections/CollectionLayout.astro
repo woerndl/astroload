@@ -19,10 +19,10 @@ const previewCtx = preview ? { collection: result.collection, id: result.data.id
 
 {
   result.collection === 'pages' ? (
-    <PageLayout data={result.data} lang={lang} paths={paths} preview={previewCtx} />
+    <PageLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
   ) : result.collection === 'posts' ? (
-    <PostLayout data={result.data} lang={lang} paths={paths} preview={previewCtx} />
+    <PostLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
   ) : (
-    <AuthorLayout data={result.data} lang={lang} paths={paths} preview={previewCtx} />
+    <AuthorLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
   )
 }

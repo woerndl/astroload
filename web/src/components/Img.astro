@@ -28,9 +28,10 @@ if (!url) {
   throw new Error(`Media ${image.id} has no url`)
 }
 
-const srcset = SRCSET_KEYS.map((key) => image.sizes?.[key]).flatMap((v) =>
-  v?.url && v.width ? [`${versionedMediaURL(v.url, image.updatedAt)} ${v.width}w`] : [],
-)
+const srcset = SRCSET_KEYS.flatMap((key) => {
+  const v = image.sizes?.[key]
+  return v?.url && v.width ? [`${versionedMediaURL(v.url, image.updatedAt)} ${v.width}w`] : []
+})
 const src = versionedMediaURL(url, image.updatedAt)
 ---
 

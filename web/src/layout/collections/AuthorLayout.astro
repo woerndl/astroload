@@ -1,6 +1,5 @@
 ---
-import type { Author } from '@astroload/cms/src/payload-types'
-
+import type { PageByPathResult } from '../../cms/getPageByPath'
 import { resolveSeo } from '../../cms/resolveSeo'
 import { isPopulated, type Locale, type LocalePaths, type PreviewContext } from '../../cms/types'
 import Img from '../../components/Img.astro'
@@ -8,13 +7,14 @@ import LexicalContent from '../../components/lexical/LexicalContent.astro'
 import Layout from '../Layout.astro'
 
 interface Props {
-  data: Author
+  result: Extract<PageByPathResult, { collection: 'authors' }>
   lang: Locale
   paths?: LocalePaths
   preview?: PreviewContext
 }
 
-const { data, lang, paths, preview } = Astro.props
+const { result, lang, paths, preview } = Astro.props
+const { data } = result
 
 const photo = isPopulated(data.photo) ? data.photo : null
 const seo = resolveSeo(data)
@@ -24,7 +24,7 @@ const seo = resolveSeo(data)
   title={seo.title}
   description={seo.description}
   image={seo.image ?? photo}
-  result={{ collection: 'authors', data }}
+  result={result}
   lang={lang}
   paths={paths}
   preview={preview}

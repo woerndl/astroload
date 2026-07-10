@@ -1,6 +1,5 @@
 ---
-import type { Page } from '@astroload/cms/src/payload-types'
-
+import type { PageByPathResult } from '../../cms/getPageByPath'
 import { getGlobalData } from '../../cms/getGlobalData'
 import { resolveSeo } from '../../cms/resolveSeo'
 import type { Locale, LocalePaths, PreviewContext } from '../../cms/types'
@@ -8,13 +7,14 @@ import SectionBlock from '../../components/SectionBlock.astro'
 import Layout from '../Layout.astro'
 
 interface Props {
-  data: Page
+  result: Extract<PageByPathResult, { collection: 'pages' }>
   lang: Locale
   paths?: LocalePaths
   preview?: PreviewContext
 }
 
-const { data, lang, paths, preview } = Astro.props
+const { result, lang, paths, preview } = Astro.props
+const { data } = result
 const sections = data.sections ?? []
 const seo = resolveSeo(data)
 
@@ -32,7 +32,7 @@ const { labels } = await getGlobalData({
   title={seo.title}
   description={seo.description}
   image={seo.image}
-  result={{ collection: 'pages', data }}
+  result={result}
   lang={lang}
   paths={paths}
   preview={preview}
