@@ -1,5 +1,6 @@
 import type { Footer, Header, Labels, SiteSetting } from '@astroload/cms/src/payload-types'
 
+import { previewPayloadSDK } from './previewSdk'
 import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
 import type { Locale } from './types'
@@ -13,15 +14,15 @@ export interface GlobalData {
 
 async function fetchGlobalData(locale: Locale, preview: boolean): Promise<GlobalData> {
   const query = new URLSearchParams({ locale, preview: String(preview) })
-  const response = await payloadSDK.request({
+  // The global-data endpoint rejects preview reads from the read-only key, so
+  // a preview render must ask with the preview-scoped SDK. The SDK throws on
+  // any non-ok response, so there is no status branch here.
+  const sdk = preview ? previewPayloadSDK : payloadSDK
+  const response = await sdk.request({
     method: 'GET',
     path: `/global-data?${query.toString()}`,
     init: { headers: cacheHeader(!preview) },
   })
-
-  if (!response.ok) {
-    throw new Error(`global-data fetch failed: ${response.status} ${response.statusText}`)
-  }
 
   const data = (await response.json()) as GlobalData
   if (!data.header || !data.footer || !data.labels || !data.siteSettings) {
