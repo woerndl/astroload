@@ -76,11 +76,11 @@ The hook fires whenever the published output changes: a doc that is or was
 published changed (publish, re-publish, or unpublish), a published doc
 deleted, and any global or always-deploy collection (Redirects, Forms,
 Media) changed.
-Saves that cannot change the live output are skipped: autosave draft writes
-on a published doc, and global or always-deploy saves that leave the
-document identical apart from `updatedAt`. The skip check errs toward
-firing, since a missed change ships a stale site while a redundant fire only
-wastes a build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body
+Saves that cannot change the live output are skipped: draft saves (autosave
+or a manual Save Draft, even over a published doc), a re-publish with no
+edits, and global or always-deploy saves that leave the document identical
+apart from `updatedAt`. The skip check errs toward firing, since a missed
+change ships a stale site while a redundant fire only wastes a build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body
 and no auth header.
 
 The window (`WINDOW_MS`) is set in code, not env. The default suits hosts
