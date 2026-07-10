@@ -149,7 +149,7 @@ Variables are declared in `cms/.env.example` and `web/.env.example`, which are t
 flowchart LR
     Editor -->|HTTPS| CMS["cms<br/>Payload + Next.js admin"]
     CMS <-->|mongoose| Mongo[(MongoDB)]
-    CMS -->|REST / GraphQL| Web["web<br/>Astro + Node adapter"]
+    CMS -->|REST| Web["web<br/>Astro + Node adapter"]
     Visitor -->|HTTPS| Web
 ```
 
@@ -157,7 +157,7 @@ Two Node processes, one MongoDB database. `cms/` owns the admin, the API, and th
 
 ```
 .
-├── cms/                  Payload application (admin, REST and GraphQL)
+├── cms/                  Payload application (admin and REST API)
 ├── web/                  Astro frontend (public site and /preview)
 ├── docker-compose.yml    Local MongoDB
 └── pnpm-workspace.yaml

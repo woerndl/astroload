@@ -70,6 +70,10 @@ export default buildConfig({
     fallback: true,
   },
   editor: lexicalEditorWithSafeLinks(),
+  // Nothing consumes GraphQL: the web app and the seed go through REST and
+  // the Local API. The Next route handlers under api/graphql* are deleted
+  // with it. This flag skips schema generation at init.
+  graphQL: { disable: true },
   secret: env.PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

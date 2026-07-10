@@ -3,8 +3,10 @@
 Astroload is a pnpm workspace with two applications that run as separate
 Node processes:
 
-- `cms/` is the Payload application. It owns the admin UI, the REST and
-  GraphQL APIs, the database schema, and the editorial workflow.
+- `cms/` is the Payload application. It owns the admin UI, the REST API,
+  the database schema, and the editorial workflow. GraphQL is disabled
+  (`graphQL: { disable: true }`, and the generated `api/graphql` route
+  handlers are removed) because nothing in the template consumes it.
 - `web/` is the Astro frontend. It reads from the CMS over HTTP and renders
   the public site.
 
@@ -17,7 +19,7 @@ through generated TypeScript and a small SDK layer.
 flowchart LR
     Editor -->|HTTPS| CMS["cms<br/>Payload + Next.js admin"]
     CMS <-->|mongoose| Mongo[(MongoDB)]
-    CMS -->|REST / GraphQL| Web["web<br/>Astro + Node adapter"]
+    CMS -->|REST| Web["web<br/>Astro + Node adapter"]
     Visitor -->|HTTPS| Web
 ```
 

@@ -12,6 +12,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 - The dev and production compose files run MongoDB 8 instead of 7. The adapter setup is unchanged (standalone, transactions disabled), and the README stack notes follow.
 
+### Removed
+
+- The GraphQL endpoint and playground. Nothing in the template consumes GraphQL (the web app and the seed use REST and the Local API), and every unauthenticated query surface needs its own access review, so the config sets `graphQL: { disable: true }` and the generated `api/graphql` route handlers are deleted. Restore both if your fork needs GraphQL.
+
 ### Fixed
 
 - The `/preview` route renders again. The 0.4.0 key scoping made the global-data endpoint reject preview reads from the read-only key, but the web layer still requested preview globals with that key, so every preview render failed. Global-data preview reads now use the preview-scoped SDK, the same key the page read already uses.
