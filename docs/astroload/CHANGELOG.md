@@ -8,6 +8,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-10
+
 ### Added
 
 - A vitest setup in the web app, run with `pnpm test`. The first test covers the link sanitizer that keeps rich text from failing on a link the renderer cannot resolve.
@@ -16,8 +18,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Uploaded images are converted to WebP (the `xs` through `lg` variants and the main file), and `Img.astro` emits a responsive `srcset` with a `sizes` per call site. The `og` social-card crop stays JPEG for scraper compatibility, for sources smaller than the crop too. Every media url carries a `?v=updatedAt` marker and the media route sends a 30-day `Cache-Control` (deliberately not `immutable`, so the max-age bounds the one case the marker cannot see, a variant regeneration that leaves `updatedAt` untouched), so an updated file gets a fresh url and is never served stale. The maintenance guide notes the CDN query-string requirement this relies on.
 - Internal links inside the preview keep you in preview. A capture-phase click handler rewrites internal navigation to the matching `/preview/{lang}` route and carries the preview secret, so clicking through a draft no longer drops to the public, published page. It handles locale-prefixed and locale-stripped links alike.
 - A `content-workflow.md` doc and a gitignored `cms/src/scripts/scratch/` lane for one-off content-mutation scripts. The doc names the admin UI, MCP, and REST as the paths for changing content, and sorts the scripts that belong in the repo from the ones that never should.
-- Optional Umami analytics, on when `UMAMI_WEBSITE_ID` is set. The tracker script and the collect endpoint are proxied through first-party routes (`/u.js`, `/api/send`), pageviews are tracked explicitly per `astro:page-load` so view transitions report the right URL, and preview traffic is excluded. The proxy targets Umami Cloud by default; `UMAMI_HOST_URL` points it at a self-hosted instance. Umami is cookieless and stores nothing on the visitor's device.
-- A Dockerfile per app, a `deploy/docker-compose.production.yml` scaffold to copy, and a `deployment.md` guide. The CMS image builds Next in standalone mode (gated on `NEXT_OUTPUT=standalone` so the plain `next start` path stays warning-free) and stores uploads under a `MEDIA_DIR` volume. The web image bakes the built site in, so a content publish means a rebuild.
+- Optional Umami analytics, on when `UMAMI_WEBSITE_ID` is set. The tracker script and the collect endpoint are proxied through first-party routes (`/u.js`, `/api/send`), pageviews are tracked explicitly per `astro:page-load` so view transitions report the right URL, and preview traffic is excluded. The proxy targets Umami Cloud by default, and `UMAMI_HOST_URL` points it at a self-hosted instance instead. Umami is cookieless and stores nothing on the visitor's device.
+- A Dockerfile per app, a `deploy/docker-compose.production.yml` scaffold to copy, and a `deployment.md` guide. The CMS image builds Next in standalone mode (gated on `NEXT_OUTPUT=standalone` so the plain `next start` path stays warning-free) and stores uploads under a `MEDIA_DIR` volume. The web image bakes the built site in, so a content publish means a rebuild. Both images pin the `.nvmrc` Node version, the web runtime layer carries production dependencies only, and the compose scaffold healthchecks both services and starts the web container once the CMS reports healthy.
 
 ### Changed
 
@@ -27,9 +29,12 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - The default database is now MongoDB, through `@payloadcms/db-mongodb`, in place of Postgres. The adapter runs with transactions disabled (`transactionOptions: false`), so a single standalone `mongod` is enough, and `docker-compose.yml` ships one with a `mongosh` healthcheck. Document ids change from integers to MongoDB ObjectId strings, which the regenerated Payload types reflect. Postgres stays available as a documented alternative. The maintenance guide covers the switch-back steps and how to move existing data.
 - The build-time redirects fetch retries with backoff on a strict deploy build before giving up, so a CMS that is briefly unreachable while a coordinated deploy restarts it no longer aborts the build on the first error. A sustained outage still fails the strict build by design, which leaves the last good deploy serving rather than replacing it with a redirect-less one. Non-strict runs (dev, `astro check`, plain `astro build`) read a committed `web/src/cms/redirects.fallback.json`, empty by default, giving offline builds an optional place to keep a redirect table.
 - Public content reads that render document paths go through a single `findPublicDocs` helper that strips the stored locale prefix from every returned document, its breadcrumbs, populated relations, and rich-text links, giving the strip one place to be right. Reads with no rendered path (redirects, the title-only SSR example) stay direct.
-- The lexical block renderer dispatches through a typed map of the block types it handles, so adding a type to the union without a renderer fails the build. A block added only on the editor side still throws at render time until both are added together, which the conventions doc now spells out.
+- The lexical block renderer and the page section renderer (`SectionBlock.astro`) each dispatch through a typed map of the block types they handle, so adding a type to either union without a renderer fails the build. A block added only on the editor side still throws at render time until both sides are added together, which the conventions doc now spells out.
 - `JsonLd.astro` documents the upgrade path from the generic Organization publisher to LocalBusiness, for projects that are a physical business.
 - CI runs the web test suite (`pnpm test`) on every push and pull request, alongside the existing lint and typecheck steps.
+- `pnpm check` typechecks both workspaces: `tsc --noEmit` in the CMS and `astro check` in the web app. CI runs the same combined step, so a CMS-side type error fails the pipeline.
+- The list blocks' published-relation lookup passes `req` through to its nested find, so the read joins the request's transaction.
+- `cross-env` is a CMS devDependency and the unused `dotenv` dependency is gone from the CMS. Neither is needed in the runtime image.
 
 ### Removed
 
@@ -45,6 +50,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - The preview toolbar is sticky rather than fixed, so it reserves space in the layout instead of overlapping the page header.
 - The Media upload directory is pinned to an absolute path inside the cms package (overridable via `MEDIA_DIR`). Payload resolves a relative `staticDir` against the process working directory, so a server started from the repo root read and wrote a different directory than one started from `cms/`.
 - In a single-locale project, `/{anything}/sitemap.xml` returned a 500. The prerendered `[lang]` route patterns registered with zero generated files, and the Node adapter answers such a pattern with its error page instead of falling through to a 404. Single-locale builds now render the `[lang]` routes on demand, so their locale guards 404 those URLs.
+- Per-route render-mode overrides live in a small `prerenderOverrides` Astro integration, because Astro only honors a literal `export const prerender` and silently ignores a computed one. The integration is what makes the single-locale `[lang]` fix above hold, restores on-demand rendering in dev so CMS edits show without an Astro restart, and renders the multi-locale root redirect per request so its `Accept-Language` negotiation works.
+- The CMS env validation no longer auto-skips when `CI=true` is set. Only an explicit `SKIP_ENV_VALIDATION` opts out, so a host that exports `CI` at runtime cannot boot the server past the check.
+- Small SEO and accessibility corrections: an image without alt text renders `alt=""` instead of no attribute, `og:locale` is omitted when the language has no known territory mapping instead of inventing one, the preview route no longer declares a canonical URL, and the layout links the shipped favicons.
+- `web/.env.example` states that the seed always logs the API key values, and `cms/.env.example` shows where to pin `PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` so a reseed keeps the values the web app carries.
 
 ### Security
 
@@ -52,6 +61,11 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Version history is restricted to panel users through a `readVersions` rule on Pages, Posts, and Authors. Payload leaves version reads open to any authenticated requester when the rule is unset, and version documents are not filtered by publish status, so a read-only API key could reach drafts through the generated `/versions` routes.
 - Form submissions are validated against their referenced form on the server, so a submission that omits a required field is rejected with a 400 instead of stored. A required checkbox must be ticked and every other required field must carry a non-empty value. A duplicate field name or an unknown form id gets the same generic rejection. The check runs after the existing spam guard.
 - Form-submission access rules are pinned in the plugin overrides. Submissions hold visitor PII, and the plugin's defaults leave read open to any authenticated requester (including the web app's read-only API key) and set no delete rule at all. Read is now limited to panel users and delete to admins, with update blocked as before.
+- The `global-data` response is marked `Cache-Control: private`. It requires an API key, so a shared cache must not serve it across clients.
+
+### Documentation
+
+- New conventions entries: render-mode overrides belong in the `prerenderOverrides` integration because the `prerender` export must stay literal, a pinned dev port needs `strictPort` under `vite.server`, and display-changing state classes use compound selectors. `architecture.md` states that no adapter layer sits between the two apps, and the maintenance guide flags that Railway's build cache may ignore a changed `CONTENT_BUILD_ID`.
 
 ## [0.3.3] - 2026-05-31
 
