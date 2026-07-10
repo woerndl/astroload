@@ -19,7 +19,10 @@ const fieldBasis = (width?: number | null) => {
   return `flex: 1 1 calc(${clamped}% - 1rem); min-width: 12rem`
 }
 
-const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${name}`
+// The instance token keeps input ids unique when the same form renders more
+// than once on a page.
+const instance = crypto.randomUUID().slice(0, 8)
+const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${name}`
 ---
 
 <section class="my-8">
@@ -32,7 +35,6 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${name}`
         action={submitURL}
         method="post"
         data-form-id={populatedForm.id}
-        data-form-action={submitURL}
         data-confirmation-type={populatedForm.confirmationType ?? 'message'}
         data-redirect-url={populatedForm.redirect?.url ?? ''}
         data-submit-label={submitLabel}
@@ -150,7 +152,9 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${name}`
 
 <script>
   function attach(form: HTMLFormElement) {
-    const action = form.dataset.formAction
+    // getAttribute, not form.action: the property resolves relative URLs and
+    // is shadowed by any form field named "action".
+    const action = form.getAttribute('action')
     const formId = form.dataset.formId
     if (!action || !formId) return
 
@@ -193,25 +197,19 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${name}`
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ form: formId, submissionData }),
         })
-        if (!response.ok) {
-          let detail = ''
-          try {
-            const body = await response.json()
-            if (body?.errors?.[0]?.message) detail = String(body.errors[0].message)
-          } catch {}
-          throw new Error(detail || `HTTP ${response.status}`)
-        }
+        // Server error bodies are not surfaced: hook rejections and Payload
+        // validation messages are English regardless of the page locale, so
+        // the visitor gets the localized generic label instead.
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
         if (form.dataset.confirmationType === 'redirect' && form.dataset.redirectUrl) {
           window.location.href = form.dataset.redirectUrl
           return
         }
         form.classList.add('hidden')
         confirmation?.classList.remove('hidden')
-      } catch (err) {
+      } catch {
         if (errorEl) {
-          errorEl.textContent = err instanceof Error && err.message && !/^HTTP \d+$/.test(err.message)
-            ? err.message
-            : errorMessage
+          errorEl.textContent = errorMessage
           errorEl.classList.remove('hidden')
         }
       } finally {

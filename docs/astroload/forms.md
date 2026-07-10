@@ -13,7 +13,9 @@ payment, date, upload). If you want any of those, add a case to the
 renderer and remove the plugin scoping.
 
 Each field has an explicit `<label for>` and matching input `id` of the
-form `form-${formId}-${fieldName}`. There is no automatic mapping of
+form `form-${formId}-${instance}-${fieldName}`, where `instance` is a
+per-render token that keeps ids unique when the same form appears twice
+on a page. There is no automatic mapping of
 field names to `autocomplete` tokens in the renderer. If you want
 browser autofill on common fields, add the attribute explicitly in the
 renderer or extend the field config.
@@ -29,9 +31,11 @@ The bundled `<script>` builds a JSON payload of the shape
   time, so SSR or CDN caching does not affect it.
 - POSTs JSON. On success, either redirects to the form's configured
   URL (when its confirmation type is `redirect`) or reveals the
-  localized `confirmationMessage` block. On 4xx, surfaces
-  `errors[0].message` from the response body, falling back to the
-  form's generic error label.
+  localized `confirmationMessage` block. On any non-ok response or a
+  network failure, shows the localized generic error label from the
+  Labels global. Server error bodies are never surfaced, because hook
+  rejections and Payload validation messages are English regardless of
+  the page locale.
 - Guards against double-submits with an in-flight flag.
 
 The form element has a native `action` and `method` pointing at the
@@ -69,6 +73,11 @@ ships a few baseline checks against commodity contact-form spam:
 - A `beforeChange` hook (`cms/src/hooks/spamGuard.ts`) on
   `form-submissions` that rejects honeypot-filled or sub-1.5s
   submissions and strips both internal fields before save.
+
+The names `fax` and `_rendered_at` are reserved for these checks. The
+Forms collection rejects a form that names a field after either (and any
+duplicate field name) at save time, through the `validateFormFields`
+hook wired into `formOverrides`.
 
 The time-trap is client-controlled. A bot can post any past timestamp
 and pass the check trivially. The current trap catches lazy bots, not
@@ -123,8 +132,9 @@ options) are not validated, because submissions land in a review queue.
 
 Both hooks are wired through
 `formBuilderPlugin({ formSubmissionOverrides: { hooks: { beforeChange: [spamGuard, validateSubmission] } } })`
-in `cms/src/payload.config.ts`. If you change the field shape, update
-the hooks in lockstep.
+in `cms/src/payload.config.ts`, and the authoring-side `validateFormFields`
+through `formOverrides` next to them. If you change the field shape,
+update the hooks in lockstep.
 
 The same overrides pin the submission access rules. Submissions hold
 visitor PII, so anyone may create one, only panel users (admins and
