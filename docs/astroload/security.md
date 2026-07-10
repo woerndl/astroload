@@ -92,6 +92,11 @@ Three exceptions exist by design. Decide on each before production:
   recipient addresses matters for your project. Writes are role-gated
   like the content collections.
 
+The API surface these rules guard is REST only. GraphQL is disabled
+(`graphQL: { disable: true }`, route handlers removed), so the same
+collections are not reachable through a second query surface that would
+need its own review.
+
 `read` alone does not close the leak. Payload generates `/versions`
 endpoints for every versioned collection, and their access rule is
 `readVersions`, not `read`. Left unset, `readVersions` allows any
