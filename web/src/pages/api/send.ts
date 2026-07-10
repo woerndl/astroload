@@ -6,28 +6,13 @@ export const prerender = false
 
 const COLLECT_URL = `${UMAMI_HOST_URL}/api/send`
 
-// Never forwarded upstream: hop-by-hop headers, the original host, and every
-// client-supplied IP or geo hint. x-umami-client-ip is set below from the
-// proxy-trusted header. Stripping the rest stops a visitor from spoofing their
-// geo through any header Umami's IP resolver might fall back to.
-const STRIP_HEADERS = new Set([
-  'host',
-  'content-length',
-  'connection',
-  'accept-encoding',
-  'cookie',
-  'forwarded',
-  'x-real-ip',
-  'cf-connecting-ip',
-  'cf-ipcountry',
-  'true-client-ip',
-  'x-client-ip',
-  'x-cluster-client-ip',
-  'fastly-client-ip',
-  'fly-client-ip',
-  'x-appengine-user-ip',
-  'x-umami-client-ip',
-])
+// The only request headers forwarded upstream: the User-Agent (Cloud's
+// server-side bot filter drops events whose UA was altered) and
+// x-umami-cache (the session token the tracker echoes back). Everything else
+// is dropped, so a visitor cannot spoof their geo through whatever header
+// Umami's IP resolver might fall back to. x-umami-client-ip is synthesized
+// from the proxy-trusted header below.
+const FORWARD_HEADERS = ['user-agent', 'x-umami-cache']
 
 // Umami Cloud rejects the whole event with a 400 when one optional payload
 // field exceeds its length cap, so drop an overrunning capped field rather
@@ -54,17 +39,31 @@ export const POST: APIRoute = async ({ request }) => {
   // unless the proxy in front rewrites the header.
   const clientIp = request.headers.get('x-real-ip') ?? firstForwardedFor(request)
 
-  const headers = new Headers()
-  for (const [key, value] of request.headers) {
-    if (STRIP_HEADERS.has(key.toLowerCase()) || key.toLowerCase().startsWith('x-forwarded')) {
-      continue
-    }
-    headers.set(key, value)
+  const headers = new Headers({ 'Content-Type': 'application/json' })
+  for (const name of FORWARD_HEADERS) {
+    const value = request.headers.get(name)
+    if (value) headers.set(name, value)
   }
-  headers.set('Content-Type', 'application/json')
   if (clientIp) headers.set('x-umami-client-ip', clientIp)
 
-  const body = pruneOverlongFields(await request.text())
+  // The proxy relays events for this site only. Without the check it is an
+  // open relay: anyone could funnel traffic for an arbitrary website id
+  // through this origin, spending its egress and, on Umami Cloud, its event
+  // quota. The tracker always posts { payload: { website } }, so a body
+  // without this site's id is forged by construction.
+  const raw = await request.text()
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return new Response('', { status: 403 })
+  }
+  const payload = (parsed as { payload?: { website?: unknown } } | null)?.payload
+  if (payload?.website !== UMAMI_WEBSITE_ID) {
+    return new Response('', { status: 403 })
+  }
+
+  const body = pruneOverlongFields(parsed, raw)
 
   try {
     const upstream = await fetch(COLLECT_URL, { method: 'POST', headers, body })
@@ -84,23 +83,17 @@ function firstForwardedFor(request: Request): string | null {
   return xff ? (xff.split(',')[0]?.trim() ?? null) : null
 }
 
-// Forward anything that does not parse, so an upstream format change never
-// drops events.
-function pruneOverlongFields(raw: string): string {
-  try {
-    const parsed = JSON.parse(raw)
-    const payload = parsed?.payload
-    if (!payload || typeof payload !== 'object') return raw
+function pruneOverlongFields(parsed: unknown, raw: string): string {
+  const payload = (parsed as { payload?: Record<string, unknown> } | null)?.payload
+  if (!payload || typeof payload !== 'object') return raw
 
-    let pruned = false
-    for (const [field, max] of Object.entries(FIELD_LIMITS)) {
-      if (typeof payload[field] === 'string' && payload[field].length > max) {
-        delete payload[field]
-        pruned = true
-      }
+  let pruned = false
+  for (const [field, max] of Object.entries(FIELD_LIMITS)) {
+    const value = payload[field]
+    if (typeof value === 'string' && value.length > max) {
+      delete payload[field]
+      pruned = true
     }
-    return pruned ? JSON.stringify(parsed) : raw
-  } catch {
-    return raw
   }
+  return pruned ? JSON.stringify(parsed) : raw
 }
