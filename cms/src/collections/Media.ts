@@ -2,7 +2,7 @@ import path from 'path'
 import type { CollectionConfig } from 'payload'
 import { fileURLToPath } from 'url'
 
-import { isAdmin } from '../access/isAdmin'
+import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import {
   triggerDeployAlwaysAfterChange,
   triggerDeployAlwaysAfterDelete,
@@ -27,9 +27,9 @@ export const Media: CollectionConfig = {
   // Public read so the file route serves images without an api key.
   access: {
     read: () => true,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    create: isAdminOrEditor,
+    update: isAdminOrEditor,
+    delete: isAdminOrEditor,
   },
   admin: {
     useAsTitle: 'alt',

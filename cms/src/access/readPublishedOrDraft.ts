@@ -6,7 +6,10 @@ import type { Access, AccessArgs } from 'payload'
 export const readPublishedOrDraft: Access = ({ req: { user } }: AccessArgs) => {
   if (!user) return false
 
-  if (user.collection === 'api-keys' && user.type === 'read-only') {
+  // Fail closed: every api-key except the preview key is filtered to
+  // published content, so a key type added later cannot read drafts by
+  // omission.
+  if (user.collection === 'api-keys' && user.type !== 'preview') {
     return { _status: { equals: 'published' } }
   }
 

@@ -69,8 +69,8 @@ The web app already reads content over REST with a scoped API key, sent as
 keys are read-only and preview, so they cannot mutate.
 
 A write needs a user session. Content collections (Pages, Posts, Authors) gate
-create, update, and delete on `isAdmin`, so log in as an `admin` user and use the
-returned token:
+create, update, and delete on `isAdminOrEditor`, so log in as an `admin` or
+`editor` user and use the returned token:
 
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:3000/api/users/login \

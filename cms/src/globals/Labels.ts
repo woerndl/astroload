@@ -1,6 +1,6 @@
 import type { GlobalConfig, TextField } from 'payload'
 
-import { isAdmin } from '../access/isAdmin'
+import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { triggerDeployGlobalAfterChange } from '../hooks/triggerDeploy'
 
 const labelField = (name: string, label?: string): TextField => ({
@@ -17,7 +17,7 @@ export const Labels: GlobalConfig = {
   typescript: { interface: 'Labels' },
   access: {
     read: () => true,
-    update: isAdmin,
+    update: isAdminOrEditor,
   },
   hooks: {
     afterChange: [triggerDeployGlobalAfterChange],
