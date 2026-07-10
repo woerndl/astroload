@@ -31,9 +31,10 @@ const prerenderOverrides = {
       }
       // In a single-locale project the [lang] routes have no static paths, but
       // their prerendered patterns still register, and the Node adapter answers
-      // a pattern with no file with a 500 instead of a 404
-      // (/anything/sitemap.xml). Rendering them on demand makes each route's
-      // own locale guard reachable, so those URLs 404.
+      // a pattern with no file with a 500 instead of a 404. Rendering them on
+      // demand makes each route's own locale guard reachable, so those URLs
+      // 404. (The [lang] sitemap endpoint carries a literal `prerender = false`
+      // in its route file for the same reason in every build.)
       if (!LOCALE_URL_PREFIX && route.component.includes('/pages/[lang]/')) {
         route.prerender = false
       }
