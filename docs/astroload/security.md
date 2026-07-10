@@ -43,7 +43,12 @@ the Resend and S3 keys) are separate concerns and live alongside these.
    Redirects. Managing users and API keys stays admin-only. The first
    account registered on an empty instance becomes an admin regardless
    of the form's role default, so a fresh deploy cannot lock itself
-   out.
+   out. That open registration is Payload's bootstrap model, and with
+   transactions off (the standalone-Mongo default) the empty-instance
+   check is not atomic, so two requests racing during the setup window
+   could both register as admins. Register the first account, or run the
+   seed (which mints the admin), before the instance is publicly
+   reachable. Once one user exists the endpoint closes.
 2. Two API keys minted by the seed and consumed by the Astro side.
    - A read-only key for the public renderer. Cannot read drafts.
      Cannot write. Server-only.
