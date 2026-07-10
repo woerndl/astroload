@@ -104,19 +104,18 @@ a similarly hard reason.
 
 ## Build-time CMS reads fail loud on a strict build, degrade otherwise
 
-`web/src/cms/getRedirects.ts` runs from `astro.config.mjs`. The result
-is folded into the server manifest. On a strict build (`REDIRECTS_STRICT=1`,
-which the web `build` script sets), a failed CMS fetch is retried with backoff
-and, if the CMS stays unreachable, throws, so the deploy fails rather than
-shipping a redirect-less site over the last good deploy. A missing env var
-throws the same way. In dev, `astro check`, or a plain `astro build`, the
-fetch makes one attempt and then returns the committed
-`redirects.fallback.json` (empty by default) so the run still ships. Anything
-else that reads `process.env` from
-`astro.config.mjs` needs to import `dotenv/config` at the top of its
-module, because Astro loads `.env` through Vite after the user config
-has already been evaluated. See [`maintenance.md`](./maintenance.md)
-for the failure mode this prevents.
+`web/src/cms/getRedirects.ts` runs from `astro.config.mjs`, and its result
+is folded into the server manifest. A strict build (`REDIRECTS_STRICT=1`,
+which the web `build` script sets) fails when the CMS read fails, so a
+deploy never ships a redirect-less site over the last good one. Dev,
+`astro check`, and a plain `astro build` fall back to the committed
+`redirects.fallback.json` (empty by default) so the run still ships. See
+[`maintenance.md`](./maintenance.md) for the retry, fail-loud, and fallback
+policy in full.
+
+Anything else that reads `process.env` from `astro.config.mjs` needs to
+import `dotenv/config` at the top of its module, because Astro loads `.env`
+through Vite after the user config has already been evaluated.
 
 ## Localized values come from per-locale lookups
 
