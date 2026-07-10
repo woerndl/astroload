@@ -2,10 +2,10 @@ import { randomBytes, randomUUID } from 'crypto'
 import path from 'path'
 import { buildEditorState } from '@payloadcms/richtext-lexical'
 import type { SerializedBlockNode } from '@payloadcms/richtext-lexical'
-import type { Payload } from 'payload'
+import type { CollectionSlug, Payload, Where } from 'payload'
 import { fileURLToPath } from 'url'
 
-import { LOCALES, type Locale } from './shared'
+import { DEFAULT_LOCALE, LOCALES, type Locale } from './shared'
 
 const ADMIN_EMAIL = 'admin@example.com'
 const ADMIN_PASSWORD = 'admin1234'
@@ -44,9 +44,8 @@ const richTextWithImageBlock = (text: string, imageId: string | number, caption:
 // this single opt-out instead of an `as never` cast at each call site.
 const seedData = (data: Record<string, unknown>) => data as never
 
-// Returns the locale only if the project ships it. The seed authors every
-// document in 'de' and overlays 'en' on top. A single-locale project skips the
-// overlay for a locale it no longer has.
+// Returns the locale only if the project ships it, so locale-specific writes
+// can be skipped for a locale the project no longer has.
 const configuredLocale = (code: string): Locale | null =>
   (LOCALES as readonly string[]).includes(code) ? (code as Locale) : null
 
@@ -57,25 +56,42 @@ const configuredLocale = (code: string): Locale | null =>
 // collections drop last so a force-reseed cannot collide on api-key
 // uniqueness.
 async function clearAll(payload: Payload): Promise<void> {
-  const all = { id: { exists: true as const } }
+  const all: Where = { id: { exists: true } }
 
   await payload.updateGlobal({ slug: 'header', data: seedData({ links: [] }) })
   await payload.updateGlobal({ slug: 'footer', data: seedData({ columns: [] }) })
   await payload.updateGlobal({
     slug: 'site-settings',
-    data: seedData({ defaultSeo: { image: null } }),
+    // siteName satisfies the required validation when the global was never
+    // saved (a SEED_FORCE before any seed ran). The real values land at the
+    // end of the seed.
+    data: seedData({ siteName: SITE_NAME, defaultSeo: { image: null } }),
   })
 
-  await payload.delete({ collection: 'posts', where: all })
-  await payload.delete({ collection: 'authors', where: all })
-  await payload.delete({ collection: 'pages', where: { isRootPage: { not_equals: true } } })
-  await payload.delete({ collection: 'pages', where: all })
-  await payload.delete({ collection: 'redirects', where: all })
-  await payload.delete({ collection: 'form-submissions', where: all })
-  await payload.delete({ collection: 'forms', where: all })
-  await payload.delete({ collection: 'media', where: all })
-  await payload.delete({ collection: 'api-keys', where: all })
-  await payload.delete({ collection: 'users', where: all })
+  // Bulk deletes resolve with per-document errors instead of rejecting. A
+  // partially cleared collection must abort the reseed here, or the create
+  // pass would collide with the leftovers (a second root page, api-key
+  // uniqueness) or silently duplicate content.
+  const deleteAll = async (collection: CollectionSlug, where: Where = all) => {
+    const result = await payload.delete({ collection, where })
+    if (result.errors.length > 0) {
+      const detail = result.errors.map((e) => `${e.id}: ${e.message}`).join('; ')
+      throw new Error(
+        `Seed: clearing ${collection} left ${result.errors.length} document(s) behind: ${detail}`,
+      )
+    }
+  }
+
+  await deleteAll('posts')
+  await deleteAll('authors')
+  await deleteAll('pages', { isRootPage: { not_equals: true } })
+  await deleteAll('pages')
+  await deleteAll('redirects')
+  await deleteAll('form-submissions')
+  await deleteAll('forms')
+  await deleteAll('media')
+  await deleteAll('api-keys')
+  await deleteAll('users')
 }
 
 export async function seedCMS(payload: Payload, force = false): Promise<void> {
@@ -90,10 +106,14 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
     }
   }
 
-  // The English overlay writes run only when the project ships 'en'. A
-  // single-locale build skips them. `en` is typed Locale (not the literal
-  // 'en'), so it stays assignable when the project's locale set excludes it.
+  // The showcase content is German with an English overlay. The base pass
+  // needs a configured locale: 'de' when the project ships it, otherwise the
+  // default locale, where a configured 'en' overlay then replaces the German
+  // text. A project defaulting to a third locale keeps the German base as its
+  // demo material. `en` is typed Locale (not the literal 'en'), so the overlay
+  // writes stay assignable when the project's locale set excludes it.
   const en = configuredLocale('en')
+  const baseLocale = configuredLocale('de') ?? DEFAULT_LOCALE
 
   payload.logger.info('Seed: creating admin user')
   await payload.create({
@@ -135,7 +155,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   const createMedia = async (altDe: string, altEn: string) => {
     const doc = await payload.create({
       collection: 'media',
-      locale: 'de',
+      locale: baseLocale,
       filePath: placeholderImagePath,
       data: { alt: altDe },
     })
@@ -152,17 +172,57 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   const authorPhoto = await createMedia('Autorenfoto', 'Author photo')
 
   payload.logger.info('Seed: creating contact form')
+  // The plugin localizes submitButtonLabel, confirmationMessage, and each
+  // field's label, so the demo form follows the same base-plus-overlay
+  // pattern as the pages. The title is not localized. It names the form in
+  // admin.
   const contactForm = await payload.create({
     collection: 'forms',
+    locale: baseLocale,
     data: {
       title: 'Contact',
-      submitButtonLabel: 'Send',
+      submitButtonLabel: 'Senden',
       confirmationType: 'message',
-      confirmationMessage: richText('Thanks. We will be in touch.'),
+      confirmationMessage: richText('Danke. Wir melden uns.'),
       fields: [
         { blockType: 'text', name: 'name', label: 'Name', required: true, width: 100 },
-        { blockType: 'email', name: 'email', label: 'Email', required: true, width: 100 },
-        { blockType: 'textarea', name: 'message', label: 'Message', required: true, width: 100 },
+        { blockType: 'email', name: 'email', label: 'E-Mail', required: true, width: 100 },
+        { blockType: 'textarea', name: 'message', label: 'Nachricht', required: true, width: 100 },
+      ],
+    },
+  })
+  if (en) await payload.update({
+    collection: 'forms',
+    id: contactForm.id,
+    locale: en,
+    data: {
+      submitButtonLabel: 'Send',
+      confirmationMessage: richText('Thanks. We will be in touch.'),
+      fields: [
+        {
+          id: contactForm.fields![0]!.id,
+          blockType: 'text',
+          name: 'name',
+          label: 'Name',
+          required: true,
+          width: 100,
+        },
+        {
+          id: contactForm.fields![1]!.id,
+          blockType: 'email',
+          name: 'email',
+          label: 'Email',
+          required: true,
+          width: 100,
+        },
+        {
+          id: contactForm.fields![2]!.id,
+          blockType: 'textarea',
+          name: 'message',
+          label: 'Message',
+          required: true,
+          width: 100,
+        },
       ],
     },
   })
@@ -170,7 +230,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   payload.logger.info('Seed: creating pages')
   const homeDe = await payload.create({
     collection: 'pages',
-    locale: 'de',
+    locale: baseLocale,
     data: seedData({
       title: 'Startseite',
       slug: '',
@@ -216,7 +276,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
 
   const aboutDe = await payload.create({
     collection: 'pages',
-    locale: 'de',
+    locale: baseLocale,
     data: seedData({
       title: 'Über uns',
       slug: 'ueber-uns',
@@ -249,7 +309,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
 
   const contactDe = await payload.create({
     collection: 'pages',
-    locale: 'de',
+    locale: baseLocale,
     data: seedData({
       title: 'Kontakt',
       slug: 'kontakt',
@@ -289,7 +349,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   payload.logger.info('Seed: creating posts and authors parent pages')
   const postsParentDe = await payload.create({
     collection: 'pages',
-    locale: 'de',
+    locale: baseLocale,
     data: seedData({
       title: 'Beiträge',
       slug: 'posts',
@@ -328,7 +388,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
 
   const authorsParentDe = await payload.create({
     collection: 'pages',
-    locale: 'de',
+    locale: baseLocale,
     data: seedData({
       title: 'Autoren',
       slug: 'authors',
@@ -368,7 +428,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   payload.logger.info('Seed: creating author')
   const authorDe = await payload.create({
     collection: 'authors',
-    locale: 'de',
+    locale: baseLocale,
     data: seedData({
       name: 'Sam Houston',
       slug: 'sam-houston',
@@ -393,7 +453,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   payload.logger.info('Seed: creating post')
   const postDe = await payload.create({
     collection: 'posts',
-    locale: 'de',
+    locale: baseLocale,
     data: seedData({
       title: 'Hallo Welt',
       slug: 'hallo-welt',
@@ -429,7 +489,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   payload.logger.info('Seed: updating globals')
   const headerDe = await payload.updateGlobal({
     slug: 'header',
-    locale: 'de',
+    locale: baseLocale,
     data: seedData({
       links: [
         { page: { relationTo: 'pages', value: homeDe.id }, label: 'Startseite' },
@@ -465,7 +525,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   const year = new Date().getFullYear()
   const footerDe = await payload.updateGlobal({
     slug: 'footer',
-    locale: 'de',
+    locale: baseLocale,
     data: seedData({
       columns: [
         {
@@ -530,7 +590,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
 
   await payload.updateGlobal({
     slug: 'labels',
-    locale: 'de',
+    locale: baseLocale,
     data: {
       global: {
         home: 'Startseite',
@@ -597,7 +657,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
 
   await payload.updateGlobal({
     slug: 'site-settings',
-    locale: 'de',
+    locale: baseLocale,
     data: {
       siteName: SITE_NAME,
       defaultSeo: {
