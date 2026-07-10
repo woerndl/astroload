@@ -12,22 +12,22 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
-Astroload is an Astro 7 + Payload CMS starter template and boilerplate, built as a pnpm workspace on MongoDB. It includes live preview, single- or multi-locale routing, SEO output, S3 storage, spam-protected forms, build-time redirects, deploy webhooks, and a typed CMS data layer with LRU caching.
+Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspace on MongoDB. It includes live preview, single- or multi-locale routing, SEO output, S3 storage, spam-protected forms, build-time redirects, deploy webhooks, and a typed CMS data layer with LRU caching.
 
 > [!NOTE]
 > This template is in active development. Production deployment is untested. Expect the API, content model, and project structure to change between releases. Pin a tag or commit if you build on top of it. Changes per release are tracked in [`astroload/CHANGELOG.md`](./astroload/CHANGELOG.md).
 
 ## Features
 
-**Content and CMS**
+### Content and CMS
 
 - Page builder with rich text, image, form, and dynamic posts/authors list blocks
 - Drafts and autosave on Pages, Posts, and Authors
-- Role-based access (`admin`, `editor`) plus separate API keys for read-only and preview reads. The Astro side uses these scoped keys, so no admin-capable Payload token ships in `web/.env`
+- Role-based access (`admin`, `editor`) plus separate API keys for read-only and preview reads. The Astro side uses these scoped keys, so `web/.env` never holds an admin-capable Payload token
 - Editor-managed Header, Footer, Labels, and SiteSettings globals
-- Seed script for an admin user, API keys, and demo content; re-running is a no-op unless `--force` or `SEED_FORCE=1`
+- Seed script for an admin user, API keys, and demo content
 
-**Frontend rendering**
+### Frontend rendering
 
 - Astro 7 with prerendered pages in production and an SSR fallback in dev so CMS edits show up without restarts
 - Tailwind v4 via `@tailwindcss/vite`, no PostCSS layer
@@ -35,33 +35,33 @@ Astroload is an Astro 7 + Payload CMS starter template and boilerplate, built as
 - Lexical rich text with custom block and upload renderers
 - Typed data layer backed by an LRU cache, bypassed in dev and inside the preview iframe
 
-**Live preview**
+### Live preview
 
 - Autosave-driven preview on every editable collection
 - Mobile, tablet, and desktop breakpoints preconfigured in the admin
 - Editor toolbar overlay on the standalone preview tab, hidden inside the Payload iframe
 - Preview route guarded by a shared secret with `crypto.timingSafeEqual`, served with `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, and `Referrer-Policy: no-referrer`
 
-**SEO and i18n**
+### SEO and i18n
 
-- Configurable locale set (`en` and `de` out of the box). With more than one locale, URLs carry a `/{locale}` segment and content pages get `hreflang` plus `x-default` alternates (error and root pages carry none)
+- Configurable locale set (`en` and `de` by default). With more than one locale, URLs carry a `/{locale}` segment and content pages get `hreflang` plus `x-default` alternates (error and root pages carry none)
 - With a single locale the prefix is omitted, so URLs read `/about` rather than `/en/about`, and the switcher and alternates are off. A single-locale project that may add languages later can set `FORCE_URL_PREFIX` to keep the `/{locale}` prefix, so its URLs survive that change with no redirects
 - Editable SEO metadata (title, description, image) on every content type, with fallbacks
 - JSON-LD output: `WebSite` and `Organization` on home, `Article` on posts, `Person` on authors
 - Sitemap index plus per-locale sitemaps with `lastmod` and alternate-locale links
 - `robots.txt` gated by a SiteSettings toggle so staging stays out of search
-- Language switcher in the header when more than one locale ships
+- Language switcher in the header when more than one locale is configured
 
-**Forms and spam protection**
+### Forms and spam protection
 
 - Form builder with text, email, number, textarea, select, checkbox, and message fields
 - Client-side submission to the CMS endpoint (JavaScript required)
 - Hidden honeypot field plus a submit-time trap, both stripped server-side
 
-**Operations**
+### Operations
 
 - Build-time redirects fetched from a `Redirects` collection, no runtime hop
-- Deploy webhook (`DEPLOY_HOOK_URL`) for Railway, Vercel, Coolify, or any plain endpoint, with edit bursts coalesced into a rate-limited build window
+- Deploy webhook (`DEPLOY_HOOK_URL`) for any plain endpoint, with edit bursts coalesced into a rate-limited build window
 - Optional integrations, each turning on when its env vars are set: S3 storage (falls back to the local filesystem under `cms/media/`), Resend email (falls back to console logging), and Umami analytics, Cloud or self-hosted (cookieless, proxied through first-party routes so content blockers keyed on the Umami hosts miss it)
 - Locale-aware custom 404 and 500 pages
 
@@ -124,7 +124,7 @@ Re-seeding from a populated database needs `--force` or `SEED_FORCE=1`.
 
 Variables are declared in `cms/.env.example` and `web/.env.example`, which are the source of truth.
 
-**CMS (`cms/.env`)**
+### CMS (`cms/.env`)
 
 - `DATABASE_URI` MongoDB connection string. The docker-compose service uses `mongodb://127.0.0.1:27017/astroload`.
 - `PAYLOAD_SECRET` admin session secret.
@@ -135,13 +135,13 @@ Variables are declared in `cms/.env.example` and `web/.env.example`, which are t
 - `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `RESEND_FROM_NAME` optional.
 - `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` optional.
 
-**Web (`web/.env`)**
+### Web (`web/.env`)
 
 - `PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY` minted by the seed.
 - `PREVIEW_SECRET` matches the CMS value.
 - `CMS_URL`, `WEBSITE_URL` origins.
 - `UMAMI_WEBSITE_ID` optional.
-- `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are public, build-time-baked values. Build the web app with production values. Injecting them only at runtime has no effect. See [Deployment](#deployment).
+- `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are public values baked in at build time, see [Deployment](#deployment).
 
 ## Architecture
 
@@ -165,31 +165,27 @@ Two Node processes, one MongoDB database. `cms/` owns the admin, the API, and th
 
 ## Deployment
 
-Both apps are plain Node servers. No serverless adapter or provider-specific build step, so any Node host works. For containers, each app ships a Dockerfile and `deploy/docker-compose.production.yml` is a scaffold to copy. See [`astroload/deployment.md`](./astroload/deployment.md).
+Both apps are plain Node servers. No serverless adapter or provider-specific build step, so any Node host works. For containers, each app has a Dockerfile and `deploy/docker-compose.production.yml` is a scaffold to copy. See [`astroload/deployment.md`](./astroload/deployment.md).
 
-**CMS**
+### CMS
 
 - `pnpm --filter @astroload/cms build` then `pnpm --filter @astroload/cms start`.
 - Needs `DATABASE_URI`, `PAYLOAD_SECRET`, `SERVER_URL`, `WEBSITE_URL`, `PREVIEW_SECRET` at runtime. Boot fails fast with a consolidated error if any are missing.
 - S3 and Resend turn on when their env vars are set.
+- There is no bundled rate limiter. Rate limiting belongs at the edge or in a proxy in front of the CMS, see [`astroload/security.md`](./astroload/security.md).
 
-**Web**
+### Web
 
 - `pnpm --filter @astroload/web build` then `pnpm --filter @astroload/web start`. The `start` script binds `0.0.0.0:4321` by default. Container hosts (Railway, Coolify, Fly) inject `HOST` and `PORT` to override that.
 - Build env is deploy env. `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are `astro:env/client` public values, inlined into the output at `astro build`. The web app must be built with the production values. Injecting them only at `start` has no effect.
 - The Astro standalone server does not auto-load `.env`, unlike the CMS's `next start`. The host injects the runtime server vars (`PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `PREVIEW_SECRET`, plus `UMAMI_HOST_URL` for a self-hosted Umami). For local production testing, export them or run `node --env-file=.env ./dist/server/entry.mjs`.
 - Pages and sitemap routes are prerendered. The `/preview` route is SSR. A client-side script POSTs form submissions as JSON to Payload's `/api/form-submissions` endpoint, so no Web-side submission route is needed. Submission requires JavaScript.
 - `astro build` reads redirects from the `Redirects` collection through the CMS REST API. The CMS must be reachable during build.
+- The Node server sends uncompressed responses. gzip or brotli comes from the host's proxy or CDN, and the host cutover runbook in [`astroload/maintenance.md`](./astroload/maintenance.md) shows how to verify it. A host that does not compress needs a compressing proxy in front.
 
-**Deploy webhook**
+### Deploy webhook
 
 - Setting `DEPLOY_HOOK_URL` in the CMS fires a POST whenever a draft is published, a published doc is deleted, or any global changes. Works with Railway, Vercel, Coolify, or any plain webhook endpoint as-is. A burst of edits coalesces to one leading build plus at most one trailing build per throttle window while edits continue. See `cms/.env.example` for URL shapes and `docs/astroload/maintenance.md` for publish-to-live latency and the `CONTENT_BUILD_ID` cache-bust seam.
-
-## Not included by design
-
-- Response compression on the web server. The Astro Node server sends uncompressed responses, and gzip or brotli is expected from the host's proxy or CDN. The host cutover runbook in [`astroload/maintenance.md`](./astroload/maintenance.md) shows how to verify it, and a host that does not compress needs a compressing proxy in front.
-- A bundled rate limiter. Rate limiting belongs at the edge or in front of the CMS, see [`astroload/security.md`](./astroload/security.md).
-- Admin panel branding and date-format helpers. Payload's own `admin` config covers both when a project wants them.
 
 ## Contributing
 

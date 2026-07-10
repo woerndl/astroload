@@ -13,7 +13,7 @@ import { env } from '../env'
 // trigger: a build hook (Railway, Vercel, Coolify) only needs the POST.
 //
 // State is process-local. A trailing deploy queued when the process restarts is
-// lost; maintenance.md documents a latch recipe for hosts that need durability.
+// lost. maintenance.md documents a latch recipe for hosts that need durability.
 const WINDOW_MS = 300_000
 
 type Logger = PayloadRequest['payload']['logger']

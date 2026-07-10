@@ -3,8 +3,8 @@ import type { FeatureProviderServer } from '@payloadcms/richtext-lexical'
 
 const ALLOWED_LINK_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:']
 
-// Relative paths and anchors are allowed; protocol-relative `//host` is rejected
-// (off-origin); absolute URLs must use an allowed scheme, rejecting javascript:/data:.
+// Relative paths and anchors are allowed. Protocol-relative `//host` is rejected
+// (off-origin). Absolute URLs must use an allowed scheme, rejecting javascript:/data:.
 function isAllowedLinkUrl(value: string): boolean {
   const url = value.trim()
   if (url.startsWith('//')) return false
@@ -39,7 +39,7 @@ const safeLinkFeature = LinkFeature({
     }),
 })
 
-// Matches Payload's own `defaultFeatures` typing; per-feature props generics vary.
+// Matches Payload's own `defaultFeatures` typing. Per-feature props generics vary.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LexicalFeature = FeatureProviderServer<any, any, any>
 

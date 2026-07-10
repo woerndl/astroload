@@ -24,7 +24,7 @@ export function stripLocalePathsDeep<T>(value: T): T {
   return walk(value) as T
 }
 
-// Apply stripLocalePath across a per-locale path map; no-op in multi-locale mode.
+// Apply stripLocalePath across a per-locale path map.
 export function toPublicPaths(paths: LocalePaths): LocalePaths {
   if (LOCALE_URL_PREFIX) return paths
   const out: LocalePaths = {}

@@ -7,7 +7,7 @@ import { DEFAULT_LOCALE } from '../cms/types'
 // On-demand SSR opt-in. Unlike the static default, this route renders on every
 // request, so it always reflects the latest published content without waiting
 // for a rebuild. Copy this shape for the few routes that must stay current
-// (live listings, dashboards); everything else stays static. The freshness
+// (live listings, dashboards). Everything else stays static. The freshness
 // classes are documented in docs/astroload/conventions.md.
 export const prerender = false
 

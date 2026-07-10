@@ -11,7 +11,7 @@ const link = (fields: Record<string, unknown>, label = 'label') => ({
   version: 1,
 })
 
-// Each input is a link the renderer would throw on; the sanitizer must unwrap
+// Each input is a link the renderer would throw on. The sanitizer must unwrap
 // each to its plain-text children instead.
 describe('sanitizeLexicalLinks', () => {
   it('unwraps the renderer-throwing links to plain text', () => {
