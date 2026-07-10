@@ -45,10 +45,10 @@ export const validateSubmission: CollectionBeforeChangeHook = async ({ data, ope
   const valueByField = new Map<string, string | undefined>()
   for (const entry of entries) {
     if (typeof entry.field !== 'string') continue
-    // A real submission posts each field once. A duplicate name is malformed or
-    // forged and makes "which value wins" ambiguous between this check and the
-    // stored record. This assumes single-valued fields (no multi-select in this
-    // starter). Collect values per name if a multi-value field is added.
+    // Field names are unique per form (the Forms collection validates that on
+    // save), so a real submission posts each name once and a duplicate here is
+    // malformed or forged. This assumes single-valued fields (no multi-select
+    // in this starter). Collect values per name if a multi-value field is added.
     if (valueByField.has(entry.field)) throw reject()
     valueByField.set(entry.field, typeof entry.value === 'string' ? entry.value : undefined)
   }

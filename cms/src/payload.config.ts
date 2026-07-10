@@ -24,6 +24,7 @@ import { getStaticPaths } from './endpoints/staticPaths'
 import { env } from './env'
 import { lexicalEditorWithSafeLinks } from './lexical/editor'
 import { spamGuard } from './hooks/spamGuard'
+import { validateFormFields } from './hooks/validateFormFields'
 import { validateSubmission } from './hooks/validateSubmission'
 import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
@@ -120,6 +121,9 @@ export default buildConfig({
       },
       formOverrides: {
         admin: { group: CollectionGroups.System },
+        hooks: {
+          beforeValidate: [validateFormFields],
+        },
       },
       formSubmissionOverrides: {
         // Submissions hold visitor PII. Without this, read is open to any
