@@ -75,4 +75,8 @@ Two more jobs belong in that proxy layer:
 - When Umami is enabled, the proxy must pass the visitor's IP as `x-real-ip`
   (or `web/src/pages/api/send.ts` must be adjusted to the header it does set).
   Get this wrong and analytics keeps answering 200 while every visitor reports
-  the proxy's IP and country.
+  the proxy's IP and country. The proxy should also overwrite an
+  `x-real-ip` the client sent itself: a caller who reaches the app directly
+  can otherwise attribute forged events to an arbitrary IP. That only skews
+  analytics (the same forgery works against Umami directly, since the website
+  id is public in the tracker tag), but there is no reason to leave it open.

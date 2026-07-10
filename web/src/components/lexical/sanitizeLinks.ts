@@ -4,12 +4,15 @@ import { ALLOWED_LINK_SCHEMES } from '@astroload/cms/src/shared'
 // Dangerous: absolute URLs with a disallowed scheme (javascript:, data:),
 // protocol-relative `//host` (off-origin), and anything holding an ASCII
 // control character, which browsers strip while resolving a URL, so
-// '/\t/evil.com' would navigate off-origin as '//evil.com'.
+// '/\t/evil.com' would navigate off-origin as '//evil.com', and anything
+// holding a backslash, which browsers treat as a slash in http(s) URLs, so
+// '/\evil.example' would navigate off-origin as '//evil.example'.
 // Relative/schemeless are left to the renderer.
 function isDangerousHref(url: string): boolean {
   const trimmed = url.trim()
   // eslint-disable-next-line no-control-regex
   if (/[\u0000-\u001f]/.test(trimmed)) return true
+  if (trimmed.includes('\\')) return true
   if (trimmed.startsWith('//')) return true
   if (!trimmed || trimmed.startsWith('/')) return false
   try {
