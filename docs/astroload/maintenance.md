@@ -74,7 +74,8 @@ saves continue, not a flat cap of two.
 
 The hook fires whenever the published output changes: a doc that is or was
 published changed (publish, re-publish, or unpublish), a published doc
-deleted, and any global or always-deploy collection (Redirects) changed.
+deleted, and any global or always-deploy collection (Redirects, Forms,
+Media) changed.
 Saves that cannot change the live output are skipped: autosave draft writes
 on a published doc, and global or always-deploy saves that leave the
 document identical apart from `updatedAt`. The skip check errs toward

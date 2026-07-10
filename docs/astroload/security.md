@@ -76,7 +76,7 @@ that each related collection's access policy runs against the same
 requester, so draftable relations stay filtered. Verify this with a
 test before relying on it for sensitive content.
 
-Two exceptions exist by design. Decide on each before production:
+Three exceptions exist by design. Decide on each before production:
 
 - Media has `read: anyone` (public-read). Uploads referenced by an
   unpublished post are reachable by URL if someone has it. Add an
@@ -85,6 +85,12 @@ Two exceptions exist by design. Decide on each before production:
 - The Header, Footer, Labels, and SiteSettings globals are public-read.
   They carry editorial copy, not draft article bodies, but a draft
   change there is visible immediately.
+- Forms are public-read, the form-builder plugin's default. A form
+  definition holds field names, confirmation copy, and the notification
+  recipient addresses, and it is enumerable without a key. Tighten read
+  to authenticated requesters in `formOverrides.access` if exposing the
+  recipient addresses matters for your project. Writes are role-gated
+  like the content collections.
 
 `read` alone does not close the leak. Payload generates `/versions`
 endpoints for every versioned collection, and their access rule is
