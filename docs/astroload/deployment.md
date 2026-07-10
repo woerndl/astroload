@@ -53,6 +53,13 @@ to start the CMS before the web image can build. The web build's
 the shell environment or a `.env` beside the compose file. `web.env` only
 reaches the running container.
 
+The web service carries commented `UMAMI_WEBSITE_ID` and `CONTENT_BUILD_ID`
+build args. Uncomment `CONTENT_BUILD_ID` when the publish hook rebuilds
+through this compose file: without a fresh value per publish, `docker compose
+build web` on an unchanged commit replays the cached prerender layer and the
+new content never ships (see the cache-bust recipe in
+[`maintenance.md`](./maintenance.md#same-commit-redeploys-and-the-content-build-id)).
+
 ## In front of the containers
 
 The web server sends uncompressed responses over plain HTTP. Terminate TLS and

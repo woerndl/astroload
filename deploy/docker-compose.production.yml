@@ -14,7 +14,9 @@
 # file. web.env below only reaches the running container, not the build.
 #
 # A content publish repeats the last two steps. Point DEPLOY_HOOK_URL at
-# whatever runs them (a CI job, a Coolify service, a shell hook).
+# whatever runs them (a CI job, a Coolify service, a shell hook), and have it
+# pass a fresh CONTENT_BUILD_ID (see the build args below) so a same-commit
+# rebuild cannot be served from a cached build layer.
 #
 # The build runs outside the compose network, so CMS_URL must be reachable
 # from the host: the public CMS origin once DNS is up, or
@@ -24,7 +26,7 @@
 # CDN in front of both apps (see docs/astroload/deployment.md).
 services:
   mongo:
-    image: mongo:7
+    image: mongo:8
     restart: unless-stopped
     volumes:
       - mongodata:/data/db
@@ -65,6 +67,12 @@ services:
       args:
         CMS_URL: ${CMS_URL:?public CMS origin, baked into the build}
         WEBSITE_URL: ${WEBSITE_URL:?public web origin, baked into the build}
+        # Optional. UMAMI_WEBSITE_ID (baked, public) turns analytics on.
+        # CONTENT_BUILD_ID must change per publish-driven rebuild, or the
+        # docker build cache replays the old prerender. The publish hook
+        # passes it, e.g. CONTENT_BUILD_ID=$(date +%s).
+        # UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+        # CONTENT_BUILD_ID: ${CONTENT_BUILD_ID:-}
       # Sourced from the shell env or .env, not web.env (see header comment).
       secrets:
         - payload_read_key
