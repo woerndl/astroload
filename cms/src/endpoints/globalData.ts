@@ -1,4 +1,3 @@
-import { createHash } from 'crypto'
 import { APIError, type PayloadRequest } from 'payload'
 
 import type { Footer, Header, Labels, SiteSetting } from '../payload-types'
@@ -48,21 +47,12 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
     const body: GlobalData = preview
       ? { footer, header, labels, siteSettings }
       : stripLocalePathsDeep({ footer, header, labels, siteSettings })
-    const json = JSON.stringify(body)
-    const etag = createHash('md5').update(json).digest('hex')
     // private: the response requires an API key, so a shared cache must not
     // serve it across clients.
     const cacheControl = preview ? 'no-cache' : `private, max-age=${PUBLIC_MAX_AGE_SECONDS}`
 
-    if (req.headers.get('if-none-match') === etag) {
-      return new Response(null, {
-        headers: { 'Cache-Control': cacheControl, ETag: etag },
-        status: 304,
-      })
-    }
-
-    return new Response(json, {
-      headers: { 'Cache-Control': cacheControl, 'Content-Type': 'application/json', ETag: etag },
+    return new Response(JSON.stringify(body), {
+      headers: { 'Cache-Control': cacheControl, 'Content-Type': 'application/json' },
     })
   } catch (error) {
     req.payload.logger.error({ err: error }, 'globalData endpoint failed')
