@@ -28,6 +28,10 @@ export const publishedRelationField = ({
       async ({ req }) => {
         const { docs } = await req.payload.find({
           collection: relationTo,
+          // Only the ids are used, so skip relation population and every
+          // non-id field. An empty select is include-mode, returning id alone.
+          depth: 0,
+          select: {},
           limit: 0,
           pagination: false,
           locale: req.locale,

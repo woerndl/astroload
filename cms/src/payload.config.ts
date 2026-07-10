@@ -42,9 +42,27 @@ import { stripLocalePath } from './stripLocalePath'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-const s3Configured =
-  !!process.env.S3_BUCKET && !!process.env.S3_ACCESS_KEY_ID && !!process.env.S3_SECRET_ACCESS_KEY
-const resendConfigured = !!process.env.RESEND_API_KEY && !!process.env.RESEND_FROM_ADDRESS
+// An integration turns on only when its whole env group is set. Warn on a
+// half-set group so a typo'd var name does not silently leave S3 or email off.
+function isConfigured(label: string, vars: Record<string, string | undefined>): boolean {
+  const set = Object.values(vars).filter(Boolean).length
+  const names = Object.keys(vars)
+  if (set > 0 && set < names.length) {
+    const missing = names.filter((name) => !vars[name])
+    console.warn(`[astroload] ${label} is partially configured. It stays off until you set: ${missing.join(', ')}`)
+  }
+  return set === names.length
+}
+
+const s3Configured = isConfigured('S3 storage', {
+  S3_BUCKET: process.env.S3_BUCKET,
+  S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+  S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
+})
+const resendConfigured = isConfigured('Resend email', {
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  RESEND_FROM_ADDRESS: process.env.RESEND_FROM_ADDRESS,
+})
 
 export default buildConfig({
   serverURL: env.SERVER_URL,

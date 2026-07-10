@@ -13,7 +13,6 @@ const labelField = (name: string, label?: string): TextField => ({
 
 export const Labels: GlobalConfig = {
   slug: 'labels',
-  dbName: 'labels',
   typescript: { interface: 'Labels' },
   access: {
     read: () => true,

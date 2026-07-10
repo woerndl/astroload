@@ -60,6 +60,13 @@ export const Posts: PageCollectionConfig = {
         position: 'sidebar',
         date: { pickerAppearance: 'dayAndTime' },
       },
+      hooks: {
+        beforeChange: [
+          // Stamp the first publish time when the editor leaves the field
+          // blank. A later publish keeps whatever value is already set.
+          ({ data, value }) => (data?._status === 'published' && !value ? new Date() : value),
+        ],
+      },
     },
     {
       name: 'title',

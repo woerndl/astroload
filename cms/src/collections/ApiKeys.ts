@@ -34,7 +34,6 @@ export const ApiKeys: CollectionConfig = {
       name: 'type',
       type: 'select',
       required: true,
-      saveToJWT: true,
       defaultValue: 'read-only',
       options: [
         { label: 'Read-only (published content)', value: 'read-only' },
