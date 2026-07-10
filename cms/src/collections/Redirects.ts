@@ -1,6 +1,6 @@
 import type { RedirectsCollectionConfig } from '@jhb.software/payload-pages-plugin'
 
-import { isAdmin } from '../access/isAdmin'
+import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { isAuthenticated } from '../access/isAuthenticated'
 import {
   triggerDeployAlwaysAfterChange,
@@ -20,9 +20,9 @@ export const Redirects: RedirectsCollectionConfig = {
   },
   access: {
     read: isAuthenticated,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    create: isAdminOrEditor,
+    update: isAdminOrEditor,
+    delete: isAdminOrEditor,
   },
   hooks: {
     afterChange: [triggerDeployAlwaysAfterChange],

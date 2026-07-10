@@ -20,6 +20,21 @@ export const Users: CollectionConfig = {
     create: isAdmin,
     delete: isAdmin,
   },
+  hooks: {
+    beforeChange: [
+      // First-user registration runs with overrideAccess, so the roles field
+      // access never applies and the onboarding form's 'editor' default would
+      // save, locking the instance out of every admin-only surface. Whoever
+      // registers into an empty Users collection is the admin.
+      async ({ data, operation, req }) => {
+        if (operation === 'create') {
+          const { totalDocs } = await req.payload.count({ collection: 'users', req })
+          if (totalDocs === 0) data.roles = ['admin']
+        }
+        return data
+      },
+    ],
+  },
   fields: [
     {
       name: 'firstName',

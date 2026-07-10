@@ -1,13 +1,13 @@
 import type { GlobalConfig } from 'payload'
 
-import { isAdmin } from '../access/isAdmin'
+import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { triggerDeployGlobalAfterChange } from '../hooks/triggerDeploy'
 
 export const Footer: GlobalConfig = {
   slug: 'footer',
   access: {
     read: () => true,
-    update: isAdmin,
+    update: isAdminOrEditor,
   },
   hooks: {
     afterChange: [triggerDeployGlobalAfterChange],

@@ -38,7 +38,12 @@ Other env values (`DATABASE_URI`, `PAYLOAD_SECRET`, `DEPLOY_HOOK_URL`,
 the Resend and S3 keys) are separate concerns and live alongside these.
 
 1. Editor accounts in the Users collection. Admin and editor roles.
-   Real authentication through Payload's login flow.
+   Real authentication through Payload's login flow. Both roles write
+   content: Pages, Posts, Authors, Media, the four globals, and
+   Redirects. Managing users and API keys stays admin-only. The first
+   account registered on an empty instance becomes an admin regardless
+   of the form's role default, so a fresh deploy cannot lock itself
+   out.
 2. Two API keys minted by the seed and consumed by the Astro side.
    - A read-only key for the public renderer. Cannot read drafts.
      Cannot write. Server-only.

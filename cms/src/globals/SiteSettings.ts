@@ -1,13 +1,13 @@
 import type { GlobalConfig } from 'payload'
 
-import { isAdmin } from '../access/isAdmin'
+import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { triggerDeployGlobalAfterChange } from '../hooks/triggerDeploy'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
   access: {
     read: () => true,
-    update: isAdmin,
+    update: isAdminOrEditor,
   },
   hooks: {
     afterChange: [triggerDeployGlobalAfterChange],

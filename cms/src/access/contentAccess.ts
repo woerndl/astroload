@@ -1,4 +1,4 @@
-import { isAdmin } from './isAdmin'
+import { isAdminOrEditor } from './isAdminOrEditor'
 import { isPanelUser } from './isPanelUser'
 import { readPublishedOrDraft } from './readPublishedOrDraft'
 
@@ -8,7 +8,7 @@ export const contentAccess = {
   // api-key could read drafts through the versions endpoints. Lock them to
   // panel users. The public site never needs version history.
   readVersions: isPanelUser,
-  create: isAdmin,
-  update: isAdmin,
-  delete: isAdmin,
+  create: isAdminOrEditor,
+  update: isAdminOrEditor,
+  delete: isAdminOrEditor,
 }
