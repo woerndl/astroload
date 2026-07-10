@@ -21,7 +21,7 @@ interface Props {
 }
 
 const { content, class: className } = Astro.props
-// A draft with an untouched body has no content yet; render nothing rather than
+// A draft with an untouched body has no content yet. Render nothing rather than
 // dereferencing a null root.
 const nodes = sanitizeLexicalLinks(content?.root?.children ?? [])
 ---

@@ -81,7 +81,7 @@ if (isHome) {
     article.image = {
       '@type': 'ImageObject',
       url: versionedMediaURL(ogVariant.url, cover?.updatedAt),
-      // schema-dts types these as Distance/QuantitativeValue; Google wants a bare integer.
+      // schema-dts types these as Distance/QuantitativeValue. Google wants a bare integer.
       width: ogVariant.width as unknown as Distance,
       height: ogVariant.height as unknown as Distance,
     }

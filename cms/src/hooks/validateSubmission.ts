@@ -5,7 +5,7 @@ import { APIError, NotFound } from 'payload'
 const reject = () => new APIError('Submission rejected.', 400, undefined, true)
 
 // A required checkbox (consent) must be ticked. A checked box posts 'on' (the
-// browser default for a valueless checkbox) or 'true'; an unticked one is
+// browser default for a valueless checkbox) or 'true'. An unticked one is
 // omitted entirely. Every other required field just needs a non-empty value.
 const hasValue = (blockType: string, value: string | undefined): boolean => {
   if (value == null) return false
@@ -28,7 +28,7 @@ export const validateSubmission: CollectionBeforeChangeHook = async ({ data, ope
     throw reject()
   }
 
-  // findByID throws NotFound for a forged or stale form id; collapse that into
+  // findByID throws NotFound for a forged or stale form id. Collapse that into
   // the same generic rejection so the response never distinguishes the cases.
   // A transient lookup error keeps its own status instead of reading as rejected.
   const form = await req.payload

@@ -42,7 +42,7 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
   if (preview && !canPreview(req)) {
     return new Response('Forbidden', { status: 403 })
   }
-  // Single-locale projects request public, un-prefixed paths; preview keeps the
+  // Single-locale projects request public, un-prefixed paths. Preview keeps the
   // prefixed scheme end to end so the live-preview route is unchanged.
   const usePublicPath = !LOCALE_URL_PREFIX && !preview
 
@@ -113,7 +113,7 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
       ])
       const rawPaths = ((pathDoc as { path?: LocalePaths }).path ?? {}) as LocalePaths
       // Public single-locale requests get the doc, breadcrumbs, and populated
-      // relations in public form; preview keeps the prefix.
+      // relations in public form. Preview keeps the prefix.
       const body: PageByPathBody = {
         collection,
         data: usePublicPath ? stripLocalePathsDeep(data) : data,

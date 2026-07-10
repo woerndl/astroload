@@ -48,7 +48,7 @@ export async function getStaticPaths(): Promise<StaticPageParams[]> {
           : fullPath
         out.push({ params: { lang, path: trimmed }, props })
       } else {
-        // The endpoint already stripped the prefix; '/' is the home page, which
+        // The endpoint already stripped the prefix. '/' is the home page, which
         // index.astro owns, so the catch-all route skips it.
         if (fullPath === '/') continue
         out.push({ params: { path: fullPath.replace(/^\//, '') }, props })

@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
   // Standalone output is what cms/Dockerfile runs. Gated on an env flag because
   // `next start`, the plain-Node deploy path, warns when it is set.
   ...(process.env.NEXT_OUTPUT === 'standalone' ? { output: 'standalone' as const } : {}),
-  // The CMS is admin-only; send the bare root to the admin panel instead of 404.
+  // The CMS is admin-only. Send the bare root to the admin panel instead of 404.
   async redirects() {
     return [{ source: '/', destination: '/admin', permanent: false }]
   },

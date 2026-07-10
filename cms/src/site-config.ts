@@ -8,7 +8,7 @@ export const LOCALES: readonly Locale[] = ['de', 'en']
 
 export const DEFAULT_LOCALE: Locale = 'en'
 
-// Admin labels keyed by locale code; a code with no entry falls back to the
+// Admin labels keyed by locale code. A code with no entry falls back to the
 // code itself. Typed by string, not Locale, so it can keep labels for locales
 // a single-locale project no longer ships without tripping the type checker.
 export const LOCALE_LABELS: Record<string, string> = {

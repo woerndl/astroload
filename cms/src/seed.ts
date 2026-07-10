@@ -45,7 +45,7 @@ const richTextWithImageBlock = (text: string, imageId: string | number, caption:
 const seedData = (data: Record<string, unknown>) => data as never
 
 // Returns the locale only if the project ships it. The seed authors every
-// document in 'de' and overlays 'en' on top; a single-locale project skips the
+// document in 'de' and overlays 'en' on top. A single-locale project skips the
 // overlay for a locale it no longer has.
 const configuredLocale = (code: string): Locale | null =>
   (LOCALES as readonly string[]).includes(code) ? (code as Locale) : null
@@ -90,7 +90,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
     }
   }
 
-  // The English overlay writes run only when the project ships 'en'; a
+  // The English overlay writes run only when the project ships 'en'. A
   // single-locale build skips them. `en` is typed Locale (not the literal
   // 'en'), so it stays assignable when the project's locale set excludes it.
   const en = configuredLocale('en')

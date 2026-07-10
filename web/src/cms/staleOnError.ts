@@ -14,7 +14,7 @@ export interface StaleResult<T> {
 // last good value for this key instead, flagged stale. On a cold start with no
 // prior value the error propagates, because there is nothing to fall back to.
 // Concurrent calls are not deduped, so "last good" is whichever fetch completes
-// last; that is fine here because every fetch is a live read of the same data.
+// last. That is fine here because every fetch is a live read of the same data.
 export async function staleOnError<T>(
   key: string,
   fetcher: () => Promise<T>,

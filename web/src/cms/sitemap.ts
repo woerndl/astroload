@@ -9,13 +9,12 @@ export function escapeXml(value: string): string {
     .replace(/'/g, '&apos;')
 }
 
-// Escape a site-relative path and resolve it to an absolute URL.
 export function escapedSiteURL(localePath: string): string {
   return escapeXml(absoluteSiteURL(localePath))
 }
 
 // Build one `<url>` entry. `alternateLinks` are pre-rendered `<xhtml:link>`
-// lines (already indented), appended verbatim before the closing tag; the
+// lines (already indented), appended verbatim before the closing tag. The
 // single-locale sitemap passes none.
 export function urlEntry(loc: string, lastmod: string, alternateLinks: string[] = []): string {
   const head = `  <url>\n    <loc>${escapedSiteURL(loc)}</loc>\n    <lastmod>${escapeXml(lastmod)}</lastmod>`

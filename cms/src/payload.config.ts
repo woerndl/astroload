@@ -90,7 +90,7 @@ export default buildConfig({
       generatePageURL: ({ path: pagePath, preview }) => {
         if (!pagePath) return null
         // Preview keeps the stored /{locale} prefix so the prefixed preview route
-        // resolves; the public link drops it to match the served single-locale URL.
+        // resolves. The public link drops it to match the served single-locale URL.
         const linkPath = preview ? pagePath : stripLocalePath(pagePath)
         const url = new URL(`${preview ? '/preview' : ''}${linkPath}`, env.WEBSITE_URL)
         if (preview) url.searchParams.set('previewSecret', env.PREVIEW_SECRET)
