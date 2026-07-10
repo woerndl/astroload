@@ -10,6 +10,9 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ### Changed
 
+- Posts stamp `publishedAt` with the current time on their first publish when the field is left blank, instead of publishing with an empty date. A later publish keeps whatever value is set.
+- A half-configured S3 or Resend env group now logs a startup warning naming the missing variables, instead of silently leaving the integration off when one variable of the group is set. The integration still turns on only when its whole group is present.
+- The Header and Footer share one nav-link field definition, and the CMS dropped a handful of inert config (`dbName` on the Labels global, `saveToJWT` on the API-key type, an unused `SITE_NAME` re-export). The list-block published-relation lookup reads at `depth: 0` with an id-only select, since it uses only the ids.
 - The web data layer single-sources its wire types from the CMS endpoints (`GlobalData`, `StaticPathItem`) instead of restating them, and the two catch-all page routes share one `loadCatchAllPage` helper instead of duplicating the id/path resolution and global-data overlap. The `global-data` and `static-paths` endpoints dropped their ETag/304 machinery, which no client ever sent an `If-None-Match` against, and `cachedFetch` strips the internal `X-Use-Cache` marker before the CMS request and keys the cache on url plus auth identity only (GET-only, so method and body were constant).
 - The dev and production compose files run MongoDB 8 instead of 7. The adapter setup is unchanged (standalone, transactions disabled), and the README stack notes follow.
 - The CI workflow pins its actions to commit SHAs (with the version in a comment) so a moved tag cannot swap the code the workflow runs, and grants the default token `contents: read` only.

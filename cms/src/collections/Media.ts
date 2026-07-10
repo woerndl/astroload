@@ -74,10 +74,13 @@ export const Media: CollectionConfig = {
         withoutEnlargement: true,
       },
     ],
+    // Applies to Payload's own file route, which serves media from local disk.
     // The web app appends ?v=updatedAt to every media url, so the bytes for a
     // given url never change and can be cached hard. 30 days, not immutable:
     // max-age bounds the one path the version marker cannot see, a variant
-    // regeneration that rewrites file bytes without touching updatedAt.
+    // regeneration that rewrites file bytes without touching updatedAt. With S3
+    // (disablePayloadAccessControl) this route is bypassed and the bucket or
+    // CDN sets its own cache headers.
     modifyResponseHeaders: ({ headers }) => {
       headers.set('Cache-Control', 'public, max-age=2592000')
     },

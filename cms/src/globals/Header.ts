@@ -2,6 +2,7 @@ import type { GlobalConfig } from 'payload'
 
 import { isAdminOrEditor } from '../access/isAdminOrEditor'
 import { triggerDeployGlobalAfterChange } from '../hooks/triggerDeploy'
+import { navLinkFields } from '../shared'
 
 export const Header: GlobalConfig = {
   slug: 'header',
@@ -16,20 +17,7 @@ export const Header: GlobalConfig = {
     {
       name: 'links',
       type: 'array',
-      fields: [
-        {
-          name: 'page',
-          type: 'relationship',
-          relationTo: ['pages', 'posts', 'authors'],
-          required: true,
-        },
-        {
-          name: 'label',
-          type: 'text',
-          required: true,
-          localized: true,
-        },
-      ],
+      fields: navLinkFields,
     },
   ],
 }
