@@ -10,6 +10,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ### Changed
 
+- The stock Astro favicon is replaced with the Astroload mark, white on a purple-gradient tile, shipped as `favicon.svg` and a regenerated multi-resolution `favicon.ico`.
 - The `staleOnError` helper logs the read failure it swallows, so a CMS that keeps failing while a route serves its last good response is visible in the server logs instead of silent. The `latest.astro` stale notice no longer asserts the CMS is unreachable, since the read can fail for other reasons.
 - Posts stamp `publishedAt` with the current time on their first publish when the field is left blank, instead of publishing with an empty date. A later publish keeps whatever value is set.
 - A half-configured S3 or Resend env group now logs a startup warning naming the missing variables, instead of silently leaving the integration off when one variable of the group is set. The integration still turns on only when its whole group is present.
