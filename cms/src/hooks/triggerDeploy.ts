@@ -76,19 +76,27 @@ function stable(value: unknown): string {
 }
 
 export const triggerDeployAfterChange: CollectionAfterChangeHook = ({ doc, previousDoc, req }) => {
-  // Autosave writes a draft version every ~1.5s while an editor types. The
-  // published output the static build serves is untouched by a draft save, so an
-  // autosave must never consume the leading deploy. Payload's Autosave element is
-  // the only caller that sends ?autosave=true, always with _status: 'draft'. The
-  // REST endpoint coerces the query flag to a boolean before the hook runs;
-  // accept the string too for any path that skips that coercion.
-  const isAutosave = req.query?.autosave === true || req.query?.autosave === 'true'
-  if (isAutosave && doc?._status === 'draft') return doc
+  // A draft-flagged save that stays a draft never touches the published
+  // parent document, so it must not consume the leading deploy. That covers
+  // autosave (every ~1.5s while an editor types) and a manual Save Draft,
+  // including the first draft over a published doc, where previousDoc still
+  // reads 'published'. Unpublish shows the same status pair but sends no
+  // ?draft=true and does rewrite the parent, so it falls through. The REST
+  // endpoint coerces the query flag to a boolean before the hook runs. Accept
+  // the string too for any path that skips that coercion.
+  const isDraftSave = req.query?.draft === true || req.query?.draft === 'true'
+  if (isDraftSave && doc?._status === 'draft') return doc
 
   // A deploy is warranted only when the published output changes: a first
-  // publish, a re-publish of a live doc, or an unpublish that retracts it.
+  // publish, a changed re-publish of a live doc, or an unpublish that retracts
+  // it.
   const affectsPublished = doc?._status === 'published' || previousDoc?._status === 'published'
   if (!affectsPublished) return doc
+
+  // Publish with no edits writes the same document back. previousDoc is the
+  // latest version (drafts included), so a real publish of drafted content
+  // always differs, at least in _status.
+  if (unchanged(doc, previousDoc)) return doc
 
   scheduleDeploy(req.payload.logger)
   return doc
