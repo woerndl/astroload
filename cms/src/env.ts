@@ -16,9 +16,7 @@ type LoadedEnv = Record<RequiredEnv, string> & Partial<Record<OptionalEnv, strin
 // Explicit opt-in only, so a stray CI=true or SKIP_ENV_VALIDATION=0 never
 // disables validation without warning in a real deployment.
 const skipValidation =
-  process.env.SKIP_ENV_VALIDATION === '1' ||
-  process.env.SKIP_ENV_VALIDATION === 'true' ||
-  process.env.CI === 'true'
+  process.env.SKIP_ENV_VALIDATION === '1' || process.env.SKIP_ENV_VALIDATION === 'true'
 
 function loadEnv(): LoadedEnv {
   const missing: string[] = []
