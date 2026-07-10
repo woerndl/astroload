@@ -40,7 +40,6 @@ deploy/*.env
 
 # Payload
 cms/media/
-cms/payload-types.ts.bak
 
 # One-off content-mutation scripts. Run them, never commit them.
 cms/src/scripts/scratch/*
