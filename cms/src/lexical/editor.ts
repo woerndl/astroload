@@ -9,11 +9,15 @@ import { ALLOWED_LINK_SCHEMES } from '../shared'
 // the web sanitizer, so it is rejected here at save time instead of stored
 // and silently dropped. ASCII control characters are rejected because
 // browsers strip them while resolving a URL, which would let '/\t/evil.com'
-// navigate off-origin as '//evil.com'.
-function isAllowedLinkUrl(value: string): boolean {
-  const url = value.trim()
+// navigate off-origin as '//evil.com'. Backslashes are rejected because
+// browsers treat them as slashes in http(s) URLs, so '/\evil.example'
+// navigates off-origin as '//evil.example'. The value is checked untrimmed
+// because the renderer resolves the raw value: a URL behind a non-breaking
+// space would save here and then be unwrapped on render.
+function isAllowedLinkUrl(url: string): boolean {
   if (!url) return false
   if (/[\u0000-\u001f]/.test(url)) return false
+  if (url.includes('\\')) return false
   if (url.startsWith('//')) return false
   if (url.startsWith('/')) return true
   try {

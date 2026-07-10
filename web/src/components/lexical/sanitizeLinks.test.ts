@@ -27,6 +27,8 @@ describe('sanitizeLexicalLinks', () => {
       link({ linkType: 'custom', url: '/\t/evil.com' }), // tab smuggle: browsers resolve it as //evil.com
       link({ linkType: 'custom', url: '/\n/evil.com' }), // newline smuggle
       link({ linkType: 'custom', url: 'java\tscript:alert(1)' }), // control char hides the scheme
+      link({ linkType: 'custom', url: '/\\evil.example' }), // backslash smuggle: browsers resolve it as //evil.example
+      link({ linkType: 'custom', url: '\u00a0https://example.com' }), // NBSP defeats the renderer's new URL()
       link({ linkType: 'internal', doc: null }), // unpopulated internal link
       link({ linkType: undefined as unknown as string }), // unknown linkType
     ]
