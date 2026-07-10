@@ -4,6 +4,7 @@ import 'dotenv/config'
 import type { Config } from '@astroload/cms/src/payload-types'
 
 import fallbackRedirects from './redirects.fallback.json'
+import { stripLocalePath } from './types'
 
 // Runs while Astro config is evaluated, before Vite loads .env for app code,
 // so astro:env is not available and process.env only sees what the shell
@@ -59,8 +60,12 @@ export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
   let lastError: unknown
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      // Redirects key off sourcePath/destinationPath, not a localized `path`, so
-      // this read skips findPublicDocs and does not strip a locale prefix.
+      // Redirects key off sourcePath/destinationPath, not a localized `path`,
+      // so this read skips findPublicDocs. The paths still need the locale
+      // strip: a slug-change redirect is recorded against the stored
+      // `/${locale}/...` path, which a single-locale site never serves.
+      // stripLocalePath is a multi-locale no-op and idempotent on paths an
+      // editor entered without a prefix.
       const result = await sdk.find({
         collection: 'redirects',
         limit: 0,
@@ -68,8 +73,8 @@ export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
       })
 
       return result.docs.reduce<Record<string, RedirectConfig>>((acc, doc) => {
-        acc[doc.sourcePath] = {
-          destination: doc.destinationPath,
+        acc[stripLocalePath(doc.sourcePath)] = {
+          destination: stripLocalePath(doc.destinationPath),
           status: doc.type === 'permanent' ? 301 : 302,
         }
         return acc
