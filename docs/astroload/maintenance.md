@@ -2,33 +2,32 @@
 
 Failure modes that are not obvious from reading the code.
 
-## Schema changes to globals can wipe localized data in dev
+## Schema changes do not migrate existing documents
 
-Payload's dev mode uses Drizzle's `push` to sync the schema. When you
-change a global's shape (add a required field, change a field type, add a
-localized group), `push` may need to recreate the localized side table.
-If that table already has rows, you will see a prompt that warns about
-data loss and asks for confirmation. Accepting destroys the localized
-rows for that global. The columns are added and the rows come back empty
-across all locales. There is no recovery short of re-seeding or
-repopulating by hand.
+The MongoDB adapter stores documents without a fixed schema, so changing a
+field's shape never runs a migration or rewrites what is already stored.
+There is no dev-time schema push and no destructive prompt: adding,
+removing, retyping, or renaming a field leaves existing documents exactly
+as they were.
 
-Two cases to distinguish:
+The catch is that old documents keep their old shape:
 
-- Fresh install. The seed runs after the schema is created. There is no
-  existing data to lose. Safe.
-- Existing install. The schema is already in place with content. A new
-  required global field triggers the destructive prompt. Take a database
-  backup before answering `y`. Re-run the seed (or write a one-off
-  populate that calls `payload.updateGlobal` per locale) to restore the
-  localized values.
+- A newly required field is simply absent on documents saved before it
+  existed. They read back without it and fail validation only the next
+  time something saves them (an admin edit, a hook), so nothing flags the
+  gap until then.
+- A renamed field orphans the old key's data rather than moving it. The
+  new name reads empty.
+- A retyped field can leave stored values that no longer match the new
+  type.
 
-For production, use migrations. Generate one with `payload migrate:create`
-and apply it with `payload migrate`. Migrations let you add columns with
-default values and avoid the destructive push path. The safe upgrade flow
-when adding a required field to an existing global is: generate a
-migration, apply it with a default or a backfill step, optionally tighten
-to NOT NULL in a second migration once rows are populated.
+Localized fields are stored per locale, so none of this wipes locale data,
+but a backfill has to set each locale. There is no automatic migration: to
+reshape or backfill existing documents, write a one-off script in the
+scratch lane (see [`content-workflow.md`](./content-workflow.md)) that
+reads each document and re-saves it through the Local API, or re-run the
+seed. Take a database backup first on an install that already holds real
+content.
 
 ## Locale set and default locale live in one file
 
