@@ -32,10 +32,12 @@ ignored and the route falls back to the default. So every route in the
 template uses one of two literal shapes:
 
 - `export const prerender = true` for routes that are static in prod.
-  The content catch-alls, the home page, the sitemaps, and `robots.txt`
-  use this.
+  The content catch-alls, the home page, the sitemap index, and
+  `robots.txt` use this.
 - `export const prerender = false` for routes that must run per request.
-  The 404 and 500 pages and anything under `/preview` are in this group.
+  The 404 and 500 pages, the per-locale sitemap (a prerendered dynamic
+  endpoint would answer unknown locales with a 500 instead of a 404), and
+  anything under `/preview` are in this group.
 
 Every conditional case lives in the `prerenderOverrides` integration in
 `astro.config.mjs`, the seam Astro provides for per-route overrides. It

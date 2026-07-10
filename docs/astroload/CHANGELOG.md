@@ -12,6 +12,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 - The `/preview` route renders again. The 0.4.0 key scoping made the global-data endpoint reject preview reads from the read-only key, but the web layer still requested preview globals with that key, so every preview render failed. Global-data preview reads now use the preview-scoped SDK, the same key the page read already uses.
 - Preview renders no longer leak `/preview/...` URLs into the page head: JSON-LD and `og:url` are omitted in preview, alongside the canonical link that already was. The language switcher inside preview now targets the document's translation instead of the locale home, and hreflang alternates stay suppressed there.
+- In a multi-locale build, `/{not-a-locale}/sitemap.xml` answered 500: the per-locale sitemap was a prerendered dynamic endpoint, and the Node adapter routes an unmatched param on such an endpoint into the renderer instead of a 404. The route now renders on demand in every build, so its locale guard answers with a 404, and the per-locale sitemaps track publishes without waiting for a redeploy.
+- The per-locale sitemap emits hreflang alternates only when more than one locale is configured, matching the page head, so a single-locale build with `FORCE_URL_PREFIX` no longer lists self-referential alternates. Its `x-default` follows the head too: it names the default locale's translation and is omitted when that translation is missing, instead of falling back to an arbitrary locale.
 
 ## [0.4.0] - 2026-07-10
 

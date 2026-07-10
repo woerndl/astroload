@@ -36,6 +36,9 @@ export function urlsetDocument(entries: string[], options: { xhtml?: boolean } =
   )
 }
 
+// Live headers for the on-demand per-locale sitemap. The sitemap index and
+// the single-locale sitemap are prerendered, so there these apply only in
+// dev and the static file's headers come from the host.
 export const sitemapHeaders = {
   'Content-Type': 'application/xml; charset=utf-8',
   'Cache-Control': 'public, max-age=300',
