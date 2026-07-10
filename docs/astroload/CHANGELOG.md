@@ -8,6 +8,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Changed
+
+- The dev and production compose files run MongoDB 8 instead of 7. The adapter setup is unchanged (standalone, transactions disabled), and the README stack notes follow.
+
 ### Fixed
 
 - The `/preview` route renders again. The 0.4.0 key scoping made the global-data endpoint reject preview reads from the read-only key, but the web layer still requested preview globals with that key, so every preview render failed. Global-data preview reads now use the preview-scoped SDK, the same key the page read already uses.
@@ -18,6 +22,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - The seed no longer assumes the locale set: its base pass writes 'de' when the project ships it and the default locale otherwise, so a project that dropped 'de' can still seed. A force reseed aborts when a bulk delete leaves documents behind instead of seeding on top of them, and works when site-settings was never saved. The demo contact form is now localized like the rest of the seed content (German labels with an English overlay).
 - The analytics proxy relays events for this site only: a POST whose `payload.website` is not the configured `UMAMI_WEBSITE_ID` answers 403 instead of being forwarded, so the endpoint cannot be used as an open relay to Umami. Header forwarding switched from a deny-list to an allow-list (User-Agent and `x-umami-cache`), which drops geo-spoofing headers by default instead of by enumeration.
 - Rich-text link validation matches what the renderer can render. The validator rejects ASCII control characters (browsers strip them while resolving a URL, so `/\t/evil.com` navigated off-origin as `//evil.com`), and it rejects anchors, queries, and bare hostnames at save time instead of storing links the web sanitizer then silently unwraps to plain text. Both layers now share one scheme allow-list.
+- The production compose scaffold shows how to pass the optional web build args: commented `UMAMI_WEBSITE_ID` and `CONTENT_BUILD_ID` entries under the web service, and a header note that the publish hook must pass a fresh `CONTENT_BUILD_ID` or a same-commit `docker compose build` replays the cached prerender. Previously the scaffold offered no way to reach either build arg.
 - The spam guard's internal field names (`fax`, `_rendered_at`) are now reserved: the Forms collection rejects a form that names a field after either, so an editor's field can no longer collide with the honeypot and turn every real submission into a spam rejection. Duplicate field names are rejected at save time too. Submission errors shown to visitors are now always the localized generic label. Server messages were English regardless of the page locale. Input ids stay unique when the same form renders twice on a page.
 
 ## [0.4.0] - 2026-07-10

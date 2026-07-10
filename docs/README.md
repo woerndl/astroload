@@ -7,7 +7,7 @@
 [![Astro](https://img.shields.io/badge/Astro-7-FF5D01?logo=astro&logoColor=white)](https://astro.build)
 [![Payload](https://img.shields.io/badge/Payload-3-000000?logo=payloadcms&logoColor=white)](https://payloadcms.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-8-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
 [![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -69,7 +69,7 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 
 - Astro 7 with the Node adapter (`@astrojs/node`)
 - Payload 3 on Next 16 and React 19
-- MongoDB 7 via `@payloadcms/db-mongodb`, standalone (transactions disabled). Postgres remains available as a documented alternative, see [`astroload/maintenance.md`](./astroload/maintenance.md)
+- MongoDB 8 via `@payloadcms/db-mongodb`, standalone (transactions disabled). Postgres remains available as a documented alternative, see [`astroload/maintenance.md`](./astroload/maintenance.md)
 - Tailwind CSS v4 via `@tailwindcss/vite`
 - TypeScript 5.7
 - pnpm 10 workspaces

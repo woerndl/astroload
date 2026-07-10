@@ -142,7 +142,9 @@ Host recipes:
 - Vercel/Netlify: set `CONTENT_BUILD_ID` to the deploy id env the platform
   exposes, or turn off build cache for the project.
 - Coolify/Docker hosts: pass `--build-arg CONTENT_BUILD_ID=$(date +%s)` or an
-  equivalent unique value at build time.
+  equivalent unique value at build time. The compose scaffold in
+  `deploy/docker-compose.production.yml` carries a commented
+  `CONTENT_BUILD_ID` build arg for this.
 
 Leaving `CONTENT_BUILD_ID` unset omits the meta tag and disables the seam.
 That is fine when the host already rebuilds cleanly per deploy. Set it only
