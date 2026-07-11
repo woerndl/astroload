@@ -93,11 +93,16 @@ change has to run again, in another environment, or be reviewable later.
 Durable scripts are committed. A migration, a backfill, or a data correction that
 has to be reproducible lives in `cms/src/scripts/` alongside the seed, is reviewed
 like any other code, and is written to be idempotent so a second run is safe.
+`src/upsertByKey.ts` is the primitive for that: it finds a document by a stable
+key (a slug, a title), updates it when it exists, and creates it only when
+missing, so a bulk content script converges on the same documents instead of
+duplicating them run over run.
 `src/scripts/seed.ts` is the worked example: re-running it is a no-op unless
 `--force` or `SEED_FORCE=1` is passed. The auth bootstrap (admin user and API
-keys) lives separately in `src/seedAuth.ts` with its own `pnpm seed:auth`
-entry, so a real project can delete the demo seed without losing the path
-that provisions a fresh database.
+keys) lives separately in `src/seedAuth.ts` with its own script entry
+(`pnpm --filter @astroload/cms seed:auth` from the repo root), so a real
+project can delete the demo seed without losing the path that provisions a
+fresh database.
 
 Throwaway scripts are not committed. A one-time local edit with no lasting value
 goes in `cms/src/scripts/scratch/`, which is gitignored except for its README, so
