@@ -47,9 +47,9 @@ the Resend and S3 keys) are separate concerns and live alongside these.
    transactions off (the standalone-Mongo default) the empty-instance
    check is not atomic, so two requests racing during the setup window
    could both register as admins. Register the first account, or run the
-   seed (which mints the admin), before the instance is publicly
+   auth seed (which mints the admin), before the instance is publicly
    reachable. Once one user exists the endpoint closes.
-2. Two API keys minted by the seed and consumed by the Astro side.
+2. Two API keys minted by the auth seed and consumed by the Astro side.
    - A read-only key for the public renderer. Cannot read drafts.
      Cannot write. Server-only.
    - A preview-scoped key for the `/preview` route. Can read drafts.
@@ -238,13 +238,19 @@ pass it through `lexicalEditorWithSafeLinks` so the validator applies.
 
 ## Generated keys are not in the repo
 
-The seed creates the admin user and the two API keys and logs the key
-values to stdout at the end of the run. The values must be pasted into
-`web/.env`. None of them are committed. By default the seed skips when
-users already exist, so re-running it does not rotate the keys. Passing
-`SEED_FORCE=1` re-runs it and mints fresh values unless `PAYLOAD_READ_KEY`
-and `PAYLOAD_PREVIEW_KEY` are pinned in `cms/.env`. The reseed trap is
-documented in [`maintenance.md`](./maintenance.md).
+Auth bootstrap is its own module: `seedAuth` creates the admin user and
+the two API keys and logs the key values to stdout. It runs standalone
+as `pnpm --filter @astroload/cms seed:auth` and as the first step of the
+demo seed, so a project
+that deletes the demo content keeps a bootstrap path for a fresh
+database. The key values must be pasted into `web/.env`. None of them
+are committed. Both entry points skip whatever already exists, so
+re-running does not rotate the keys. Passing `SEED_FORCE=1` to the demo
+seed clears and re-mints them, with fresh values unless
+`PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` are pinned in `cms/.env`.
+The admin account uses the demo credentials unless
+`PAYLOAD_ADMIN_EMAIL` and `PAYLOAD_ADMIN_PASSWORD` are set. The reseed
+trap is documented in [`maintenance.md`](./maintenance.md).
 
 ## Dependencies
 

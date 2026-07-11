@@ -103,8 +103,9 @@ pnpm --filter @astroload/cms seed
 # Paste both into web/.env.
 ```
 
-The seed creates an admin user `admin@example.com` / `admin1234`. Change the
-password (or the credentials in `cms/src/seed.ts`) before deploying.
+The seed creates an admin user `admin@example.com` / `admin1234` unless
+`PAYLOAD_ADMIN_EMAIL` and `PAYLOAD_ADMIN_PASSWORD` are set in `cms/.env`.
+Change the password before the instance is reachable.
 
 Then run the two dev servers in **separate terminals**:
 
