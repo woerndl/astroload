@@ -91,6 +91,10 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
       // Load the full doc at the request locale for rendering, and the same
       // doc's `path` across every locale (cheap id lookup, virtual field only)
       // so the response carries the alternate paths the web layer needs.
+      // The `all`-locale call must not share `req`: Payload's createLocalReq
+      // writes its locale onto the passed req in place, so two concurrent
+      // calls with different locales corrupt each other. Passing `user`
+      // instead gives it a fresh request with the same access control.
       const [data, pathDoc] = await Promise.all([
         req.payload.findByID({
           collection,
@@ -108,7 +112,7 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
           overrideAccess: false,
           select: { path: true },
           depth: 0,
-          req,
+          user: req.user,
         }),
       ])
       const rawPaths = ((pathDoc as { path?: LocalePaths }).path ?? {}) as LocalePaths
