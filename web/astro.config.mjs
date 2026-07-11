@@ -54,8 +54,14 @@ export default defineConfig({
   compressHTML: true,
   trailingSlash: 'never',
   redirects: await getRedirects(),
+  // Pinned dev port. Renumber per project. strictPort must sit under
+  // vite.server or it is silently ignored (see conventions.md), and with it
+  // a second dev server refuses to start instead of hopping to the next
+  // free port while a stale process keeps answering this one.
+  server: { port: 4321 },
   vite: {
     plugins: [tailwindcss()],
+    server: { strictPort: true },
   },
   env: {
     schema: {
