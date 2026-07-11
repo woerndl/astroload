@@ -8,6 +8,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Added
+
+- `cms/src/upsertByKey.ts`, the find-or-create-by-stable-key primitive that makes bulk content seeds idempotent. Its lookup includes drafts so an unpublished document is updated rather than shadowed by a new copy, and it throws when the key matches more than one document instead of updating an arbitrary one.
+
 ### Changed
 
 - Auth bootstrap is split out of the demo seed. `seedAuth` mints the first admin and the two env-pinned API keys, skips whatever already exists, and runs standalone as `pnpm --filter @astroload/cms seed:auth` or as the demo seed's first step. A project that deletes the demo seed (which ships known credentials) no longer deletes the only path that provisions a fresh database, where every web read answered 403 and the strict build failed. The admin account takes `PAYLOAD_ADMIN_EMAIL`/`PAYLOAD_ADMIN_PASSWORD` from the env and warns when it falls back to the demo credentials.
