@@ -7,8 +7,15 @@ services:
   mongo:
     image: mongo:8
     restart: unless-stopped
+    # Loopback only (this mongod has no auth), and a pinned host port to
+    # renumber per project, like the web dev port: when several projects
+    # keep the default, whichever container is up answers 27017 for all of
+    # them, and a seed or SEED_FORCE aimed at this project reads or wipes
+    # another one's data. A unique port fails with connection refused
+    # instead. Keep DATABASE_URI in cms/.env on the same port and give each
+    # project its own database name as the second guard.
     ports:
-      - '27017:27017'
+      - '127.0.0.1:27017:27017'
     volumes:
       - mongodata:/data/db
     healthcheck:
