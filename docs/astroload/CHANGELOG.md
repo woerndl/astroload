@@ -10,6 +10,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ### Changed
 
+- Auth bootstrap is split out of the demo seed. `seedAuth` mints the first admin and the two env-pinned API keys, skips whatever already exists, and runs standalone as `pnpm --filter @astroload/cms seed:auth` or as the demo seed's first step. A project that deletes the demo seed (which ships known credentials) no longer deletes the only path that provisions a fresh database, where every web read answered 403 and the strict build failed. The admin account takes `PAYLOAD_ADMIN_EMAIL`/`PAYLOAD_ADMIN_PASSWORD` from the env and warns when it falls back to the demo credentials.
 - The stock Astro favicon is replaced with the Astroload mark, white on a purple-gradient tile, shipped as `favicon.svg` and a regenerated multi-resolution `favicon.ico`.
 - The `staleOnError` helper logs the read failure it swallows, so a CMS that keeps failing while a route serves its last good response is visible in the server logs instead of silent. The `latest.astro` stale notice no longer asserts the CMS is unreachable, since the read can fail for other reasons.
 - Posts stamp `publishedAt` with the current time on their first publish when the field is left blank, instead of publishing with an empty date. A later publish keeps whatever value is set.

@@ -352,11 +352,13 @@ divergence when editing the seed.
 
 ## API key reseed trap
 
-The seed reads `PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` from the
-CMS process env. If either is unset, the seed generates a random value
-instead. In both cases the keys it ends up using are logged to stdout
-at the end of the seed run. Those values must match `web/.env` or the
-frontend sees silent 401s.
+The auth seed (`pnpm --filter @astroload/cms seed:auth`, also the first
+step of the demo seed) reads `PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY`
+from the CMS process env. If either is unset, the seed generates a random
+value instead. A key's value is logged to stdout only when the seed
+creates it. A rerun that finds the keys in place logs nothing and changes
+nothing. The values in use must match `web/.env` or the frontend sees
+silent 401s.
 
 When you drop the database and re-run the seed, the keys stay stable
 only if both env vars are pinned in the CMS env. If they are absent,

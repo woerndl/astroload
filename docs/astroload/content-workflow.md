@@ -94,7 +94,10 @@ Durable scripts are committed. A migration, a backfill, or a data correction tha
 has to be reproducible lives in `cms/src/scripts/` alongside the seed, is reviewed
 like any other code, and is written to be idempotent so a second run is safe.
 `src/scripts/seed.ts` is the worked example: re-running it is a no-op unless
-`--force` or `SEED_FORCE=1` is passed.
+`--force` or `SEED_FORCE=1` is passed. The auth bootstrap (admin user and API
+keys) lives separately in `src/seedAuth.ts` with its own `pnpm seed:auth`
+entry, so a real project can delete the demo seed without losing the path
+that provisions a fresh database.
 
 Throwaway scripts are not committed. A one-time local edit with no lasting value
 goes in `cms/src/scripts/scratch/`, which is gitignored except for its README, so

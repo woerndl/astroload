@@ -1,17 +1,14 @@
-import { randomBytes, randomUUID } from 'crypto'
+import { randomUUID } from 'crypto'
 import path from 'path'
 import { buildEditorState } from '@payloadcms/richtext-lexical'
 import type { SerializedBlockNode } from '@payloadcms/richtext-lexical'
 import type { CollectionSlug, Payload, Where } from 'payload'
 import { fileURLToPath } from 'url'
 
+import { seedAuth } from './seedAuth'
 import { DEFAULT_LOCALE, LOCALES, type Locale } from './shared'
 
-const ADMIN_EMAIL = 'admin@example.com'
-const ADMIN_PASSWORD = 'admin1234'
 const SITE_NAME = 'My site'
-
-const generateApiKey = () => randomBytes(32).toString('hex')
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -115,41 +112,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   const en = configuredLocale('en')
   const baseLocale = configuredLocale('de') ?? DEFAULT_LOCALE
 
-  payload.logger.info('Seed: creating admin user')
-  await payload.create({
-    collection: 'users',
-    data: {
-      email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
-      firstName: 'Admin',
-      lastName: 'User',
-      roles: ['admin'],
-    },
-  })
-
-  payload.logger.info('Seed: creating api keys')
-  const readKeyValue = process.env.PAYLOAD_READ_KEY ?? generateApiKey()
-  const previewKeyValue = process.env.PAYLOAD_PREVIEW_KEY ?? generateApiKey()
-  await payload.create({
-    collection: 'api-keys',
-    data: {
-      name: 'Website (read-only)',
-      type: 'read-only',
-      enableAPIKey: true,
-      apiKey: readKeyValue,
-    },
-  })
-  await payload.create({
-    collection: 'api-keys',
-    data: {
-      name: 'Preview',
-      type: 'preview',
-      enableAPIKey: true,
-      apiKey: previewKeyValue,
-    },
-  })
-  payload.logger.info(`Seed: read-only api key = ${readKeyValue}`)
-  payload.logger.info(`Seed: preview api key   = ${previewKeyValue}`)
+  await seedAuth(payload)
 
   payload.logger.info('Seed: creating media')
   const createMedia = async (altDe: string, altEn: string) => {
