@@ -95,6 +95,12 @@ preserves the cache behaviour: LRU in prod, bypass in dev and preview.
 When you add a new content read, add it to the SDK first, then call
 it from the route.
 
+The CMS half of such a read is a custom endpoint in `cms/src/endpoints/`.
+Endpoints register once at config init and Next's dev HMR does not
+re-register them, so an endpoint edit is not live until the CMS dev
+server restarts. If an edit seems to have no effect, restart before
+debugging anything else.
+
 There is one deliberate exception. `web/src/cms/getRedirects.ts` runs
 from `astro.config.mjs` at config-evaluation time. At that point
 `astro:env` is not yet wired, so it imports `dotenv/config` and
