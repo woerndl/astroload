@@ -8,6 +8,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-11
+
 ### Added
 
 - `cms/src/upsertByKey.ts`, the find-or-create-by-stable-key primitive that makes bulk content seeds idempotent. Its lookup includes drafts so an unpublished document is updated rather than shadowed by a new copy, and it throws when the key matches more than one document instead of updating an arbitrary one.
