@@ -30,7 +30,7 @@ const FIELD_LIMITS: Record<string, number> = { language: 35, screen: 11 }
 // needs CLIENT_IP_HEADER=x-umami-client-ip set on the Umami server, or it
 // falls back to the connection IP of this proxy.
 export const POST: APIRoute = async ({ request }) => {
-  if (!UMAMI_WEBSITE_ID) return new Response('', { status: 204 })
+  if (!UMAMI_WEBSITE_ID) return new Response(null, { status: 204 })
 
   // x-real-ip is the trusted client-IP header behind nginx-style proxies and
   // on Railway. A host that exposes the visitor IP under a different name
@@ -74,7 +74,7 @@ export const POST: APIRoute = async ({ request }) => {
   } catch {
     // A failed collect must stay invisible to the page: the tracker reads the
     // response inside a try/catch, so an empty 204 is silently ignored.
-    return new Response('', { status: 204 })
+    return new Response(null, { status: 204 })
   }
 }
 
