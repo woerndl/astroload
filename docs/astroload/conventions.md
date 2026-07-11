@@ -78,6 +78,27 @@ vite: { server: { strictPort: true } },
 With `strictPort` in place, a second dev server on the same port refuses
 to start instead of auto-incrementing.
 
+## Each project's dev Mongo gets its own host port and database name
+
+The dev mongod runs without auth, and Mongo creates any database named in
+the connection string on first write. So when two projects copied from
+this starter both publish the default `27017`, whichever container happens
+to be running answers for both: a dev server or seed pointed at this
+project can read from or, with `SEED_FORCE`, wipe another project's data
+without any error. Two cheap guards:
+
+- Renumber the host port in `docker-compose.yml` per project (the
+  container side stays `27017`) and keep `DATABASE_URI` in `cms/.env` on
+  the same number. A wrong or missing container then fails with connection
+  refused instead of silently answering.
+- Give each project its own database name in `DATABASE_URI`. Even on a
+  shared mongod, writes then land in separate databases.
+
+The compose file also binds the port to `127.0.0.1`. Keep that: an
+auth-less mongod published on `0.0.0.0` is reachable from the local
+network. Production is unaffected: the production compose gives Mongo no
+host port at all.
+
 ## Display-changing state classes use compound selectors
 
 A modifier that flips visibility (`.menu.is-open { display: flex }`) must
