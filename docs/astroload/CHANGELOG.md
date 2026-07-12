@@ -11,6 +11,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 ### Added
 
 - Add a `.astroload.yml` derivation marker. A derived project records the template commit and release tag it was scaffolded from and updates them after each verified sync.
+- Add `scripts/sync-inventory.mjs`. Run from a derived project, it lists upstream commits since the `.astroload.yml` base and a per-file state: `matches base`, `matches target`, `diverged`, `missing`, or `still at <old path>`. It has no dependencies and its tests run in `pnpm test`.
 
 ### Changed
 
