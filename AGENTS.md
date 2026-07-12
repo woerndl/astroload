@@ -16,3 +16,4 @@ Read the matching file before working on the listed topics.
 - [`docs/astroload/deployment.md`](./docs/astroload/deployment.md): Docker images, standalone output, media volume, production compose, baked build env
 - [`docs/astroload/maintenance.md`](./docs/astroload/maintenance.md): global schema changes, default locale, new locale, deploy throttle, redirects at config-eval, lexical link slip, lexical blocks, seed
 - [`docs/astroload/security.md`](./docs/astroload/security.md): threat model, draft leakage, preview route, cross-origin posture, rate limiting, hardening
+- [`docs/astroload/updating.md`](./docs/astroload/updating.md): syncing a derived project, derivation marker, sync-inventory script, classification verdicts, when to update the marker

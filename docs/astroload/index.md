@@ -18,3 +18,5 @@ below describe what is not obvious from reading the code.
   compose scaffold, and which env values are baked in at build.
 - [`security.md`](./security.md): threat model, what the template
   defends against, and what you should add before production.
+- [`updating.md`](./updating.md): applying template changes to a derived
+  project, the derivation marker, and the inventory script.
