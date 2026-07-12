@@ -1,0 +1,6 @@
+# Derivation marker. A project scaffolded from astroload records here the
+# template commit and release tag it was derived from or last synced to.
+# Set both when deriving. Update them only after the verification steps in
+# docs/astroload/updating.md.
+upstream_commit: REPLACE-WITH-SCAFFOLD-COMMIT-SHA
+upstream_release: REPLACE-WITH-SCAFFOLD-RELEASE-TAG

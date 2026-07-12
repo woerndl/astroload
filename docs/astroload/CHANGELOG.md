@@ -8,6 +8,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Added
+
+- Add a `.astroload.yml` derivation marker. A derived project records the template commit and release tag it was scaffolded from and updates them after each verified sync.
+
 ### Fixed
 
 - The analytics relay answered 500 instead of 204 when analytics is disabled or an event is dropped: `new Response('', { status: 204 })` throws in undici, which rejects a 204 with a non-null body. Both no-op responses now pass `null`.
