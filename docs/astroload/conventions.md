@@ -81,11 +81,13 @@ to start instead of auto-incrementing.
 ## Each project's dev Mongo gets its own host port and database name
 
 The dev mongod runs without auth, and Mongo creates any database named in
-the connection string on first write. So when two projects copied from
-this starter both publish the default `27017`, whichever container happens
-to be running answers for both: a dev server or seed pointed at this
-project can read from or, with `SEED_FORCE`, wipe another project's data
-without any error. Two cheap guards:
+the connection string on first write. So when two projects publish the
+same host port, whichever container happens to be running answers for
+both: a dev server or seed pointed at this project can read from or, with
+`SEED_FORCE`, wipe another project's data without any error. This starter
+publishes `27330` rather than the Mongo default, so a fresh checkout does
+not collide with a stock local Mongo on the default port. Two cheap
+guards when deriving a project:
 
 - Renumber the host port in `docker-compose.yml` per project (the
   container side stays `27017`) and keep `DATABASE_URI` in `cms/.env` on
