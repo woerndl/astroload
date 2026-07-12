@@ -12,6 +12,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 - Add a `.astroload.yml` derivation marker. A derived project records the template commit and release tag it was scaffolded from and updates them after each verified sync.
 
+### Changed
+
+- Move the template's own dev Mongo to host port 27330 so a template checkout and a derived project do not share a database server by default.
+
 ### Fixed
 
 - The analytics relay answered 500 instead of 204 when analytics is disabled or an event is dropped: `new Response('', { status: 204 })` throws in undici, which rejects a 204 with a non-null body. Both no-op responses now pass `null`.
