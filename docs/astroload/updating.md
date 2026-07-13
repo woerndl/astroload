@@ -44,6 +44,19 @@ applies to this project happens in step 2.
 
 ## 2. Classify each commit, then apply
 
+Before classifying, read the upgrade notes in the exact range:
+
+    git -C ../astroload diff <base>..<target> -- docs/astroload/CHANGELOG.md
+
+Nested `**Upgrade notes:**` bullets describe work the upstream diff
+alone may not show: a search for the same bug in code this project
+added itself, a query to run on existing data first, a condition under
+which the change does not apply, or a behavior to compare before and
+after. They guide review and verification. They do not decide whether a
+change applies or which verdict it gets. When syncing to an untagged
+commit, notes still under `## [Unreleased]` may change later, so read
+them from the range diff above, not from the current file.
+
 Review each commit with `git -C ../astroload show <sha>`. Changelog
 entries are summaries and not a basis for classification. Assign one
 verdict per commit:
