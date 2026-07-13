@@ -438,9 +438,15 @@ Versions follow SemVer, and `CHANGELOG.md` follows Keep a Changelog:
 new work accumulates under `## [Unreleased]` as it lands. Cutting a
 release is three steps, in order.
 
-1. Promote the changelog. Rename `## [Unreleased]` to
-   `## [X.Y.Z] - YYYY-MM-DD` and leave a fresh empty `## [Unreleased]`
-   above it. This goes in its own commit, with no code in it:
+1. Promote the changelog. Before renaming, check every non-doc entry
+   in the section against the `**Upgrade notes:**` cases in
+   `AGENTS.md`. Notes are easy to miss at fix time because the author
+   sees the template code, not the derived projects. Add the missing
+   ones, and add a note where two entries affect each other, for
+   example when one must be applied before the other. Then rename
+   `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` and leave a fresh
+   empty `## [Unreleased]` above it. This goes in its own commit, with
+   no code in it:
 
    ```bash
    git commit -m "docs: release X.Y.Z in CHANGELOG"

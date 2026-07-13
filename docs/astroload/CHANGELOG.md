@@ -13,6 +13,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Add a `.astroload.yml` derivation marker. A derived project records the template commit and release tag it was scaffolded from and updates them after each verified sync.
 - Add `scripts/sync-inventory.mjs`. Run from a derived project, it lists upstream commits since the `.astroload.yml` base and a per-file state: `matches base`, `matches target`, `diverged`, `missing`, or `still at <old path>`. It has no dependencies and its tests run in `pnpm test`.
 - Document the downstream sync workflow in `docs/astroload/updating.md`: run the inventory script, classify each commit, verify, then update the marker.
+- Changelog entries now carry nested `**Upgrade notes:**` bullets when a derived project has to do more than apply the diff. `AGENTS.md` says when to write one, the release steps in `docs/astroload/maintenance.md` add a check for missed notes, and `docs/astroload/updating.md` has a sync read them from the base-to-target range first.
 
 ### Changed
 
