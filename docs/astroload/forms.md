@@ -69,7 +69,8 @@ ships a few baseline checks against commodity contact-form spam:
   field has no `aria-hidden`, `tabindex`, or `autocomplete` attribute,
   because each of those is a fingerprint a bot can match on. The name
   `fax` was picked because browsers do not autofill it.
-- A client-stamped `_rendered_at` time-trap.
+- A client-stamped `_rendered_at` timestamp for a minimum-submit-time
+  check.
 - A `beforeChange` hook (`cms/src/hooks/spamGuard.ts`) on
   `form-submissions` that rejects honeypot-filled or sub-1.5s
   submissions and strips both internal fields before save.
@@ -79,8 +80,8 @@ Forms collection rejects a form that names a field after either (and any
 duplicate field name) at save time, through the `validateFormFields`
 hook wired into `formOverrides`.
 
-The time-trap is client-controlled. A bot can post any past timestamp
-and pass the check trivially. The current trap catches lazy bots, not
+The timestamp is client-controlled. A bot can post any past timestamp
+and pass the check trivially. The check catches lazy bots, not
 motivated ones. If your project needs stronger guarantees, replace the
 client stamp with a server-stamped signed token (HMAC, short TTL) or
 gate the endpoint behind a CDN rule.
@@ -106,7 +107,7 @@ require a wrapper endpoint because the plugin's submission API returns a
 flat error. That is more scope than the starter takes on. Add it in your
 fork if your project needs it.
 
-## What the spamGuard hook actually checks
+## What the spamGuard hook checks
 
 `cms/src/hooks/spamGuard.ts` runs on `beforeChange` for
 `form-submissions` and applies the following rules:

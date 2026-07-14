@@ -14,6 +14,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Add `scripts/sync-inventory.mjs`. Run from a derived project, it lists upstream commits since the `.astroload.yml` base and a per-file state: `matches base`, `matches target`, `diverged`, `missing`, or `still at <old path>`. It has no dependencies and its tests run in `pnpm test`.
 - Document the downstream sync workflow in `docs/astroload/updating.md`: run the inventory script, classify each commit, verify, then update the marker.
 - Changelog entries now carry nested `**Upgrade notes:**` bullets when a derived project has to do more than apply the diff. `AGENTS.md` says when to write one, the release steps in `docs/astroload/maintenance.md` add a check for missed notes, and `docs/astroload/updating.md` has a sync read them from the base-to-target range first.
+- Document static-asset placement in `docs/astroload/conventions.md`: component-owned art lives in `web/src/assets` and is imported, so it ships content-hashed under `/_astro/` and the Node adapter caches it as immutable. `web/public/` is only for files whose exact pathname outside consumers depend on. The adapter serves everything else in `public/` with `max-age=0`, so each browser reload waits on a revalidation round trip and paints the alt text until it answers.
+  - **Upgrade notes:** The template has no assets to move, but a derived project may have added its own art under `web/public/`. Run `rg --files web/public`, then find each file's references with `rg -n -F '/<path-from-public>' web/src`. Move decorative assets to `web/src/assets` and import them (`?url` for SVGs rendered through `<img>`). Keep files whose exact public pathname is intentional.
 
 ### Changed
 
