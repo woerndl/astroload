@@ -8,9 +8,12 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-14
+
 ### Added
 
 - Add a `.astroload.yml` derivation marker. A derived project records the template commit and release tag it was scaffolded from and updates them after each verified sync.
+  - **Upgrade notes:** An existing project creates the file by hand: set `upstream_commit` to the template commit of the last verified sync and `upstream_release` to its tag. A project that already tracks its base in a hand-rolled marker or in prose keeps that verified commit value and adopts this schema.
 - Add `scripts/sync-inventory.mjs`. Run from a derived project, it lists upstream commits since the `.astroload.yml` base and a per-file state: `matches base`, `matches target`, `diverged`, `missing`, or `still at <old path>`. It has no dependencies and its tests run in `pnpm test`.
 - Document the downstream sync workflow in `docs/astroload/updating.md`: run the inventory script, classify each commit, verify, then update the marker.
 - Changelog entries now carry nested `**Upgrade notes:**` bullets when a derived project has to do more than apply the diff. `AGENTS.md` says when to write one, the release steps in `docs/astroload/maintenance.md` add a check for missed notes, and `docs/astroload/updating.md` has a sync read them from the base-to-target range first.
@@ -20,10 +23,12 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 ### Changed
 
 - Move the template's own dev Mongo to host port 27330 so a template checkout and a derived project do not share a database server by default.
+  - **Upgrade notes:** Applies to the template checkout only. A derived project that already renumbered its dev Mongo port and database name per `docs/astroload/conventions.md` changes nothing.
 
 ### Fixed
 
 - The analytics relay answered 500 instead of 204 when analytics is disabled or an event is dropped: `new Response('', { status: 204 })` throws in undici, which rejects a 204 with a non-null body. Both no-op responses now pass `null`.
+  - **Upgrade notes:** The same pattern may exist in project-added routes. Run `rg -n "status: 204" web/src` and check that every hit passes `null` as the response body.
 
 ## [0.5.0] - 2026-07-11
 
