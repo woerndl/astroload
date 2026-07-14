@@ -93,8 +93,10 @@ Rules from past syncs:
 - Run the build and typecheck, then exercise the request paths the
   applied changes touch: form POST, preview, sitemap, analytics relay.
   A passing build alone does not verify behavior.
-- On a live project, verify against a restored production dump. Never
-  point anything writable at the live URI.
+- On a live project, verify against a restored production dump when the
+  applied changes touch schema, validation, access control, or stored
+  content. A doc-only or marker-only sync skips this. Never point
+  anything writable at the live URI.
 - Record KEEP and ADAPT decisions where this project keeps such notes.
 - After everything above, set `upstream_commit` to the target commit's
   full SHA and `upstream_release` to the matching release tag in
