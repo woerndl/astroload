@@ -24,7 +24,7 @@ The catch is that old documents keep their old shape:
 Localized fields are stored per locale, so none of this wipes locale data,
 but a backfill has to set each locale. There is no automatic migration: to
 reshape or backfill existing documents, write a one-off script in the
-scratch lane (see [`content-workflow.md`](./content-workflow.md)) that
+scratch directory (see [`content-workflow.md`](./content-workflow.md)) that
 reads each document and re-saves it through the Local API, or re-run the
 seed. Take a database backup first on an install that already holds real
 content.
@@ -40,7 +40,7 @@ public page lookup anchor on the same `DEFAULT_LOCALE`, so the Payload
 config can no longer drift from the value those consumers read.
 
 `site-config.ts` asserts at import that `DEFAULT_LOCALE` is one of
-`LOCALES`. A default outside the shipped set fails fast at import, instead
+`LOCALES`. A default outside the shipped set fails at import, instead
 of silently producing wrong paths and a wrong `hreflang="x-default"` link
 in production sitemaps.
 
@@ -60,12 +60,12 @@ rejected at import, because their un-prefixed URLs would collide.
 The web app ships prerendered HTML. Publishing in admin does not change
 the live site on its own. It posts to `DEPLOY_HOOK_URL`, the host rebuilds
 and redeploys, and the new build goes live. Publish-to-live latency is the
-host's build and deploy time, on the order of minutes, not instant. There
+host's build and deploy time, typically minutes. There
 is no per-request CMS read on the published path, which is the trade for
 that latency.
 
-The deploy hook (`cms/src/hooks/triggerDeploy.ts`) coalesces bursts with a
-single process-global window, not one window per document. The first
+The deploy hook (`cms/src/hooks/triggerDeploy.ts`) coalesces bursts with one
+process-wide window shared by all documents. The first
 deploy-worthy save fires the webhook immediately. Every further save during
 the window collapses into one pending deploy that fires when the window
 closes. A burst inside one window costs at most two builds: one leading, one
@@ -84,7 +84,8 @@ apart from `updatedAt`. The skip check errs toward firing, since a missed
 change ships a stale site while a redundant fire only wastes a build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body
 and no auth header.
 
-The window (`WINDOW_MS`) is set in code, not env. The default suits hosts
+The window (`WINDOW_MS`) is set in code, not env, and defaults to
+300000 ms (five minutes). The default suits hosts
 that bill per build minute. Shorten it for faster publishing, lengthen it to
 batch harder. A window shorter than the build time can overlap builds.
 
@@ -93,10 +94,12 @@ button, or `curl -X POST "$DEPLOY_HOOK_URL"`). A manual rebuild always picks
 up the current published state.
 
 Edit bursts: a long editing session coalesces to the leading build plus one
-trailing build per window while it lasts. Edits made after the last trailing
-build fires are not deployed until the next deploy-worthy save or a manual
-rebuild. When you finish a burst, confirm the live site reflects your last
-change and rebuild if it does not.
+trailing build per window while it lasts. A deploy-worthy save during an
+open window becomes that window's trailing build, and one after the window
+closes fires immediately, so no save is left waiting for a later save. When
+you finish a burst, confirm the live site reflects your last change and
+rebuild if it does not (the restart hazard below can drop a queued trailing
+build).
 
 Time-relative content: a static build freezes content at build time. Pages
 that show relative dates ("posted 3 days ago") or that should reveal a
@@ -104,24 +107,26 @@ future-dated post drift until the next build. Schedule a periodic rebuild on
 the host (a daily cron hitting `DEPLOY_HOOK_URL`) so time-sensitive output
 stays current without an editor action.
 
-Restart hazard and latch recipe: the throttle window lives in process
+Restart hazard: the throttle window lives in process
 memory. A trailing deploy queued when the CMS process restarts (a redeploy
 of the CMS itself, a crash, a scale-to-zero) is lost. The leading deploy is
-not affected because it fires synchronously. To guarantee no publish is
-dropped without adding database-backed deploy state, latch a low-frequency
-scheduled rebuild on the host as a backstop: a periodic `DEPLOY_HOOK_URL`
+far less exposed because its request is sent immediately, though the hook
+does not await it, so a restart at that instant can still cut off the
+in-flight request. To guarantee no publish is
+dropped without adding database-backed deploy state, schedule a
+low-frequency rebuild on the host as a backstop: a periodic `DEPLOY_HOOK_URL`
 POST eventually ships any change a lost trailing deploy missed. The same
 cron that covers time-relative content covers this.
 
 ## Same-commit redeploys and the content build id
 
 A publish-driven rebuild runs on the same git commit as the last one, only
-the CMS content differs. Hosts that cache build output keyed on the commit
+the CMS content differs. Hosts that cache build output by commit
 SHA can serve the previous build for that second deploy, so the new content
 never reaches the edge. The site looks stuck on stale HTML even though the
 deploy "succeeded".
 
-The seam against this is `CONTENT_BUILD_ID`. Set it to a value that changes
+The fix is `CONTENT_BUILD_ID`. Set it to a value that changes
 every deploy and the web build stamps it into every page as
 `<meta name="content-build-id">`, so the output genuinely differs build over
 build. The contract for an operator:
@@ -134,7 +139,7 @@ build. The contract for an operator:
   (`curl -s https://your-site/ | grep content-build-id`). A changed value
   confirms the redeploy rebuilt rather than replayed a cached build.
 
-Host recipes:
+Host examples:
 
 - Railway: set `CONTENT_BUILD_ID=${{ RAILWAY_DEPLOYMENT_ID }}` (or another
   per-deploy variable) on the web service. Unverified whether Railpack
@@ -148,11 +153,11 @@ Host recipes:
   `deploy/docker-compose.production.yml` carries a commented
   `CONTENT_BUILD_ID` build arg for this.
 
-Leaving `CONTENT_BUILD_ID` unset omits the meta tag and disables the seam.
+Leaving `CONTENT_BUILD_ID` unset omits the meta tag and turns the check off.
 That is fine when the host already rebuilds cleanly per deploy. Set it only
 if you observe a same-commit redeploy serving stale HTML.
 
-## Media is served WebP and cached hard, busted by a version marker
+## Media is served as WebP and cached with a version marker
 
 The Media collection converts uploads to WebP (`xs` through `lg` and the main
 file), keeping the `og` social-card crop as JPEG because some scrapers still do
@@ -211,7 +216,7 @@ The fetch keys its behaviour on the `REDIRECTS_STRICT` flag, which the
   roughly a minute and a half), to ride out a CMS that is briefly down while
   a coordinated deploy restarts it. Non-strict makes a single attempt.
 - If the CMS is still unreachable after the strict retries, the build fails
-  loudly rather than shipping a redirect-less site. The last good deploy is
+  rather than shipping a redirect-less site. The last good deploy is
   already serving, so failing leaves it in place instead of replacing it with
   a build that 404s every removed URL. A missing `CMS_URL`/`PAYLOAD_READ_KEY`
   fails the same way, since that is a wiring error, not an outage.
@@ -224,17 +229,19 @@ The fetch keys its behaviour on the `REDIRECTS_STRICT` flag, which the
 Strictness keys on the flag instead of `NODE_ENV` because `astro check`
 forces `NODE_ENV=production` while resolving the config. Keying on
 `NODE_ENV` would then make a type-check abort on a transient CMS outage.
-The flag scopes the retry effort and the fail-loud policy to the deploy build
-alone.
+The flag scopes the retry effort and the build-failure policy to the deploy
+build alone.
 
 This is a build-time policy, independent of runtime resilience. The running
 standalone server has no request-time dependency on the CMS for redirects or
-prerendered content (see above), so a CMS outage does not take the live site
-down.
+prerendered content (see above), so a CMS outage does not take those down.
+The request-time routes (`/preview`, the per-locale sitemaps, `/latest`, and
+the CMS-backed error pages) can fail during the outage or serve their last
+good response where `staleOnError` applies.
 
 `redirects.fallback.json` is the committed redirect table for non-strict runs
-(offline dev and CI). It ships empty, which a fresh project loses nothing by.
-It also doubles as an availability backstop: an operator who would rather
+(offline dev and CI). It ships empty, so a fresh project loses nothing.
+An operator who would rather
 keep a deploy alive through a CMS outage than fail it can populate the file
 (export the Redirects collection into it) and return `fallback` instead of
 throwing in the final strict branch of `getRedirects.ts`.
@@ -262,15 +269,15 @@ vars. Splitting individual server-only consumers onto `astro:env/server` is
 a separate, optional decision and does not remove the need to build with
 correct public URLs.
 
-## Host cutover runbook
+## Taking the site live or moving hosts
 
 Taking the site live, or moving it to a new host, touches two public hostnames
-and one build-cache trap. Work through these in order.
+and one build-cache pitfall. Work through these in order.
 
 Two hostnames are public, not one. The web origin (`WEBSITE_URL`) serves visitors.
 The CMS origin (`CMS_URL`) is also public: every media url the web app emits
-points at it, so each `<img>`, the `og:image`, and the sitemap resolve through
-the CMS host. A CMS reachable only on a private network renders a site with broken
+points at it, so each `<img>` and the `og:image` resolve through the CMS
+host. A CMS reachable only on a private network renders a site with broken
 images and social cards. Both hostnames must resolve over HTTPS from the public
 internet.
 
@@ -293,7 +300,7 @@ internet.
    as the last one, so a host that caches build output by commit can replay stale
    HTML. Set `CONTENT_BUILD_ID` per deploy (see [Same-commit redeploys and the
    content build id](#same-commit-redeploys-and-the-content-build-id)).
-5. Verify the cutover. Load the public web origin over HTTPS. Confirm an image
+5. Verify the result. Load the public web origin over HTTPS. Confirm an image
    renders, which proves `CMS_URL` is publicly reachable and built in correctly.
    Publish a content change and confirm the live site updates and the
    `content-build-id` meta tag changes
@@ -350,15 +357,15 @@ would not work for translating URLs. The plugin emits the right path per
 locale and the switcher reads it from `Astro.props.paths`. Keep the
 divergence when editing the seed.
 
-## API key reseed trap
+## API keys change on reseed unless pinned
 
 The auth seed (`pnpm --filter @astroload/cms seed:auth`, also the first
 step of the demo seed) reads `PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY`
 from the CMS process env. If either is unset, the seed generates a random
 value instead. A key's value is logged to stdout only when the seed
 creates it. A rerun that finds the keys in place logs nothing and changes
-nothing. The values in use must match `web/.env` or the frontend sees
-silent 401s.
+nothing. The values in use must match `web/.env` or every CMS read from
+the frontend fails with a 401.
 
 When you drop the database and re-run the seed, the keys stay stable
 only if both env vars are pinned in the CMS env. If they are absent,
@@ -435,7 +442,7 @@ Postgres is still a first-class option. To switch back:
 ## Cutting a release
 
 Versions follow SemVer, and `CHANGELOG.md` follows Keep a Changelog:
-new work accumulates under `## [Unreleased]` as it lands. Cutting a
+new work accumulates under `## [Unreleased]` as it is committed. Cutting a
 release is three steps, in order.
 
 1. Promote the changelog. Before renaming, check every non-doc entry

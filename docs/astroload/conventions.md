@@ -32,15 +32,17 @@ ignored and the route falls back to the default. So every route in the
 template uses one of two literal shapes:
 
 - `export const prerender = true` for routes that are static in prod.
-  The content catch-alls, the home page, the sitemap index, and
+  The content catch-alls, the home page, the root sitemap, and
   `robots.txt` use this.
 - `export const prerender = false` for routes that must run per request.
   The 404 and 500 pages, the per-locale sitemap (a prerendered dynamic
-  endpoint would answer unknown locales with a 500 instead of a 404), and
-  anything under `/preview` are in this group.
+  endpoint would answer unknown locales with a 500 instead of a 404),
+  the analytics relay routes (`u.js`, `/api/send`), and anything under
+  `/preview` are in this group.
 
 Every conditional case lives in the `prerenderOverrides` integration in
-`astro.config.mjs`, the seam Astro provides for per-route overrides. It
+`astro.config.mjs`, Astro's supported way to override render modes per
+route. It
 renders everything on demand in dev (so admin edits show up without a
 restart), the `[lang]` routes on demand in a single-locale build, and
 the root on demand in a multi-locale build (the Accept-Language
@@ -65,13 +67,13 @@ the file.
 ## A pinned dev port needs strictPort under vite.server
 
 Astro's top-level `server` option accepts `port` but ignores keys it does
-not know, so `server: { port: 4330, strictPort: true }` pins the port
+not know, so `server: { port: 4321, strictPort: true }` pins the port
 without the strictness. When the port is taken, the dev server hops to the
 next free one and a stale process keeps answering the pinned URL. Put the
 flag in Vite's config, which Astro passes through:
 
 ```js
-server: { port: 4330 },
+server: { port: 4321 },
 vite: { server: { strictPort: true } },
 ```
 
@@ -110,11 +112,39 @@ order, which is not stable between the dev server and the production
 bundle. A toggle that works in dev can lose the tie after bundling, and
 the failure only shows up on the built site.
 
+## Static art is imported, public/ is for fixed pathnames
+
+Put component-owned images in `web/src/assets` and reference them through
+imports. The build emits them under `/_astro` with a content hash in the
+filename, and the standalone Node adapter serves that directory with
+`Cache-Control: public, max-age=31536000, immutable`, so a reload takes
+the file straight from the browser cache.
+
+Files in `web/public/` ship at their literal path and the adapter serves
+them with `max-age=0`, which makes the browser revalidate on every use.
+Each reload then waits on a conditional request before painting, and
+container builds rewrite mtimes, so every deploy also invalidates every
+client's cached copy at once. Keep a file in `public/` only when outside
+consumers depend on its exact pathname or conventional filename. In this
+template that is the two favicons. A fixed pathname with generated
+content is a route, like `robots.txt.ts`, and does not need `public/`.
+
+For local raster images prefer Astro's `<Image>` and `<Picture>`
+components, which take the same `src/assets` imports and add dimensions
+and format handling. CMS-hosted images stay on the Payload variant path
+through `Img.astro`. For an SVG rendered through `<img>`, import it with
+`?url`. Astro turns a bare `.svg` import into an inline component, which
+leaks the file's `<style>` blocks and ids into the page. Vite inlines
+`?url` assets smaller than `assetsInlineLimit` (4096 bytes) as data URIs.
+That is fine as an `<img>` src. Append `&no-inline` when the result must
+stay an HTTP URL, for example one handed to external consumers.
+
 ## CMS calls go through the SDK layer
 
 The Astro side talks to Payload through `web/src/cms/`. Route files do
 not call `fetch` against the CMS directly. Going through the SDK
-preserves the cache behaviour: LRU in prod, bypass in dev and preview.
+preserves the cache behaviour: LRU in prod for reads that opt in, bypass
+in dev, in preview, and on live routes that pass `cacheHeader(false)`.
 When you add a new content read, add it to the SDK first, then call
 it from the route.
 
@@ -131,7 +161,7 @@ constructs its own `PayloadSDK` from `process.env` instead of going
 through the rest of the SDK helpers. Do not add new exceptions without
 a similarly hard reason.
 
-## Build-time CMS reads fail loud on a strict build, degrade otherwise
+## Build-time CMS reads fail a strict build, degrade otherwise
 
 `web/src/cms/getRedirects.ts` runs from `astro.config.mjs`, and its result
 is folded into the server manifest. A strict build (`REDIRECTS_STRICT=1`,
@@ -139,8 +169,8 @@ which the web `build` script sets) fails when the CMS read fails, so a
 deploy never ships a redirect-less site over the last good one. Dev,
 `astro check`, and a plain `astro build` fall back to the committed
 `redirects.fallback.json` (empty by default) so the run still ships. See
-[`maintenance.md`](./maintenance.md) for the retry, fail-loud, and fallback
-policy in full.
+[`maintenance.md`](./maintenance.md) for the retry and fallback policy in
+full.
 
 Anything else that reads `process.env` from `astro.config.mjs` needs to
 import `dotenv/config` at the top of its module, because Astro loads `.env`
@@ -160,7 +190,7 @@ locale to prove this works. Keep that divergence when you edit seeds.
 `PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` must never reach the client
 bundle. Read them through `astro:env/server`, not `astro:env/client`. The
 preview key in particular is gated this way because a leak exposes the
-draft state of every published collection. The read key is server-only too
+draft state of Pages, Posts, and Authors. The read key is server-only too
 so that the API token does not become a client-enumerable secret.
 
 If you find an island that needs CMS data, fetch the data in the parent
@@ -219,7 +249,8 @@ typechecks both workspaces (`tsc --noEmit` in the CMS, `astro check` in the
 web app). `pnpm lint` covers the CMS only, since the web workspace has no
 linter configured.
 
-The test runner is Vitest in the web workspace (`pnpm test` runs `vitest run`).
+The test runner is Vitest in the web workspace. The root `pnpm test` runs
+it and then the Node-based tests in `scripts/*.test.mjs`.
 It covers pure units such as URL building and the stale-on-error wrapper. The
 CMS workspace has no test runner, so a CMS-side hook ships with the same
 inline-reasoning comments that `spamGuard` and `validateSubmission` carry rather

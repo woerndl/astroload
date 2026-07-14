@@ -1,8 +1,8 @@
 # Deployment
 
 Both apps are plain Node servers. The simplest deploy is the one in the
-[README](../README.md#deployment): `build` and `start` per app on any Node
-host. This page covers the container path.
+[README](../README.md#deployment): `build` and `start` per app on a plain
+Node host. This page covers the container path.
 
 ## Images
 
@@ -23,9 +23,9 @@ optional integrations. When S3 is not configured, uploads write to `MEDIA_DIR`
 with the container.
 
 The web image is different in one important way: the site is built into the
-image. `astro build` prerenders every page from CMS content and bakes the
-public env values into the output, so the build needs a reachable CMS and
-production values:
+image. `astro build` prerenders the static routes from CMS content and
+bakes the public env values into the output, so the build needs a reachable
+CMS and production values:
 
 ```bash
 docker build -f web/Dockerfile -t astroload-web \
@@ -36,11 +36,12 @@ docker build -f web/Dockerfile -t astroload-web \
 
 `UMAMI_WEBSITE_ID` and `CONTENT_BUILD_ID` are further optional build args. At
 runtime the container needs `PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, and
-`PREVIEW_SECRET` for the preview route and any SSR opt-in route, plus
+`PREVIEW_SECRET` for the preview route, the per-locale sitemaps, the error
+pages, and any SSR opt-in route, plus
 `UMAMI_HOST_URL` when the analytics proxy should target a self-hosted Umami
 instead of Umami Cloud.
 
-A content publish means a new web image. Point the deploy webhook
+A change that affects prerendered output means a new web image. Point the deploy webhook
 (`DEPLOY_HOOK_URL`) at whatever rebuilds and redeploys it.
 
 ## Compose scaffold
@@ -57,13 +58,13 @@ The web service carries commented `UMAMI_WEBSITE_ID` and `CONTENT_BUILD_ID`
 build args. Uncomment `CONTENT_BUILD_ID` when the publish hook rebuilds
 through this compose file: without a fresh value per publish, `docker compose
 build web` on an unchanged commit replays the cached prerender layer and the
-new content never ships (see the cache-bust recipe in
+new content never ships (see
 [`maintenance.md`](./maintenance.md#same-commit-redeploys-and-the-content-build-id)).
 
 ## In front of the containers
 
 The web server sends uncompressed responses over plain HTTP. Terminate TLS and
-compression in a reverse proxy or CDN. The host cutover runbook in
+compression in a reverse proxy or CDN. The go-live section in
 [`maintenance.md`](./maintenance.md) has the verification steps.
 
 Two more jobs belong in that proxy layer:

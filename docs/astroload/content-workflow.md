@@ -10,20 +10,20 @@ gitignored scratch directory instead, so it never enters git history.
 
 ## Pick the lightest path that does the change
 
-1. **Admin UI** is the default for a human. Log in at `/admin`, edit, save or
+1. The admin UI is the default for a human. Log in at `/admin`, edit, save or
    publish. Access control, validation, versions, and the deploy hook all run.
    Nothing to clean up.
-2. **MCP** is the recommended path for an agent. With the Payload MCP plugin
+2. MCP is the recommended path for an agent. With the Payload MCP plugin
    enabled, an assistant edits content through typed tools instead of writing a
    script. See [Enabling MCP](#enabling-mcp). Off by default in this starter.
-3. **REST API** is the path for a program or a CI step. Authenticate, then call
+3. The REST API is the path for a program or a CI step. Authenticate, then call
    the documented endpoints. See [REST](#rest).
-4. **A Local API script** is for a change the paths above cannot express, or one
+4. A Local API script is for a change the paths above cannot express, or one
    that has to be reproducible. Whether it is committed or thrown away depends on
    which. See [Scripts: durable versus throwaway](#scripts-durable-versus-throwaway).
 
-Reach for the first one that does the job. A single field edit is an admin click,
-not a script.
+Reach for the first one that does the job. A single field edit belongs in
+the admin UI, not a script.
 
 ## Enabling MCP
 
@@ -34,11 +34,12 @@ surface or key collection by default. A project that does agent-driven editing
 should turn it on.
 
 Add the Payload MCP plugin (`@payloadcms/plugin-mcp`) to
-`cms/src/payload.config.ts`, following the plugin's current setup and
-authentication docs. Then point an MCP client at the running CMS. A project-level
-config for an HTTP MCP server has this shape (confirm the endpoint path and auth
-header against the plugin docs, they are what the plugin defines, not this
-starter):
+`cms/src/payload.config.ts` and opt each collection and global you want
+exposed into the plugin config. The plugin serves MCP at `/api/mcp` and
+authenticates with an API key created in the admin panel under MCP, sent
+as a bearer token. Capabilities are toggled per key, so a key grants only
+what you enable on it. Payload's access rules and hooks still apply. A
+project-level client config:
 
 ```jsonc
 // .mcp.json
@@ -46,17 +47,15 @@ starter):
   "mcpServers": {
     "payload": {
       "type": "http",
-      "url": "http://localhost:3000/api/plugin/mcp",
+      "url": "http://localhost:3000/api/mcp",
       "headers": { "Authorization": "Bearer ${PAYLOAD_MCP_KEY}" }
     }
   }
 }
 ```
 
-```bash
-# cms/.env, only once the plugin is enabled
-PAYLOAD_MCP_KEY=your_mcp_key_here
-```
+`PAYLOAD_MCP_KEY` holds the admin-created key in the MCP client's
+environment.
 
 Point the client at the local CMS while developing. Read [Local versus
 deployed](#local-versus-deployed) before letting any agent reach a deployed
@@ -93,13 +92,16 @@ change has to run again, in another environment, or be reviewable later.
 Durable scripts are committed. A migration, a backfill, or a data correction that
 has to be reproducible lives in `cms/src/scripts/` alongside the seed, is reviewed
 like any other code, and is written to be idempotent so a second run is safe.
-`src/upsertByKey.ts` is the primitive for that: it finds a document by a stable
-key (a slug, a title), updates it when it exists, and creates it only when
-missing, so a bulk content script converges on the same documents instead of
-duplicating them run over run.
-`src/scripts/seed.ts` is the worked example: re-running it is a no-op unless
-`--force` or `SEED_FORCE=1` is passed. The auth bootstrap (admin user and API
-keys) lives separately in `src/seedAuth.ts` with its own script entry
+`cms/src/upsertByKey.ts` is the primitive for that: it finds a document by a
+stable key (a slug, or another value with at most one match), updates it when
+it exists, creates it when missing, and throws when the key matches more than
+one document, so a bulk content script converges on the same documents
+instead of duplicating them run over run.
+`cms/src/scripts/seed.ts` is the worked example: re-running it skips once
+users exist, and `--force` or `SEED_FORCE=1` clears the seeded collections,
+users and API keys included, and recreates the demo content. The auth
+bootstrap (admin user and API
+keys) lives separately in `cms/src/seedAuth.ts` with its own script entry
 (`pnpm --filter @astroload/cms seed:auth` from the repo root), so a real
 project can delete the demo seed without losing the path that provisions a
 fresh database.

@@ -39,7 +39,7 @@ the Resend and S3 keys) are separate concerns and live alongside these.
 
 1. Editor accounts in the Users collection. Admin and editor roles.
    Real authentication through Payload's login flow. Both roles write
-   content: Pages, Posts, Authors, Media, the four globals, and
+   content: Pages, Posts, Authors, Media, Forms, the four globals, and
    Redirects. Managing users and API keys stays admin-only. The first
    account registered on an empty instance becomes an admin regardless
    of the form's role default, so a fresh deploy cannot lock itself
@@ -57,7 +57,7 @@ the Resend and S3 keys) are separate concerns and live alongside these.
 3. `PREVIEW_SECRET`, a shared value the CMS and the Astro app both
    know. Gates the `/preview` route itself.
 
-No admin-capable Payload token ever lands in `web/.env`. A leak of the
+No admin-capable Payload token ever goes into `web/.env`. A leak of the
 read-only key reveals already-public content. A leak of the preview key
 reveals drafts. Neither gives write access or the admin surface.
 
@@ -88,8 +88,8 @@ Three exceptions exist by design. Decide on each before production:
   access guard if a leaked media URL is a meaningful disclosure for
   your project.
 - The Header, Footer, Labels, and SiteSettings globals are public-read.
-  They carry editorial copy, not draft article bodies, but a draft
-  change there is visible immediately.
+  They carry editorial copy and have no draft state, so any change there
+  is publicly readable immediately.
 - Forms are public-read, the form-builder plugin's default. A form
   definition holds field names, confirmation copy, and the notification
   recipient addresses, and it is enumerable without a key. Tighten read
@@ -182,8 +182,8 @@ queued submission pipeline. Pick one before you go to production.
 
 ## Form submission integrity
 
-The form time-trap is client-controlled, so it is not a strong abuse
-control. See [`forms.md`](./forms.md) for the shipped checks and
+The form's minimum-submit-time check relies on a client-stamped
+timestamp, so it is not a strong abuse control. See [`forms.md`](./forms.md) for the shipped checks and
 production gaps.
 
 Stored submissions hold visitor PII, so their access rules are pinned in
@@ -242,15 +242,16 @@ Auth bootstrap is its own module: `seedAuth` creates the admin user and
 the two API keys and logs the key values to stdout. It runs standalone
 as `pnpm --filter @astroload/cms seed:auth` and as the first step of the
 demo seed, so a project
-that deletes the demo content keeps a bootstrap path for a fresh
+that deletes the demo content keeps a way to provision a fresh
 database. The key values must be pasted into `web/.env`. None of them
 are committed. Both entry points skip whatever already exists, so
 re-running does not rotate the keys. Passing `SEED_FORCE=1` to the demo
 seed clears and re-mints them, with fresh values unless
 `PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` are pinned in `cms/.env`.
 The admin account uses the demo credentials unless
-`PAYLOAD_ADMIN_EMAIL` and `PAYLOAD_ADMIN_PASSWORD` are set. The reseed
-trap is documented in [`maintenance.md`](./maintenance.md).
+`PAYLOAD_ADMIN_EMAIL` and `PAYLOAD_ADMIN_PASSWORD` are set. How a
+reseed affects the keys is documented in
+[`maintenance.md`](./maintenance.md).
 
 ## Dependencies
 
@@ -273,5 +274,5 @@ production hardening checklist:
 - Body-size limit on form submissions.
 - IP allow-list on `/admin` if your team is in a known network.
 - Automated regression test for draft leakage at populated depth.
-- Server-stamped time-trap (or alternative) on form submissions if you
-  expect targeted spam.
+- Server-stamped submit-time check (or alternative) on form submissions
+  if you expect targeted spam.

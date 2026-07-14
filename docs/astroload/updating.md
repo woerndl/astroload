@@ -15,12 +15,16 @@ adaptation.
   target.
 - `.astroload.yml` in the downstream root records the template commit the
   project was scaffolded from, or last synced to. If the file is missing,
-  recover that commit from project history and add the marker before
-  continuing.
+  or still holds the scaffold placeholder values, recover that commit from
+  project history and set the marker before continuing.
 
 ## 1. Run the inventory script
 
-    node scripts/sync-inventory.mjs --upstream ../astroload --to v0.6.0
+    node ../astroload/scripts/sync-inventory.mjs --upstream ../astroload --to <tag>
+
+The script ships with the template, so run the upstream clone's copy: a
+project scaffolded before the script existed does not have it, and the
+upstream copy is current either way.
 
 This lists every upstream commit since the base and, for each net-changed
 file, one of five states:
