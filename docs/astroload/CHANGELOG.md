@@ -8,6 +8,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-07-16
+
 ### Changed
 
 - Rewrite source comments and `docs/` in a plainer, more neutral style, replacing figurative vocabulary with the literal mechanism. Prose only, no code changes.
