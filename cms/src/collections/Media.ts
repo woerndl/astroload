@@ -64,7 +64,7 @@ export const Media: CollectionConfig = {
       { name: 'md', width: 1024, formatOptions: toWebp },
       { name: 'lg', width: 1920, formatOptions: toWebp },
       // withoutEnlargement keeps the og variant for sources smaller than the
-      // target, so og:image never falls through to the WebP main file.
+      // target, so og:image does not fall through to the WebP main file.
       {
         name: 'og',
         width: 1200,
@@ -75,12 +75,12 @@ export const Media: CollectionConfig = {
       },
     ],
     // Applies to Payload's own file route, which serves media from local disk.
-    // The web app appends ?v=updatedAt to every media url, so the bytes for a
-    // given url never change and can be cached hard. 30 days, not immutable:
-    // max-age bounds the one path the version marker cannot see, a variant
-    // regeneration that rewrites file bytes without touching updatedAt. With S3
-    // (disablePayloadAccessControl) this route is bypassed and the bucket or
-    // CDN sets its own cache headers.
+    // The web app appends ?v=updatedAt to every media url, so a normal update
+    // moves readers to a new URL and the response can be cached for 30 days.
+    // max-age stays finite because a variant regeneration can rewrite the
+    // bytes behind an unchanged URL without touching updatedAt.
+    // With S3 (disablePayloadAccessControl), this route is bypassed and the
+    // bucket or CDN sets cache headers.
     modifyResponseHeaders: ({ headers }) => {
       headers.set('Cache-Control', 'public, max-age=2592000')
     },

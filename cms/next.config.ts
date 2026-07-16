@@ -8,11 +8,11 @@ const dirname = path.dirname(__filename)
 const workspaceRoot = path.resolve(dirname, '..')
 
 const nextConfig: NextConfig = {
-  // pnpm-workspace fix: turbopack.root + outputFileTracingRoot must point at the
-  // workspace root, not cms/, or Turbopack can't resolve next/package.json from src/app.
+  // Trace standalone output from the workspace root, not cms/, so the Docker
+  // image gets the dependencies pnpm hoists to the workspace root.
   outputFileTracingRoot: workspaceRoot,
-  // Standalone output is what cms/Dockerfile runs. Gated on an env flag because
-  // `next start`, the plain-Node deploy path, warns when it is set.
+  // cms/Dockerfile runs standalone output. The env flag avoids a warning from
+  // `next start`, which does not use standalone output.
   ...(process.env.NEXT_OUTPUT === 'standalone' ? { output: 'standalone' as const } : {}),
   // The CMS is admin-only. Send the bare root to the admin panel instead of 404.
   async redirects() {
@@ -34,6 +34,8 @@ const nextConfig: NextConfig = {
 
     return webpackConfig
   },
+  // Without the workspace root, Turbopack can't resolve next/package.json
+  // from src/app in this pnpm workspace.
   turbopack: {
     root: workspaceRoot,
   },

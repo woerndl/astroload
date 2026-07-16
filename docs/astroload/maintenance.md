@@ -5,14 +5,14 @@ Failure modes that are not obvious from reading the code.
 ## Schema changes do not migrate existing documents
 
 The MongoDB adapter stores documents without a fixed schema, so changing a
-field's shape never runs a migration or rewrites what is already stored.
+field's shape does not run a migration or rewrite what is already stored.
 There is no dev-time schema push and no destructive prompt: adding,
 removing, retyping, or renaming a field leaves existing documents exactly
 as they were.
 
-The catch is that old documents keep their old shape:
+Old documents keep their old shape:
 
-- A newly required field is simply absent on documents saved before it
+- A newly required field is absent on documents saved before it
   existed. They read back without it and fail validation only the next
   time something saves them (an admin edit, a hook), so nothing flags the
   gap until then.
@@ -36,8 +36,8 @@ content.
 re-exports both, `payload.config.ts` derives `localization.locales` and
 `localization.defaultLocale` from them, and the Astro side reads them
 through `web/src/cms/types.ts`. The sitemap `x-default` emission and the
-public page lookup anchor on the same `DEFAULT_LOCALE`, so the Payload
-config can no longer drift from the value those consumers read.
+public page lookup read the same `DEFAULT_LOCALE`, so the Payload
+config cannot drift from the value those consumers use.
 
 `site-config.ts` asserts at import that `DEFAULT_LOCALE` is one of
 `LOCALES`. A default outside the shipped set fails at import, instead
@@ -47,7 +47,7 @@ in production sitemaps.
 To swap the default, or to change which locales ship, edit
 `site-config.ts`, then regenerate the CMS types
 (`pnpm --filter @astroload/cms generate:types`) so the generated `locale`
-union tracks the new set. Nothing else changes in lockstep.
+union tracks the new set. No other file needs a matching edit.
 
 By default a project carries the `/{locale}` URL prefix only when it ships more
 than one locale. To keep the prefix on a single-locale project, so its URLs
@@ -57,12 +57,11 @@ rejected at import, because their un-prefixed URLs would collide.
 
 ## Publishing to a live static build
 
-The web app ships prerendered HTML. Publishing in admin does not change
+The web app serves prerendered HTML. Publishing in admin does not change
 the live site on its own. It posts to `DEPLOY_HOOK_URL`, the host rebuilds
 and redeploys, and the new build goes live. Publish-to-live latency is the
-host's build and deploy time, typically minutes. There
-is no per-request CMS read on the published path, which is the trade for
-that latency.
+host's build and deploy time, typically minutes. There is no per-request
+CMS read on the published path, and the latency is the cost of that.
 
 The deploy hook (`cms/src/hooks/triggerDeploy.ts`) coalesces bursts with one
 process-wide window shared by all documents. The first
@@ -81,8 +80,9 @@ Saves that cannot change the live output are skipped: draft saves (autosave
 or a manual Save Draft, even over a published doc), a re-publish with no
 edits, and global or always-deploy saves that leave the document identical
 apart from `updatedAt`. The skip check errs toward firing, since a missed
-change ships a stale site while a redundant fire only wastes a build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body
-and no auth header.
+change leaves the live site stale while a redundant fire only wastes a
+build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body and no
+auth header.
 
 The window (`WINDOW_MS`) is set in code, not env, and defaults to
 300000 ms (five minutes). The default suits hosts
@@ -115,7 +115,7 @@ does not await it, so a restart at that instant can still cut off the
 in-flight request. To guarantee no publish is
 dropped without adding database-backed deploy state, schedule a
 low-frequency rebuild on the host as a backstop: a periodic `DEPLOY_HOOK_URL`
-POST eventually ships any change a lost trailing deploy missed. The same
+POST eventually deploys any change a lost trailing deploy missed. The same
 cron that covers time-relative content covers this.
 
 ## Same-commit redeploys and the content build id
@@ -123,13 +123,14 @@ cron that covers time-relative content covers this.
 A publish-driven rebuild runs on the same git commit as the last one, only
 the CMS content differs. Hosts that cache build output by commit
 SHA can serve the previous build for that second deploy, so the new content
-never reaches the edge. The site looks stuck on stale HTML even though the
+does not reach the edge. The site looks stuck on stale HTML even though the
 deploy "succeeded".
 
 The fix is `CONTENT_BUILD_ID`. Set it to a value that changes
-every deploy and the web build stamps it into every page as
-`<meta name="content-build-id">`, so the output genuinely differs build over
-build. The contract for an operator:
+every deploy and the web build stamps it into every page rendered through
+the shared layout as
+`<meta name="content-build-id">`, so the output differs build over
+build. What the operator must do:
 
 - Pass a fresh `CONTENT_BUILD_ID` on each deploy (the host's deploy id, a
   timestamp, the build number). Most hosts hash build env vars into the
@@ -154,8 +155,9 @@ Host examples:
   `CONTENT_BUILD_ID` build arg for this.
 
 Leaving `CONTENT_BUILD_ID` unset omits the meta tag and turns the check off.
-That is fine when the host already rebuilds cleanly per deploy. Set it only
-if you observe a same-commit redeploy serving stale HTML.
+Skip it only when a same-commit redeploy has been verified to serve the new
+content on your host. When in doubt, set it and pass a fresh value per
+deploy as above.
 
 ## Media is served as WebP and cached with a version marker
 
@@ -170,12 +172,12 @@ or browser may cache a media url for 30 days. That is only safe because every
 media url the web app emits carries a `?v=<updatedAt>` marker
 (`versionedMediaURL`), which changes when the file changes and so produces a new
 url. The header is deliberately not `immutable`: the max-age bounds the one case
-the marker cannot see, a script that regenerates variant bytes without touching
+the marker does not cover, a script that regenerates variant bytes without touching
 the document's `updatedAt`. Two operational consequences:
 
 - A CDN in front of the CMS must keep the query string in its cache key. If it
-  strips query strings, an updated image keeps serving stale because every
-  version resolves to the same cached key. Most CDNs include the query string by
+  strips query strings, an updated image keeps serving the old bytes because
+  every version resolves to the same cached key. Most CDNs include the query string by
   default. Confirm before fronting media.
 - Any new code that builds a media url must go through `versionedMediaURL`, not
   `absoluteCmsURL`, or it opts that url out of cache busting.
@@ -216,12 +218,12 @@ The fetch keys its behaviour on the `REDIRECTS_STRICT` flag, which the
   roughly a minute and a half), to ride out a CMS that is briefly down while
   a coordinated deploy restarts it. Non-strict makes a single attempt.
 - If the CMS is still unreachable after the strict retries, the build fails
-  rather than shipping a redirect-less site. The last good deploy is
+  rather than producing a site with no redirects. The last good deploy is
   already serving, so failing leaves it in place instead of replacing it with
   a build that 404s every removed URL. A missing `CMS_URL`/`PAYLOAD_READ_KEY`
   fails the same way, since that is a wiring error, not an outage.
 - A non-strict run (dev, `astro check`, plain `astro build`) makes one
-  attempt and then returns the committed fallback so the run still ships.
+  attempt and then returns the committed fallback so the run still completes.
 - The CMS is trusted when it answers. An empty Redirects collection produces
   an empty table, in strict and non-strict alike, so deleting every redirect
   takes effect rather than being overridden.
@@ -240,7 +242,7 @@ the CMS-backed error pages) can fail during the outage or serve their last
 good response where `staleOnError` applies.
 
 `redirects.fallback.json` is the committed redirect table for non-strict runs
-(offline dev and CI). It ships empty, so a fresh project loses nothing.
+(offline dev and CI). It is committed empty, so a fresh project loses nothing.
 An operator who would rather
 keep a deploy alive through a CMS outage than fail it can populate the file
 (export the Redirects collection into it) and return `fallback` instead of
@@ -310,7 +312,7 @@ internet.
    responses and relies on the host's proxy or CDN to compress. Confirm with
    `curl -sI -H 'Accept-Encoding: gzip, br' https://your-site/ | grep -i content-encoding`.
    If nothing comes back, the host does not compress at the edge and needs a
-   compressing proxy in front, or every page ships uncompressed HTML.
+   compressing proxy in front, or every page is served uncompressed.
 7. Verify analytics, when `UMAMI_WEBSITE_ID` is set. In a browser, confirm
    exactly one POST to the first-party `/api/send` per page view. A request to
    the Umami host (`gateway.umami.is` or `cloud.umami.is` on Cloud) instead
@@ -375,7 +377,7 @@ first seed, mirror them in `web/.env`, and leave them there.
 
 ## Astro dev does not re-fetch prerendered routes on every request
 
-In `astro dev`, prerendered routes don't re-run `getStaticPaths` on
+In `astro dev`, prerendered routes do not re-run `getStaticPaths` on
 every request, and the SDK has its own response cache. Live content
 edits do not propagate to dev pages until the dev server is restarted,
 unless the route renders on demand in dev.

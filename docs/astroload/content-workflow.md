@@ -3,10 +3,10 @@
 How to change content in this starter, and where a mutation script belongs when
 you need one.
 
-Most changes need no script. When one is warranted, the split is simple: a
-script that has to be reproducible, such as a migration or a backfill, is
-committed and reviewed like any other code. A one-off edit is written in the
-gitignored scratch directory instead, so it never enters git history.
+Most changes need no script. When one is warranted, a script that has to be
+reproducible, such as a migration or a backfill, is committed and reviewed
+like any other code. A one-off edit is written in the gitignored scratch
+directory instead, so it does not enter git history.
 
 ## Pick the lightest path that does the change
 
@@ -22,16 +22,15 @@ gitignored scratch directory instead, so it never enters git history.
    that has to be reproducible. Whether it is committed or thrown away depends on
    which. See [Scripts: durable versus throwaway](#scripts-durable-versus-throwaway).
 
-Reach for the first one that does the job. A single field edit belongs in
+Use the first path that does the job. A single field edit belongs in
 the admin UI, not a script.
 
 ## Enabling MCP
 
-MCP is the smoothest agent path once it is wired, because the assistant mutates
-content through typed tools with access control still enforced, and writes
-nothing to the tree. It is opt-in here so the starter ships no extra server
-surface or key collection by default. A project that does agent-driven editing
-should turn it on.
+With MCP enabled, an assistant mutates content through typed tools, access
+control still enforced, and writes nothing to the tree. It is opt-in so the
+starter adds no extra server surface or key collection by default. A project
+that does agent-driven editing should turn it on.
 
 Add the Payload MCP plugin (`@payloadcms/plugin-mcp`) to
 `cms/src/payload.config.ts` and opt each collection and global you want
@@ -95,8 +94,8 @@ like any other code, and is written to be idempotent so a second run is safe.
 `cms/src/upsertByKey.ts` is the primitive for that: it finds a document by a
 stable key (a slug, or another value with at most one match), updates it when
 it exists, creates it when missing, and throws when the key matches more than
-one document, so a bulk content script converges on the same documents
-instead of duplicating them run over run.
+one document. A bulk content script built on it converges on the same
+documents instead of duplicating them run over run.
 `cms/src/scripts/seed.ts` is the worked example: re-running it skips once
 users exist, and `--force` or `SEED_FORCE=1` clears the seeded collections,
 users and API keys included, and recreates the demo content. The auth
@@ -108,7 +107,7 @@ fresh database.
 
 Throwaway scripts are not committed. A one-time local edit with no lasting value
 goes in `cms/src/scripts/scratch/`, which is gitignored except for its README, so
-it never enters git history.
+it does not enter git history.
 
 Both kinds run the same way, through `payload run`:
 
@@ -124,7 +123,7 @@ Every path above targets whatever the CMS env points at. `payload run` and the
 Local API read `cms/.env`, so a scratch script hits whatever `DATABASE_URI`
 resolves to. Keep that on the local database.
 
-The scratch skeleton ships a preflight that throws unless `DATABASE_URI` points
+The scratch skeleton includes a preflight that throws unless `DATABASE_URI` points
 at `127.0.0.1` or `localhost`, so a misconfigured env stops the script instead of
 mutating a remote database. Setting `ALLOW_DEPLOYED_SCRATCH=1` is the explicit
 opt-out, for the rare case you do mean to reach a remote instance.

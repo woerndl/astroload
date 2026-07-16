@@ -24,24 +24,24 @@ renderer or extend the field config.
 
 The bundled `<script>` builds a JSON payload of the shape
 `{ form: <id>, submissionData: [...] }` and POSTs it to
-`${CMS_URL}/api/form-submissions`. The script does three things:
+`${CMS_URL}/api/form-submissions`. The script:
 
 - Captures `Date.now()` at attach time and includes it in the payload as
   `_rendered_at`. The stamp is generated in the browser, not at render
   time, so SSR or CDN caching does not affect it.
 - POSTs JSON. On success, either redirects to the form's configured
-  URL (when its confirmation type is `redirect`) or reveals the
+  URL (when its confirmation type is `redirect`) or shows the
   localized `confirmationMessage` block. On any non-ok response or a
   network failure, shows the localized generic error label from the
-  Labels global. Server error bodies are never surfaced, because hook
+  Labels global. Server error bodies are not shown, because hook
   rejections and Payload validation messages are English regardless of
   the page locale.
 - Guards against double-submits with an in-flight flag.
 
 The form element has a native `action` and `method` pointing at the
 same endpoint, but the Payload endpoint expects the JSON shape above,
-not the form-encoded body a plain HTML POST would send. Submission
-without JavaScript is broken in the template as it ships. If you need
+not the form-encoded body a plain HTML POST would send. Submitting
+without JavaScript does not work in the template as shipped. If you need
 a no-JS path, add a thin Astro server route on the public site that
 wraps the form-encoded body into the JSON shape and forwards it.
 
@@ -61,10 +61,10 @@ allow-list explicitly.
 ## Spam protection
 
 The form builder plugin has no built-in spam protection. Astroload
-ships a few baseline checks against commodity contact-form spam:
+includes a few baseline checks against commodity contact-form spam:
 
 - A honeypot field named `fax`, hidden by `.form-extra { display: none }`
-  in the global stylesheet. The rule ships as an external sheet rather
+  in the global stylesheet. The rule is in an external sheet rather
   than inline, so bots that only parse the raw HTML do not see it. The
   field has no `aria-hidden`, `tabindex`, or `autocomplete` attribute,
   because each of those is a fingerprint a bot can match on. The name
@@ -80,8 +80,8 @@ Forms collection rejects a form that names a field after either (and any
 duplicate field name) at save time, through the `validateFormFields`
 hook wired into `formOverrides`.
 
-The timestamp is client-controlled. A bot can post any past timestamp
-and pass the check trivially. The check catches lazy bots, not
+The timestamp is client-controlled. A bot can post any timestamp older
+than the threshold and pass the check. The check catches lazy bots, not
 motivated ones. If your project needs stronger guarantees, replace the
 client stamp with a server-stamped signed token (HMAC, short TTL) or
 gate the endpoint behind a CDN rule.
@@ -92,7 +92,7 @@ so a motivated attacker can post until the table fills. See
 
 ## Accessibility
 
-The renderer wires up a few baseline patterns:
+The renderer implements a few baseline patterns:
 
 - Explicit `<label for>` and `<input id>` pairs across textarea, select,
   checkbox, and input branches.
@@ -101,7 +101,7 @@ The renderer wires up a few baseline patterns:
 - Native `required` attribute (announced by screen readers) instead of a
   visual `*` separate from semantics.
 
-What is not shipped: `aria-invalid` toggling after validation, per-field
+Not included: `aria-invalid` toggling after validation, per-field
 error display, and `fieldset`/`legend` grouping. Per-field errors would
 require a wrapper endpoint because the plugin's submission API returns a
 flat error. That is more scope than the starter takes on. Add it in your
@@ -116,7 +116,7 @@ fork if your project needs it.
 - If the honeypot field is non-empty, throw the same error.
 - If `_rendered_at` is missing or unparseable, throw the same error.
 - If `_rendered_at` is less than 1.5s before now, throw the same error.
-- Strip both internal fields from the document so they never reach the
+- Strip both internal fields from the document so they do not reach the
   database.
 
 There is no upper bound on `_rendered_at`. A stale prefetched form
@@ -129,21 +129,22 @@ rejects a submission that omits a required field of its referenced form,
 posts a duplicate field name, or references a form id that does not
 exist, all with the same generic 400. It checks presence only: value
 shapes (an email field holding a non-email, a select value outside its
-options) are not validated, because submissions land in a review queue.
+options) are not validated, because submissions are stored in the
+`form-submissions` collection and read by a person in the admin panel.
 
 Both hooks are wired through
 `formBuilderPlugin({ formSubmissionOverrides: { hooks: { beforeChange: [spamGuard, validateSubmission] } } })`
 in `cms/src/payload.config.ts`, and the authoring-side `validateFormFields`
 through `formOverrides` next to them. If you change the field shape,
-update the hooks in lockstep.
+update the hooks to match.
 
-The same overrides pin the submission access rules. Submissions hold
+The same overrides set the submission access rules. Submissions hold
 visitor PII, so anyone may create one, only panel users (admins and
 editors) may read them, nobody may update one, and only admins may
 delete. Without the explicit rules, read would be open to any
 authenticated requester, including the web app's read-only api key.
 
-The Forms collection itself is write-gated the same way as the content
+The Forms collection itself restricts writes the same way as the content
 collections (`isAdminOrEditor`): the plugin sets no write rules, so
 writes would otherwise fall back to any authenticated requester,
 including the api keys. Form reads stay anonymous (the plugin's
@@ -152,6 +153,6 @@ public-read surfaces. Form saves and deletions fire the deploy webhook,
 since the rendered fields, labels, and confirmation are baked into the
 prerendered pages that embed the form.
 
-The starter ships no integration test for this path. When you set up a
+The starter has no integration test for this path. When you set up a
 CMS-side test runner, cover it with forged POSTs asserting the rejects
 above.

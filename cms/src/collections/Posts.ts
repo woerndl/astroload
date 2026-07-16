@@ -30,8 +30,8 @@ export const Posts: PageCollectionConfig = {
       sharedDocument: true,
     },
   },
-  // The authors populate stays bio-free through Authors' defaultPopulate,
-  // which carries the rationale.
+  // authors: true stays bio-free because Authors' own defaultPopulate omits
+  // bio, so a post list does not pull a localized rich-text body per author.
   defaultPopulate: {
     title: true,
     path: true,

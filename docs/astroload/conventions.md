@@ -42,12 +42,12 @@ template uses one of two literal shapes:
 
 Every conditional case lives in the `prerenderOverrides` integration in
 `astro.config.mjs`, Astro's supported way to override render modes per
-route. It
-renders everything on demand in dev (so admin edits show up without a
-restart), the `[lang]` routes on demand in a single-locale build, and
-the root on demand in a multi-locale build (the Accept-Language
-redirect needs the request). If a new route needs a conditional render
-mode, extend that integration rather than computing the export.
+route. It renders everything on demand in dev (so admin edits show up
+without a restart), the `[lang]` routes on demand in a single-locale
+build, and the root on demand in a multi-locale build (the
+Accept-Language redirect needs the request). If a new route needs a
+conditional render mode, extend that integration rather than computing
+the export.
 
 A small subset of the second shape is the on-demand opt-in: a public route
 that must reflect the latest content without waiting for a rebuild (a live
@@ -120,7 +120,7 @@ filename, and the standalone Node adapter serves that directory with
 `Cache-Control: public, max-age=31536000, immutable`, so a reload takes
 the file straight from the browser cache.
 
-Files in `web/public/` ship at their literal path and the adapter serves
+Files in `web/public/` keep their literal path and the adapter serves
 them with `max-age=0`, which makes the browser revalidate on every use.
 Each reload then waits on a conditional request before painting, and
 container builds rewrite mtimes, so every deploy also invalidates every
@@ -166,9 +166,10 @@ a similarly hard reason.
 `web/src/cms/getRedirects.ts` runs from `astro.config.mjs`, and its result
 is folded into the server manifest. A strict build (`REDIRECTS_STRICT=1`,
 which the web `build` script sets) fails when the CMS read fails, so a
-deploy never ships a redirect-less site over the last good one. Dev,
-`astro check`, and a plain `astro build` fall back to the committed
-`redirects.fallback.json` (empty by default) so the run still ships. See
+broken read stops the deploy instead of publishing a redirect-less site
+over the last good one. Dev, `astro check`, and a plain `astro build`
+fall back to the committed `redirects.fallback.json` (empty by default)
+so the run still completes. See
 [`maintenance.md`](./maintenance.md) for the retry and fallback policy in
 full.
 
@@ -187,7 +188,7 @@ locale to prove this works. Keep that divergence when you edit seeds.
 
 ## API keys are server-only
 
-`PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` must never reach the client
+`PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` must not reach the client
 bundle. Read them through `astro:env/server`, not `astro:env/client`. The
 preview key in particular is gated this way because a leak exposes the
 draft state of Pages, Posts, and Authors. The read key is server-only too
@@ -209,7 +210,7 @@ page where the script first ran.
 `attachAll()` that marks each form with `data-form-initialized` before binding,
 skips any form already marked, and runs both on load and on `astro:after-swap`.
 A listener bound to a node that survives swaps (`document`, `window`) needs the
-idempotency guard but not the re-arm, since the node is never replaced.
+idempotency guard but not the re-arm, since the node is not replaced.
 `web/src/components/PreviewNav.astro` is that variant, attached once to
 `document` behind a `window` flag.
 
@@ -252,8 +253,9 @@ linter configured.
 The test runner is Vitest in the web workspace. The root `pnpm test` runs
 it and then the Node-based tests in `scripts/*.test.mjs`.
 It covers pure units such as URL building and the stale-on-error wrapper. The
-CMS workspace has no test runner, so a CMS-side hook ships with the same
-inline-reasoning comments that `spamGuard` and `validateSubmission` carry rather
-than a unit test. Two larger integration slots stay open and are called out in
+CMS workspace has no test runner, so a CMS-side hook carries
+inline-reasoning comments in the style of `spamGuard` and
+`validateSubmission` rather than a unit test. Two larger integration
+slots stay open and are called out in
 [`security.md`](./security.md) and [`forms.md`](./forms.md): a draft-leakage
 regression test and a form-submission integration test.

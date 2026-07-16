@@ -1,6 +1,6 @@
 import type { Locale } from './shared'
 
-// The locales this project ships. Single source of truth for both apps.
+// The locale list used by both apps.
 // Kept as readonly Locale[] (not `as const`) so MULTIPLE_LOCALES below derives a
 // plain boolean and neither the single- nor multi-locale branch is typed as
 // dead code.
@@ -42,7 +42,7 @@ if (!LOCALE_URL_PREFIX && MULTIPLE_LOCALES) {
 
 // DEFAULT_LOCALE must be one of LOCALES. Payload's defaultLocale, the URL-prefix
 // stripping, and the public page lookup all anchor on it, so a value outside the
-// shipped set would silently produce wrong paths. Fail fast at import instead.
+// shipped set would silently produce wrong paths. Throw during import instead.
 if (!LOCALES.includes(DEFAULT_LOCALE)) {
   throw new Error(`DEFAULT_LOCALE "${DEFAULT_LOCALE}" must be one of LOCALES [${LOCALES.join(', ')}]`)
 }

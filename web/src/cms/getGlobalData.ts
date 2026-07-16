@@ -35,8 +35,8 @@ export function getGlobalData({
   preview: boolean
   locals?: App.Locals
 }): Promise<GlobalData> {
-  // Without a request scope (build-time prerender, endpoints), fetch directly;
-  // the SDK LRU already dedupes repeat calls in production.
+  // Without a request scope (build-time prerender, endpoints), fetch directly.
+  // The SDK LRU already dedupes repeat calls in production.
   if (!locals) return fetchGlobalData(locale, preview)
 
   // Memoize the in-flight promise on per-request Astro.locals so one render that

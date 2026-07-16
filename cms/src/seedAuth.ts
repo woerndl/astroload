@@ -6,13 +6,13 @@ const DEMO_ADMIN_PASSWORD = 'admin1234'
 
 const generateApiKey = () => randomBytes(32).toString('hex')
 
-// Auth bootstrap, deliberately separate from the demo-content seed: a fresh
-// database needs the first admin and the two env-pinned API keys even after a
-// project deletes the demo seed, or every web read answers 403 and the strict
-// build fails. Re-runs skip whatever already exists, so it is safe on top of
-// a live database. The check-then-create is not atomic (transactions are off
-// on standalone Mongo), so two bootstraps racing could double-mint a key,
-// the same window as the documented first-user race. Run one at a time.
+// Authentication setup is separate from demo content so a project can remove
+// the content seed without losing the first admin and the two API keys (taken
+// from PAYLOAD_READ_KEY and PAYLOAD_PREVIEW_KEY, generated when unset).
+// Without the keys every web read answers 401 and the strict build fails.
+// Re-runs leave existing users and keys unchanged. The check-then-create is
+// not atomic on standalone Mongo, so two racing bootstraps could create a
+// duplicate admin or key. Run one at a time.
 export async function seedAuth(payload: Payload): Promise<void> {
   const users = await payload.find({ collection: 'users', limit: 1, pagination: false })
   if (users.totalDocs === 0) {

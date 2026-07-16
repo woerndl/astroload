@@ -13,8 +13,8 @@ type OptionalEnv = (typeof optional)[number]
 type LoadedEnv = Record<RequiredEnv, string> & Partial<Record<OptionalEnv, string>>
 
 // Skip the required-vars check in CI lint/typecheck, where secrets are absent.
-// Explicit opt-in only, so a stray CI=true or SKIP_ENV_VALIDATION=0 never
-// disables validation without warning in a real deployment.
+// Only SKIP_ENV_VALIDATION=1 or true disables validation. CI=true and
+// SKIP_ENV_VALIDATION=0 leave it enabled in deployments.
 const skipValidation =
   process.env.SKIP_ENV_VALIDATION === '1' || process.env.SKIP_ENV_VALIDATION === 'true'
 
