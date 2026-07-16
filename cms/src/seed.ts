@@ -48,9 +48,9 @@ const configuredLocale = (code: string): Locale | null =>
 
 // Pages can be parents of other pages, posts, and authors. The pages-plugin
 // blocks deleting a parent that still has children, so child collections go
-// first, then non-root pages, then the root page. Globals are cleared up
-// front so their relationships do not pin pages or media. Auth-bearing
-// collections drop last so a force-reseed cannot collide on api-key
+// first, then non-root pages, then the root page. Clear globals first so
+// their relationships do not retain pages or media. Delete authentication
+// collections last so a force-reseed does not collide with API-key
 // uniqueness.
 async function clearAll(payload: Payload): Promise<void> {
   const all: Where = { id: { exists: true } }
@@ -59,7 +59,7 @@ async function clearAll(payload: Payload): Promise<void> {
   await payload.updateGlobal({ slug: 'footer', data: seedData({ columns: [] }) })
   await payload.updateGlobal({
     slug: 'site-settings',
-    // siteName satisfies the required validation when the global was never
+    // siteName satisfies the required validation when the global has not been
     // saved (a SEED_FORCE before any seed ran). The real values land at the
     // end of the seed.
     data: seedData({ siteName: SITE_NAME, defaultSeo: { image: null } }),

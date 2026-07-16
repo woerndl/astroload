@@ -23,7 +23,7 @@ export const Users: CollectionConfig = {
   hooks: {
     beforeChange: [
       // First-user registration runs with overrideAccess, so the roles field
-      // access never applies and the onboarding form's 'editor' default would
+      // access does not apply and the onboarding form's 'editor' default would
       // save, locking the instance out of every admin-only surface. Whoever
       // registers into an empty Users collection is the admin.
       async ({ data, operation, req }) => {

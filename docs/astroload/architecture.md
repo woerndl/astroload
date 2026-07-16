@@ -29,7 +29,7 @@ Calls go over HTTP even in dev, so neither side may assume single-process
 semantics. The Astro app holds no database connection. Either side can be
 replaced as long as the API shape is preserved.
 
-The boundary is also as thin as it looks: blocks an editor composes in
+The boundary is also thin: blocks an editor composes in
 Payload render through components the Astro app types directly from the
 generated `payload-types.ts` (`SectionBlock.astro`,
 `lexical/BlockRenderer.astro`). There is deliberately no adapter or
@@ -37,7 +37,7 @@ view-model layer between the two apps. Such a layer restates every CMS
 type by hand, drifts from the schema on the first collection change, and
 doubles the surface every change has to cross. When a shape needs
 massaging, do it in the CMS response (a hook or an endpoint) or in the
-component that consumes it, never in a translation layer between them.
+component that consumes it, not in a translation layer between them.
 
 ## How content reaches the public site
 
@@ -51,7 +51,7 @@ The frontend reads content in three modes:
    trigger list) so the redeploy can be automatic.
 2. Request-time, SSR. The `/preview` route, the per-locale sitemaps,
    `/latest`, and any other route that opts in with `prerender = false`
-   runs on each request. Editor previews go through
+   run on each request. Editor previews go through
    this path so changes appear without a redeploy. A public route can opt
    in the same way to stay always-current, degrading to its last good
    response through the `staleOnError` helper when the CMS read fails. See
@@ -65,7 +65,7 @@ The frontend reads content in three modes:
 
 ## Scoped API keys and the preview gate
 
-The frontend never uses an admin-capable Payload token. There are two
+The frontend does not use an admin-capable Payload token. There are two
 scoped API keys instead:
 
 - A read-only key the public renderer uses. It cannot read drafts and
@@ -100,7 +100,7 @@ exists, plus an `x-default` pointing at the default locale's translation
 when that translation exists. The error pages and the root redirect emit
 none, because they have no per-locale counterpart to point at.
 
-A project that ships a single locale drops the `[lang]` segment entirely.
+A project that serves a single locale drops the `[lang]` segment entirely.
 Pages serve at `/<path>`, the root serves the home page directly with no
 redirect, and pages emit a plain canonical link with no `hreflang`. The
 CMS still stores the `/{locale}` path, and the web ingress normalizes it
@@ -108,7 +108,7 @@ away, so this is a config switch rather than a content change. A
 single-locale project that expects to add locales later can instead keep the
 prefix via `FORCE_URL_PREFIX` (see [`maintenance.md`](./maintenance.md)).
 
-The default locale and the shipped locale set live in one module,
+The default locale and the configured locale set live in one module,
 `cms/src/site-config.ts`, which the Payload config and the Astro side both
 read. See [`maintenance.md`](./maintenance.md) for how the single source is
 wired and the import-time check that guards it.
@@ -123,7 +123,7 @@ ones that show up most in this starter:
   the change. Astroload cannot. Static pages need a redeploy, which the
   deploy webhook automates.
 - Two deploys to coordinate. A schema change that affects the frontend
-  shape costs two repos worth of effort even though there is one
+  shape costs two repos' worth of effort even though there is one
   repository. Type regeneration is part of the dev loop.
 - Cross-origin everywhere. The admin runs on one origin and the public
   site on another, so live preview, form submissions, and any
@@ -132,9 +132,9 @@ ones that show up most in this starter:
 - A more involved editor preview. The in-process iframe preview Payload +
   Next.js has by default is not free here. Astroload pairs Payload
   autosave (on Pages, Posts, and Authors) with an iframe reload, plus a
-  standalone `/preview` SSR route for sharing draft URLs. Updates appear after each autosave
-  cycle. Acceptable for editorial work, not as tight as a
-  single-process setup.
+  standalone `/preview` SSR route for sharing draft URLs. Updates appear
+  after each autosave cycle, which is acceptable for editorial work but
+  not as tight as a single-process setup.
 - No shared component bundle between admin and frontend. The admin
   renders in React, the frontend in Astro, so the Next.js + Payload
   monorepo pattern of importing the same React component from both does
@@ -161,6 +161,6 @@ env-read at a few callsites).
 
 If you fork the template for a single site, ignore this layer. If you
 have a multi-site project in mind, plan the tenancy migration before you
-introduce shapes that fight it (per-collection hardcoded tenant
+introduce patterns that work against it (per-collection hardcoded tenant
 assumptions, host parsing in routing, slug uniqueness as a single-tenant
 DB constraint).

@@ -1,8 +1,7 @@
 import type { Access, AccessArgs } from 'payload'
 
-// The write tier for content: both shipped roles may edit. Kept separate from
-// isPanelUser so a later read-only panel role does not gain writes by
-// accident.
+// Admins and editors may edit content. This remains separate from isPanelUser
+// so a later read-only panel role does not gain write access.
 export const isAdminOrEditor: Access = ({ req: { user } }: AccessArgs): boolean => {
   return Boolean(
     user &&

@@ -1,7 +1,7 @@
 # Security
 
 What the template defends against, what it accepts as a residual risk,
-and what you should add when you ship it to production.
+and what you should add before production.
 
 ## Threat model
 
@@ -16,8 +16,8 @@ Main concerns:
   account.
 
 A starter cannot enumerate every risk a real deployment faces. The
-following are examples of concerns this template does not try to address.
-Treat the list as illustrative, not exhaustive:
+following are examples, not an exhaustive list, of concerns this
+template does not try to address:
 
 - An attacker who already holds editor or admin credentials.
 - Web application firewall behaviour. The template assumes the CMS and
@@ -47,9 +47,9 @@ the Resend and S3 keys) are separate concerns and live alongside these.
    transactions off (the standalone-Mongo default) the empty-instance
    check is not atomic, so two requests racing during the setup window
    could both register as admins. Register the first account, or run the
-   auth seed (which mints the admin), before the instance is publicly
+   auth seed (which creates the admin), before the instance is publicly
    reachable. Once one user exists the endpoint closes.
-2. Two API keys minted by the auth seed and consumed by the Astro side.
+2. Two API keys created by the auth seed and consumed by the Astro side.
    - A read-only key for the public renderer. Cannot read drafts.
      Cannot write. Server-only.
    - A preview-scoped key for the `/preview` route. Can read drafts.
@@ -117,8 +117,8 @@ If you add a custom endpoint that reads draftable content, pass
 [`cms/src/endpoints/canPreview.ts`](../../cms/src/endpoints/canPreview.ts)
 does, because the Local API skips access control by default. A
 regression here is hard to spot through manual testing. The starter
-does not ship an automated draft-leakage test. Add one when you set up
-your test runner.
+does not include an automated draft-leakage test. Add one when you set
+up your test runner.
 
 ## The preview route and the preview API key
 
@@ -246,7 +246,7 @@ that deletes the demo content keeps a way to provision a fresh
 database. The key values must be pasted into `web/.env`. None of them
 are committed. Both entry points skip whatever already exists, so
 re-running does not rotate the keys. Passing `SEED_FORCE=1` to the demo
-seed clears and re-mints them, with fresh values unless
+seed clears and recreates them, with fresh values unless
 `PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` are pinned in `cms/.env`.
 The admin account uses the demo credentials unless
 `PAYLOAD_ADMIN_EMAIL` and `PAYLOAD_ADMIN_PASSWORD` are set. How a
@@ -259,16 +259,16 @@ The Payload version is pinned in lockstep across `@payloadcms/*`
 packages. `pnpm audit` will show advisories from time to time. Triage
 them against the installed tree before acting: an advisory in a
 transitive dependency of `eslint-config-next` or the Astro language
-server does not ship to the public site, while an advisory on a runtime
+server does not reach the public site, while an advisory on a runtime
 dependency of `web/` is a release blocker. Accept admin-only or
 build-only advisories in lockstep with the Payload pin and clear them
 at the next coordinated bump.
 
 ## Hardening you should add before production
 
-The items below depend on your deploy and are not bundled. The list
-covers the gaps the template specifically leaves open. It is not a full
-production hardening checklist:
+The items below depend on your deploy and are not bundled. They cover
+the gaps the template leaves open, not a full production hardening
+checklist:
 
 - Rate-limit rule in front of the CMS (CDN or middleware).
 - Body-size limit on form submissions.

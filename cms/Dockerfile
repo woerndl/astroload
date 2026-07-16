@@ -2,7 +2,7 @@
 
 # Build from the repo root so the pnpm workspace is in context:
 #   docker build -f cms/Dockerfile -t astroload-cms .
-# Keep the tag in step with .nvmrc.
+# Keep the tag aligned with .nvmrc.
 FROM node:22.22.3-alpine AS build
 RUN corepack enable
 WORKDIR /app
@@ -21,7 +21,7 @@ RUN NEXT_OUTPUT=standalone pnpm --filter @astroload/cms build
 FROM node:22.22.3-alpine AS run
 WORKDIR /app
 ENV NODE_ENV=production
-# Uploads land here when S3 is not configured. Mount a volume at this path or
+# Uploads are written here when S3 is not configured. Mount a volume at this path or
 # the files vanish with the container.
 ENV MEDIA_DIR=/app/media
 

@@ -18,8 +18,8 @@ const hasValue = (blockType: string, value: string | undefined): boolean => {
 // malformed request bypasses the form's own required marks. Runs after
 // spamGuard, which has already normalized submissionData. Presence is the only
 // check: value shapes (an email field holding a non-email, a select value
-// outside its options) are not validated, because submissions land in a review
-// queue rather than driving automation.
+// outside its options) are not validated, because submissions are read by a
+// person in the admin panel rather than driving automation.
 export const validateSubmission: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
   if (operation !== 'create') return data
 
@@ -29,7 +29,7 @@ export const validateSubmission: CollectionBeforeChangeHook = async ({ data, ope
   }
 
   // findByID throws NotFound for a forged or stale form id. Collapse that into
-  // the same generic rejection so the response never distinguishes the cases.
+  // the same generic rejection so the response does not distinguish the cases.
   // A transient lookup error keeps its own status instead of reading as rejected.
   const form = await req.payload
     .findByID({ collection: 'forms', id: formId, depth: 0, overrideAccess: true })

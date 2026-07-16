@@ -4,7 +4,7 @@
 
 A change that needs more from a derived project than applying the diff
 gets a nested `**Upgrade notes:**` bullet under its `CHANGELOG.md`
-entry, same commit. Cases: bug fix that may also exist in project-added
+entry, in the same commit. Cases: bug fix that may also exist in project-added
 code (name the search), validation existing data may fail (name the
 query to run first), applies only under some project configs (say which
 skip it), behavior change a live site may rely on (say what to compare

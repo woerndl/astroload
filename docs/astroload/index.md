@@ -1,6 +1,6 @@
 # Documentation
 
-The landing [`README.md`](../README.md) covers quickstart and features,
+The project [`README.md`](../README.md) covers quickstart and features,
 and [`CHANGELOG.md`](./CHANGELOG.md) tracks changes per release. The docs
 below describe what is not obvious from reading the code.
 
@@ -8,8 +8,9 @@ below describe what is not obvious from reading the code.
   talk, and where the boundaries are.
 - [`conventions.md`](./conventions.md): rules for contributors and LLM
   agents working in the codebase.
-- [`maintenance.md`](./maintenance.md): failure modes that are not
-  obvious from reading the code.
+- [`maintenance.md`](./maintenance.md): failure modes in schema
+  changes, locale changes, the deploy throttle, redirects, Lexical
+  rich text, and the seed.
 - [`forms.md`](./forms.md): the forms surface, cross-origin POST, spam
   guard, and why submission requires JavaScript.
 - [`content-workflow.md`](./content-workflow.md): how to change content

@@ -8,6 +8,12 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Changed
+
+- Rewrite source comments and `docs/` in a plainer, more neutral style, replacing figurative vocabulary with the literal mechanism. Prose only, no code changes.
+- Correct statements the review found inaccurate: the seed's API keys are generated when their env vars are unset and missing keys produce 401 responses, the spam-guard timestamp must be older than the threshold rather than merely in the past, form submissions are stored in `form-submissions` with no review queue, the `content-build-id` meta tag appears only on pages rendered through the shared layout, and the `CONTENT_BUILD_ID` guidance no longer both requires and discourages setting it.
+  - **Upgrade notes:** The corrected wording may have been copied into project-added comments or docs. Search with `rg -nU "review\W+queue|answers\W+403|any\W+past\W+timestamp"` (multiline, so a copy that wraps across comment lines still matches) and check each match against the corrected claims.
+
 ## [0.6.0] - 2026-07-14
 
 ### Added
@@ -155,7 +161,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ### Added
 
-- `cms/src/site-config.ts` is the single source of truth for the shipped locale set (`LOCALES`, `DEFAULT_LOCALE`), the per-locale admin labels, the build-time `SITE_NAME`, and the derived `LOCALE_URL_PREFIX` flag (`LOCALES.length > 1`). Both apps read these four names through it — the CMS re-exports them from `shared.ts`, and the web app re-exports them from `web/src/cms/types.ts`.
+- `cms/src/site-config.ts` is the single source of truth for the shipped locale set (`LOCALES`, `DEFAULT_LOCALE`), the per-locale admin labels, the build-time `SITE_NAME`, and the derived `LOCALE_URL_PREFIX` flag (`LOCALES.length > 1`). Both apps read these four names through it: the CMS re-exports them from `shared.ts`, and the web app re-exports them from `web/src/cms/types.ts`.
 - A project that ships a single locale now serves un-prefixed public URLs (`/about` instead of `/de/about`). The CMS still stores the `/{locale}` path, which is normalized away at the web ingress by `stripLocalePath`, so switching a project between one and several locales is a config-only change with no content migration. Multi-locale projects keep the `/{locale}` prefix and are byte-for-byte unaffected.
 - An optional `FORCE_URL_PREFIX` override in `site-config.ts`. A single-locale project can set it to `true` to keep the `/{locale}` prefix, so its URLs survive adding a second locale later with no redirects. The language switcher and `hreflang`/`x-default` tags key off whether more than one locale ships (`MULTIPLE_LOCALES`) rather than off the prefix, so a forced-prefix single-locale site serves prefixed URLs without a single-option switcher or self-referential `hreflang`. Forcing the prefix off while several locales ship is rejected at import, since their un-prefixed URLs would collide.
 
@@ -181,7 +187,7 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - Hardcoded UI strings now come from the Labels global instead of being inlined. The home and language navigation labels, the empty-list messages for the post and author list blocks, and the form's submit, sending, and error text are all editor-controlled, and the unused label fields were removed.
 - `Img.astro`, `PreviewToolbar.astro`, and the SDK factory resolve CMS URLs through the shared `absoluteCmsURL` helper instead of building `new URL(...)` inline.
 - The `page-by-path` endpoint looks up candidates by slug at depth 0 selecting only the `path` field, then loads the single matched document at full depth, so colliding slugs in other collections are never populated. Its 404 response now carries the same `Cache-Control: no-cache` as the hit path.
-- `getPageData` dropped its unused `preview` option and always reads published content; the preview route fetches drafts through its own SDK.
+- `getPageData` dropped its unused `preview` option and always reads published content. The preview route fetches drafts through its own SDK.
 - The collection deploy hooks in `triggerDeploy.ts` route through a single `post` helper, and `JsonLd.astro` selects the `WebPage` branch with an explicit `pages` check rather than a catch-all `else`.
 - The seed script wraps its typed insert payloads in a small `seedData` helper instead of scattering `as never` casts.
 

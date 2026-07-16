@@ -60,10 +60,9 @@ function scheduleDeploy(logger: Logger): void {
   arm()
 }
 
-// True only when doc and previousDoc are identical apart from updatedAt, which
-// Payload bumps on every save. A genuine save always differs elsewhere, so this
-// errs toward firing: a missed change ships a stale site, a redundant fire only
-// wastes a build.
+// Returns true when doc and previousDoc are equal once updatedAt is ignored.
+// Payload updates that field on every save. Scheduling an extra build is preferable to
+// missing a content change.
 function unchanged(doc: unknown, previousDoc: unknown): boolean {
   if (!doc || !previousDoc) return false
   return stable(doc) === stable(previousDoc)
@@ -76,7 +75,7 @@ function stable(value: unknown): string {
 }
 
 export const triggerDeployAfterChange: CollectionAfterChangeHook = ({ doc, previousDoc, req }) => {
-  // A draft-flagged save that stays a draft never touches the published
+  // A draft-flagged save that stays a draft does not update the published
   // parent document, so it must not consume the leading deploy. That covers
   // autosave (every ~1.5s while an editor types) and a manual Save Draft,
   // including the first draft over a published doc, where previousDoc still
@@ -87,9 +86,8 @@ export const triggerDeployAfterChange: CollectionAfterChangeHook = ({ doc, previ
   const isDraftSave = req.query?.draft === true || req.query?.draft === 'true'
   if (isDraftSave && doc?._status === 'draft') return doc
 
-  // A deploy is warranted only when the published output changes: a first
-  // publish, a changed re-publish of a live doc, or an unpublish that retracts
-  // it.
+  // Schedule a deploy for a first publish, a changed published document, or
+  // an unpublish.
   const affectsPublished = doc?._status === 'published' || previousDoc?._status === 'published'
   if (!affectsPublished) return doc
 

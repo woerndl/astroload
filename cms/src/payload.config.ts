@@ -154,7 +154,7 @@ export default buildConfig({
         // authenticated requester, including the web app's api keys: a leaked
         // read-only key could rewrite a form's emails, confirmation, and
         // redirect, or delete the form. API keys carry no roles, so the role
-        // gate shuts them out.
+        // access check rejects them.
         access: {
           create: isAdminOrEditor,
           update: isAdminOrEditor,

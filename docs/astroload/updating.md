@@ -22,7 +22,7 @@ adaptation.
 
     node ../astroload/scripts/sync-inventory.mjs --upstream ../astroload --to <tag>
 
-The script ships with the template, so run the upstream clone's copy: a
+The script is part of the template, so run the upstream clone's copy: a
 project scaffolded before the script existed does not have it, and the
 upstream copy is current either way.
 
@@ -74,7 +74,7 @@ Rules from past syncs:
 
 - Write down every KEEP. An unrecorded KEEP looks like an oversight to
   the next sync and gets overwritten.
-- Verify that a bug reported upstream actually exists downstream before
+- Verify that a bug reported upstream exists downstream before
   planning its fix. In one recorded sync, 3 of 13 such reports did not
   apply.
 - Evaluate an upstream security fix against this project's configuration
