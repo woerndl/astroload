@@ -15,8 +15,11 @@ interface UpsertByKeyArgs<T extends CollectionSlug> {
 // Find-or-create keyed on a stable field, the primitive that makes bulk
 // content seeds idempotent: a re-run converges on the same documents instead
 // of duplicating them. The lookup includes drafts so an unpublished document
-// is updated, not shadowed by a new copy. Idempotency is sequential: the
-// find-then-create is not atomic, so seed runs must not overlap.
+// is updated, not shadowed by a new copy. The same inclusion means a re-run
+// overwrites an editor's newer draft with the script's values, so a script
+// that may run after editors own the content needs a policy on top: skip
+// existing documents, or write only empty fields. Idempotency is sequential:
+// the find-then-create is not atomic, so seed runs must not overlap.
 export async function upsertByKey<T extends CollectionSlug>(
   payload: Payload,
   { collection, where, data, locale }: UpsertByKeyArgs<T>,

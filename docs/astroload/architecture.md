@@ -113,6 +113,46 @@ The default locale and the configured locale set live in one module,
 read. See [`maintenance.md`](./maintenance.md) for how the single source is
 wired and the import-time check that guards it.
 
+### Why the routes come from the CMS instead of Astro's i18n config
+
+The starter routes locales through the `[lang]` param and does not set
+Astro's `i18n` config block. That block cannot express this starter's
+URLs: per its docs, "the file structure and URL structure must match for
+all languages", and the `locales` `path` option maps a whole locale to
+one URL segment. CMS-translated slugs, where the same page is
+`/de/ueber-uns` in German and `/en/about` in English, have no place in
+that model. The editor owns the slug per locale, so the routes have to
+come from the CMS, which is what `getStaticPaths` over the static-paths
+endpoint does. If a project ever wants Astro's i18n helper functions
+(`redirectToDefaultLocale` and friends), `i18n.routing: "manual"`
+enables them without the routing middleware and works alongside the
+CMS-derived routes. Nothing in the starter needs them.
+
+The per-locale path map that drives the switcher and the `hreflang`
+alternates is built in the `page-by-path` and `static-paths` endpoints
+from `locale: 'all'` queries, not read from the pages plugin's
+`alternatePathsField()`. That map also feeds the single-locale
+prefix-stripping and the endpoint responses, which the plugin field does
+not provide. Leaving the field unused is deliberate.
+
+## Page identity stays on the document when the layout is implemented in code
+
+A derived project usually grows pages whose layout lives in code: a
+designed home page, a contact page, a listing with a fixed shape. Astro
+components own the layout and the per-locale UI text. The Pages document
+owns the rest of the page: the localized slug, the path, the SEO fields,
+the title, and whatever main copy the editor should manage. The pages
+plugin models a routable page completely (localized slug and path,
+breadcrumbs, SEO meta, preview URL), so a page laid out in code still
+loads its identity from a document.
+
+A project has started rebuilding the plugin in code when page copy moves
+into globals while placeholder Pages docs keep the routes alive, when
+SEO fields render in no template, or when a guard locks an editable slug
+field to a constant in code. Each of these takes part of the page's
+identity away from its document. Put it back on the document and keep
+only layout in code.
+
 ## What we give up by decoupling
 
 Running the CMS and the frontend as separate processes has costs. The

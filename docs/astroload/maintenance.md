@@ -47,13 +47,36 @@ in production sitemaps.
 To swap the default, or to change which locales ship, edit
 `site-config.ts`, then regenerate the CMS types
 (`pnpm --filter @astroload/cms generate:types`) so the generated `locale`
-union tracks the new set. No other file needs a matching edit.
+union tracks the new set. No other file needs a matching edit, but two maps
+in `site-config.ts` itself take an entry per locale. `LOCALE_LABELS` holds
+the admin label and falls back to the locale code. `OG_LOCALE` holds the
+`og:locale` value, and a locale without an entry emits no `og:locale` tag,
+because the territory half cannot be derived from the language code.
 
 By default a project carries the `/{locale}` URL prefix only when it ships more
 than one locale. To keep the prefix on a single-locale project, so its URLs
 survive adding a second locale later with no redirects, set `FORCE_URL_PREFIX`
 to `true` in `site-config.ts`. Forcing it off while several locales ship is
 rejected at import, because their un-prefixed URLs would collide.
+
+## Adding a locale to a site with existing content
+
+Adding the locale to `LOCALES` makes it available, but it does not make
+existing documents publishable in it. Payload's locale fallback is
+read-time only: a request for the new locale returns the fallback
+locale's values, but publish validation of a required localized field
+runs against the values actually stored for the locale being saved.
+Saving a document in the new locale therefore fails validation until its
+required localized fields hold real values there.
+
+Write a committed script that copies each document's full localized
+field set from the default locale onto the new locale, then replaces
+copied values where translations exist. Copy the complete field set, not
+only the fields being translated, or the first publish in the new locale
+fails on whichever required field the copy skipped. Build the script on
+`upsertByKey` with the `locale` option and run it once per environment.
+Until translations arrive, the copied values are the new locale's
+interim content and keep its documents publishable.
 
 ## Publishing to a live static build
 
@@ -357,7 +380,11 @@ divergence exercises the per-locale `path` field from the pages plugin
 and the language switcher's path-mapping. A sitewide string-replace
 would not work for translating URLs. The plugin emits the right path per
 locale and the switcher reads it from `Astro.props.paths`. Keep the
-divergence when editing the seed.
+divergence when editing the seed, and when replacing the starter's markup
+with a prototype's, keep `LanguageSwitcher.astro` and its `paths` wiring
+rather than carrying over a prototype's switcher stub. A stub that swaps
+the locale prefix looks correct on equal slugs and breaks on the first
+translated one.
 
 ## API keys change on reseed unless pinned
 
