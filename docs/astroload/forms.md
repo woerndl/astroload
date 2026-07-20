@@ -38,6 +38,12 @@ The bundled `<script>` builds a JSON payload of the shape
   the page locale.
 - Guards against double-submits with an in-flight flag.
 
+The success and error states are shown by toggling Tailwind's `hidden`
+class on the form, the confirmation block, and the error paragraph. A
+project that replaces Tailwind with its own CSS must define `.hidden`
+(`display: none`) itself, or the confirmation and error blocks render
+permanently below the form.
+
 The form element has a native `action` and `method` pointing at the
 same endpoint, but the Payload endpoint expects the JSON shape above,
 not the form-encoded body a plain HTML POST would send. Submitting

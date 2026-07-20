@@ -95,7 +95,12 @@ like any other code, and is written to be idempotent so a second run is safe.
 stable key (a slug, or another value with at most one match), updates it when
 it exists, creates it when missing, and throws when the key matches more than
 one document. A bulk content script built on it converges on the same
-documents instead of duplicating them run over run.
+documents instead of duplicating them run over run. Its lookup includes
+drafts, so a re-run also overwrites an editor's unpublished draft with the
+script's values. A script that may run again once editors manage the
+content must either skip documents that already exist or write only empty
+fields. The demo seed avoids the problem by refusing to run once users
+exist.
 `cms/src/scripts/seed.ts` is the worked example: re-running it skips once
 users exist, and `--force` or `SEED_FORCE=1` clears the seeded collections,
 users and API keys included, and recreates the demo content. The auth
@@ -114,6 +119,11 @@ Both kinds run the same way, through `payload run`:
 ```bash
 pnpm --filter @astroload/cms payload run src/scripts/scratch/backfill.ts
 ```
+
+Await the script's work at the top level, the way the committed scripts
+do. `payload run` exits when the module finishes evaluating and does not
+wait for floating promises, so a script whose body is an unawaited
+async call exits 0 having done nothing.
 
 `cms/src/scripts/scratch/README.md` has the script skeleton.
 

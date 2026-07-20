@@ -11,6 +11,9 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 ### Added
 
 - The `static-paths` endpoint logs a warning when two documents claim the same public path. Slug uniqueness is per collection, so a Page and a Post could hold the same path and the page lookup served whichever collection queried first, with nothing surfacing the collision.
+- Document in `architecture.md` why the routes come from the CMS instead of Astro's `i18n` config, why the pages plugin's `alternatePathsField` stays unused, and how page identity stays on a Pages document when the layout is implemented in code.
+- Document in `maintenance.md` how to add a locale to a site with existing content, and why read-time locale fallback does not make documents publishable in a new locale.
+- Document in `content-workflow.md` that re-running an `upsertByKey` script overwrites newer editorial drafts unless the script skips existing documents or writes only empty fields, and that `payload run` exits without waiting for unawaited promises. Document in `forms.md` that the submit script toggles Tailwind's `hidden` class, which a project replacing Tailwind must define itself.
 
 ### Changed
 
