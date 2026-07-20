@@ -8,6 +8,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-07-20
+
 ### Added
 
 - The `static-paths` endpoint logs a warning when two documents claim the same public path. Slug uniqueness is per collection, so a Page and a Post could hold the same path and the page lookup served whichever collection queried first, with nothing surfacing the collision.
