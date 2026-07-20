@@ -66,11 +66,17 @@ export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
       // `/${locale}/...` path, which a single-locale site never serves.
       // stripLocalePath is a multi-locale no-op and idempotent on paths an
       // editor entered without a prefix.
-      const result = await sdk.find({
-        collection: 'redirects',
-        limit: 0,
-        pagination: false,
-      })
+      // This SDK instance bypasses cachedFetch and its timeout, so the signal
+      // rides along here. Without it a connection that stalls after connecting
+      // holds this attempt forever and the retry loop never runs.
+      const result = await sdk.find(
+        {
+          collection: 'redirects',
+          limit: 0,
+          pagination: false,
+        },
+        { signal: AbortSignal.timeout(15_000) },
+      )
 
       return result.docs.reduce<Record<string, RedirectConfig>>((acc, doc) => {
         acc[stripLocalePath(doc.sourcePath)] = {
