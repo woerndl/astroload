@@ -16,6 +16,15 @@ export const LOCALE_LABELS: Record<string, string> = {
   en: 'English',
 }
 
+// og:locale values keyed by locale code, same string typing as LOCALE_LABELS.
+// A locale missing here omits the og:locale tag: the territory half cannot be
+// derived from the language (en maps to en_US, not en_EN), so a new locale
+// needs an entry.
+export const OG_LOCALE: Record<string, string> = {
+  de: 'de_DE',
+  en: 'en_US',
+}
+
 // Build-time site display name, used for admin chrome such as the panel title.
 // The public site renders the editable siteSettings.siteName instead.
 export const SITE_NAME = 'Astroload'
