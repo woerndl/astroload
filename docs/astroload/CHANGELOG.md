@@ -17,6 +17,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - The web response cache entries now expire after 60 seconds. Without a TTL, request-time routes (the per-locale sitemaps, `/latest`) served whatever the size-bounded cache held until eviction or restart, so a published change could stay invisible on those routes indefinitely.
 - The negotiated root redirect sends `Vary: Accept-Language` and `Cache-Control: no-store`, and locale negotiation skips `q=0` entries, which mean "not acceptable" per RFC 9110. Without the headers, a CDN could cache the first visitor's 302 and send every visitor to that visitor's language.
   - **Upgrade notes:** Multi-locale projects only. A single-locale project serves the home page at the root and never renders this redirect.
+- A prerender build now fails when a document that `getStaticPaths` enumerated is no longer published, or its path changed, by the time the page loads it. Astro writes no file for a response with an empty body and reports success, so an unpublish or rename racing the build silently dropped that page from the deploy while the sitemap kept listing it.
+  - **Upgrade notes:** A build that starts failing with `was enumerated but is no longer published` or `moved from ... during the build` hit content changes mid-build. Re-run the build. If it keeps failing, check whether a deploy hook fires again during builds.
 - The web app checks that the static-paths endpoint returned an array before routes, sitemaps, and the home lookup consume it, so a wrong response fails with an error naming the endpoint instead of a type error mid-render.
 
 ## [0.6.1] - 2026-07-16
