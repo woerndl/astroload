@@ -8,6 +8,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Added
+
+- The `static-paths` endpoint logs a warning when two documents claim the same public path. Slug uniqueness is per collection, so a Page and a Post could hold the same path and the page lookup served whichever collection queried first, with nothing surfacing the collision.
+
 ### Changed
 
 - Every CMS read carries a 15-second timeout: the SDK fetches and the redirect read at Astro config evaluation, whose retry loop a stalled connection could previously hold off forever. A stalled CMS now fails the build or the request instead of holding it until the host kills it. Routes that hold a last good response keep serving it through `staleOnError`.
