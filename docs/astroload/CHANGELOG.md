@@ -8,6 +8,15 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Changed
+
+- Every CMS read carries a 15-second timeout: the SDK fetches and the redirect read at Astro config evaluation, whose retry loop a stalled connection could previously hold off forever. A stalled CMS now fails the build or the request instead of holding it until the host kills it. Routes that hold a last good response keep serving it through `staleOnError`.
+
+### Fixed
+
+- The web response cache entries now expire after 60 seconds. Without a TTL, request-time routes (the per-locale sitemaps, `/latest`) served whatever the size-bounded cache held until eviction or restart, so a published change could stay invisible on those routes indefinitely.
+- The web app checks that the static-paths endpoint returned an array before routes, sitemaps, and the home lookup consume it, so a wrong response fails with an error naming the endpoint instead of a type error mid-render.
+
 ## [0.6.1] - 2026-07-16
 
 ### Changed
