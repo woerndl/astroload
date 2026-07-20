@@ -6,6 +6,7 @@ import {
   isPopulated,
   LOCALES,
   MULTIPLE_LOCALES,
+  OG_LOCALE,
   type Locale,
   type LocalePaths,
   type PageCollectionSlug,
@@ -22,12 +23,6 @@ interface Props {
   siteSettings: SiteSetting
   preview?: boolean
 }
-
-// Keyed by string, not Locale, so the map can list locales a single-locale
-// build no longer ships without tripping the type checker. A locale missing
-// from the map omits the og:locale tag: the territory half cannot be derived
-// from the language (en maps to en_US, not en_EN), so add new locales here.
-const OG_LOCALE: Record<string, string> = { de: 'de_DE', en: 'en_US' }
 
 const { lang, collection, paths, title, description, image, siteSettings, preview } = Astro.props
 

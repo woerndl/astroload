@@ -14,6 +14,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ### Changed
 
+- The `og:locale` map moved from `SEOMetadata.astro` into `cms/src/site-config.ts` (exported as `OG_LOCALE`), so a new locale is configured in the same file that defines it. A locale without an entry still emits no `og:locale` tag.
+  - **Upgrade notes:** A project that added locales to the map inside `SEOMetadata.astro` moves those entries into `OG_LOCALE` in `site-config.ts`. Find local copies with `rg -n "OG_LOCALE" web/src`.
 - Every CMS read carries a 15-second timeout: the SDK fetches and the redirect read at Astro config evaluation, whose retry loop a stalled connection could previously hold off forever. A stalled CMS now fails the build or the request instead of holding it until the host kills it. Routes that hold a last good response keep serving it through `staleOnError`.
 
 ### Fixed
