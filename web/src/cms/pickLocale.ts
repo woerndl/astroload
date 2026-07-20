@@ -21,8 +21,9 @@ function localeFromHeader(header: string | null): Locale | undefined {
     return { lang: tag.toLowerCase().split('-')[0], q }
   })
   entries.sort((a, b) => b.q - a.q)
-  for (const { lang } of entries) {
-    if (isLocale(lang)) return lang
+  for (const { lang, q } of entries) {
+    // q=0 means "not acceptable" (RFC 9110), not lowest preference.
+    if (q > 0 && isLocale(lang)) return lang
   }
   return undefined
 }
