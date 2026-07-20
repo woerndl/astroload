@@ -2,7 +2,7 @@ import { getGlobalData } from './getGlobalData'
 import { getPageByPath, type PageByPathResult } from './getPageByPath'
 import { getPageData } from './getPageData'
 import type { StaticPageParams } from './getStaticPaths'
-import type { Locale, LocalePaths, PageCollectionSlug } from './types'
+import { stripLocalePath, type Locale, type LocalePaths, type PageCollectionSlug } from './types'
 
 // Build a render result from a static-path item's id and collection. Both
 // catch-all routes need this shape for their prerendered branch, where Astro
@@ -38,6 +38,19 @@ export async function loadCatchAllPage({
 
   if (id && collection) {
     result = await loadPageResult(collection, id, locale)
+    // This branch only runs while prerendering, and Astro skips a page whose
+    // response has no body instead of failing the build. A doc that was
+    // enumerated by getStaticPaths but vanished or moved before this load
+    // must throw, so the build fails and the previous deployment stays live.
+    if (!result) {
+      throw new Error(`page ${collection}/${id} was enumerated but is no longer published`)
+    }
+    const docPath = (result.data as { path?: string }).path
+    if (docPath && stripLocalePath(docPath) !== fullPath) {
+      throw new Error(
+        `page ${collection}/${id} moved from ${fullPath} to ${stripLocalePath(docPath)} during the build`,
+      )
+    }
   } else {
     // Dev renders the catch-all routes on demand (see prerenderOverrides in
     // astro.config.mjs) and gets no getStaticPaths props, so every dev request
