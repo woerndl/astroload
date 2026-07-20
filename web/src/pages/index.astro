@@ -16,7 +16,17 @@ const localeRedirect = LOCALE_URL_PREFIX
   ? `/${pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))}`
   : null
 if (localeRedirect) {
-  return Astro.redirect(localeRedirect, 302)
+  // The target depends on Accept-Language, so shared caches must not reuse
+  // it across users, and a 301 would let caches pin one visitor's language.
+  // Astro.redirect cannot set headers, so the Response is built by hand.
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'Cache-Control': 'no-store',
+      Location: localeRedirect,
+      Vary: 'Accept-Language',
+    },
+  })
 }
 
 // Kick off global data now so it overlaps the page fetch. The layout awaits
