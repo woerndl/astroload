@@ -20,6 +20,7 @@ import { Posts } from './collections/Posts'
 import { Redirects } from './collections/Redirects'
 import { Users } from './collections/Users'
 import { getGlobalData } from './endpoints/globalData'
+import { getHealth } from './endpoints/health'
 import { getPageByPath } from './endpoints/pageByPath'
 import { getStaticPaths } from './endpoints/staticPaths'
 import { env } from './env'
@@ -79,6 +80,7 @@ export default buildConfig({
   csrf: [env.WEBSITE_URL],
   endpoints: [
     { path: '/global-data', method: 'get', handler: getGlobalData },
+    { path: '/health', method: 'get', handler: getHealth },
     { path: '/page-by-path', method: 'get', handler: getPageByPath },
     { path: '/static-paths', method: 'get', handler: getStaticPaths },
   ],
