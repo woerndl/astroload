@@ -8,6 +8,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-21
+
 ### Removed
 
 - The `/latest` demo route. The SSR opt-in shape it demonstrated (`prerender = false`, `staleOnError`, `Cache-Control: no-store`, `cacheHeader(false)`) is now a code example in `conventions.md`.
