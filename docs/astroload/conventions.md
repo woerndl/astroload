@@ -57,9 +57,46 @@ read in the `staleOnError` helper (`web/src/cms/staleOnError.ts`), and sets
 CMS read fails, so an outage degrades that one route instead of failing it,
 and logs the swallowed error so the failing read stays visible. On a cold
 start with nothing cached the error still propagates, so the route shows its
-normal error page rather than a blank success.
-`web/src/pages/latest.astro` is the worked example. Keep this set small.
-Static prerendering stays the default for everything else.
+normal error page rather than a blank success. Here is that shape, a live
+listing of the newest posts:
+
+```astro
+---
+import { payloadSDK } from '../cms/sdk'
+import { cacheHeader } from '../cms/sdk/cachedFetch'
+import { staleOnError } from '../cms/staleOnError'
+import { DEFAULT_LOCALE } from '../cms/types'
+
+export const prerender = false
+
+// An on-demand route must not be cached at the edge, or it stops being live.
+// Set before the await so a cold-start failure response stays uncacheable.
+Astro.response.headers.set('Cache-Control', 'no-store')
+
+const { data: posts, stale } = await staleOnError('latest-posts', async () => {
+  // cacheHeader(false) bypasses the cross-request LRU so each request is live.
+  const result = await payloadSDK.find(
+    {
+      collection: 'posts',
+      locale: DEFAULT_LOCALE,
+      where: { _status: { equals: 'published' } },
+      sort: '-publishedAt',
+      limit: 5,
+      pagination: false,
+    },
+    { headers: cacheHeader(false) },
+  )
+  return result.docs
+})
+---
+
+{stale && <p>Showing the last known content. The latest could not be loaded.</p>}
+<ul>{posts.map((post) => <li>{post.title}</li>)}</ul>
+```
+
+A read that renders document paths must go through `findPublicDocs` so the
+stored locale prefix is stripped. Keep this set small. Static prerendering
+stays the default for everything else.
 
 If you add a new route, pick the right shape and write it at the top of
 the file.

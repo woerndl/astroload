@@ -50,7 +50,7 @@ The frontend reads content in three modes:
    changes (see [`maintenance.md`](./maintenance.md) for the exact
    trigger list) so the redeploy can be automatic.
 2. Request-time, SSR. The `/preview` route, the per-locale sitemaps,
-   `/latest`, and any other route that opts in with `prerender = false`
+   and any route that opts in with `prerender = false`
    run on each request. Editor previews go through
    this path so changes appear without a redeploy. A public route can opt
    in the same way to stay always-current, degrading to its last good
