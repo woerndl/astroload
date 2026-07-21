@@ -8,6 +8,11 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Added
+
+- `GET /api/health` on the CMS answers 200 when a database query succeeds and 503 when it fails, so a healthcheck catches a running process that has lost its database connection. The cms healthcheck in `deploy/docker-compose.production.yml` now requests `/api/health` instead of `/admin`.
+  - **Upgrade notes:** A healthcheck configured at the host against `/admin` moves to `/api/health`. With the database down, the 503 arrives only after the Mongo driver's server-selection timeout (30 seconds by default), so a probe with a shorter timeout reports the outage as a timeout instead.
+
 ### Changed
 
 - The web image build takes `PAYLOAD_READ_KEY` as a declared build arg instead of a BuildKit secret mount, so builders without secret support (most PaaS build pipelines) can build the image. `PAYLOAD_PREVIEW_KEY` and `PREVIEW_SECRET` only have to be set, because `astro:env` checks that they exist when the prerender imports the preview SDK. The Dockerfile declares them with placeholder defaults, and the real values come from the runtime environment.

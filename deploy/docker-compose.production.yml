@@ -54,7 +54,7 @@ services:
     volumes:
       - media:/app/media
     healthcheck:
-      test: ['CMD', 'wget', '-qO/dev/null', 'http://127.0.0.1:3000/admin']
+      test: ['CMD', 'wget', '-qO/dev/null', 'http://127.0.0.1:3000/api/health']
       interval: 30s
       timeout: 5s
       retries: 5
