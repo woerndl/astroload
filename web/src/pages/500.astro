@@ -5,25 +5,68 @@ import { stripLocalePath } from '../cms/types'
 import Layout from '../layout/Layout.astro'
 
 // SSR so Astro.url.pathname holds the originally requested URL and the
-// locale can be picked from it. If the CMS is the source of the 500 this
-// page will fail to render and Astro falls back to its default error.
+// locale can be picked from it.
 export const prerender = false
 
 const lang = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
-const { labels } = await getGlobalData({ locale: lang, preview: false, locals: Astro.locals })
-const { title, description, homePageButton } = labels.serverError
 const homeHref = stripLocalePath(`/${lang}`)
+
+// A CMS outage is a likely cause of a 500, so this page must render without
+// it. A failed labels fetch falls back to the branch below. Keyed by string
+// so a locale without an entry falls back to en.
+const fallback: Record<string, { title: string; description: string; homePageButton: string }> = {
+  de: {
+    title: 'Serverfehler',
+    description: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
+    homePageButton: 'Zur Startseite',
+  },
+  en: {
+    title: 'Server error',
+    description: 'An unexpected error occurred. Please try again later.',
+    homePageButton: 'Go to the home page',
+  },
+}
+
+let cmsLabels: { title: string; description: string; homePageButton: string } | null = null
+try {
+  const { labels } = await getGlobalData({ locale: lang, preview: false, locals: Astro.locals })
+  cmsLabels = labels.serverError
+} catch (error) {
+  console.error('500 page renders its fallback, the labels fetch failed:', error)
+  cmsLabels = null
+}
+const { title, description, homePageButton } = cmsLabels ?? fallback[lang] ?? fallback.en
 ---
 
-<Layout title={title} description={description} lang={lang}>
-  <section class="flex flex-col items-center gap-5 py-24 text-center">
-    <h1 class="text-3xl font-semibold">{title}</h1>
-    <p>{description}</p>
-    <a
-      href={homeHref}
-      class="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-gray-800"
-    >
-      {homePageButton}
-    </a>
-  </section>
-</Layout>
+{
+  cmsLabels ? (
+    <Layout title={title} description={description} lang={lang}>
+      <section class="flex flex-col items-center gap-5 py-24 text-center">
+        <h1 class="text-3xl font-semibold">{title}</h1>
+        <p>{description}</p>
+        <a
+          href={homeHref}
+          class="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-gray-800"
+        >
+          {homePageButton}
+        </a>
+      </section>
+    </Layout>
+  ) : (
+    <html lang={lang}>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="noindex" />
+        <title>{title}</title>
+      </head>
+      <body style="font-family: system-ui, sans-serif; text-align: center; padding: 6rem 1rem;">
+        <h1>{title}</h1>
+        <p>{description}</p>
+        <p>
+          <a href={homeHref}>{homePageButton}</a>
+        </p>
+      </body>
+    </html>
+  )
+}

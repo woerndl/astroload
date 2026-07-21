@@ -12,6 +12,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 - `GET /api/health` on the CMS answers 200 when a database query succeeds and 503 when it fails, so a healthcheck catches a running process that has lost its database connection. The cms healthcheck in `deploy/docker-compose.production.yml` now requests `/api/health` instead of `/admin`.
   - **Upgrade notes:** A healthcheck configured at the host against `/admin` moves to `/api/health`. With the database down, the 503 arrives only after the Mongo driver's server-selection timeout (30 seconds by default), so a probe with a shorter timeout reports the outage as a timeout instead.
+- The 404 and 500 pages keep rendering when the CMS is unreachable: a failed labels fetch now falls back to hardcoded per-locale copy and logs the error. Before, the fetch threw and Astro showed its default error page. The fallback markup skips the shared layout and carries a `noindex` meta tag.
+  - **Upgrade notes:** The fallback strings live inline in `web/src/pages/404.astro` and `500.astro` and cover `de` and `en`. A project with other locales or changed error copy extends the `fallback` map in both files. A locale without an entry falls back to English.
 
 ### Changed
 
