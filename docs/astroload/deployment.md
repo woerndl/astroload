@@ -61,6 +61,31 @@ build web` on an unchanged commit replays the cached prerender layer and the
 new content does not reach the image (see
 [`maintenance.md`](./maintenance.md#same-commit-redeploys-and-the-content-build-id)).
 
+## Direct media serving (optional)
+
+With S3 configured, media is served through Payload's file route
+(`/api/media/file/*`): the CMS streams the file from the bucket, the media
+collection's read access applies, and stored URLs stay relative. This works
+on any bucket, including providers without public-read ACLs or a public
+bucket domain.
+
+To serve files straight from the bucket instead, extend the `s3Storage` call
+in `cms/src/payload.config.ts`:
+
+```ts
+collections: { media: { disablePayloadAccessControl: true } },
+acl: 'public-read',
+```
+
+This requires a provider that supports public bucket reads, and
+`S3_ENDPOINT` must be set: the plugin builds each direct file URL as
+`<endpoint>/<bucket>/<file>`. It also changes what is stored: direct mode
+persists absolute bucket URLs in `media.url` and the per-size `sizes.*.url`
+fields, and a later switch back to proxied mode does not rewrite them, so
+existing documents keep pointing at the bucket. Migrating back needs a
+backfill that sets those fields to their `/api/media/file/<filename>` form.
+The objects in the bucket stay as they are.
+
 ## In front of the containers
 
 The web server sends uncompressed responses over plain HTTP. Put TLS

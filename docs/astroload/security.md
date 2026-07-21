@@ -84,9 +84,12 @@ test before relying on it for sensitive content.
 Three exceptions exist by design. Decide on each before production:
 
 - Media has `read: anyone` (public-read). Uploads referenced by an
-  unpublished post are reachable by URL if someone has it. Add an
-  access guard if a leaked media URL is a meaningful disclosure for
-  your project.
+  unpublished post are reachable by URL if someone has it. With S3, the
+  default proxied mode serves files through Payload's file route under
+  this same read access, while the optional direct mode
+  ([`deployment.md`](./deployment.md#direct-media-serving-optional))
+  serves the bucket publicly and bypasses it. Add an access guard if a
+  leaked media URL is a meaningful disclosure for your project.
 - The Header, Footer, Labels, and SiteSettings globals are public-read.
   They carry editorial copy and have no draft state, so any change there
   is publicly readable immediately.
