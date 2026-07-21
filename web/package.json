@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "build": "REDIRECTS_STRICT=1 astro build",
     "preview": "astro preview",
-    "start": "HOST=${HOST:-0.0.0.0} PORT=${PORT:-4321} node ./dist/server/entry.mjs",
+    "start": "node ./server.mjs",
     "check": "astro check",
     "test": "vitest run",
     "astro": "astro"
@@ -24,6 +24,7 @@
     "@tailwindcss/vite": "4.3.0",
     "astro": "^7.0.6",
     "astro-seo-schema": "^7.0.0",
+    "compression": "1.8.1",
     "dotenv": "16.4.7",
     "lru-cache": "11.3.6",
     "tailwindcss": "4.3.0"

@@ -331,11 +331,13 @@ internet.
    `content-build-id` meta tag changes
    (`curl -s https://your-site/ | grep content-build-id`), which proves the
    redeploy rebuilt rather than served a cached build.
-6. Check response compression. The web app's Node server sends uncompressed
-   responses and relies on the host's proxy or CDN to compress. Confirm with
-   `curl -sI -H 'Accept-Encoding: gzip, br' https://your-site/ | grep -i content-encoding`.
-   If nothing comes back, the host does not compress at the edge and needs a
-   compressing proxy in front, or every page is served uncompressed.
+6. Check response compression. The web app compresses its own responses
+   (`web/server.mjs`). Confirm it end to end with a GET against a page,
+   because the compression filter skips HEAD requests and the multi-locale
+   root answers with a bodyless 302 that carries no `Content-Encoding`:
+   `curl -sS -H 'Accept-Encoding: gzip' -D - -o /dev/null https://your-site/en | grep -i content-encoding`.
+   If nothing comes back, either a proxy in the chain strips
+   `Accept-Encoding` or the deployment does not start through `server.mjs`.
 7. Verify analytics, when `UMAMI_WEBSITE_ID` is set. In a browser, confirm
    exactly one POST to the first-party `/api/send` per page view. A request to
    the Umami host (`gateway.umami.is` or `cloud.umami.is` on Cloud) instead

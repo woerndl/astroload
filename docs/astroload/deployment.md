@@ -124,11 +124,22 @@ The objects in the bucket stay as they are.
 
 ## In front of the containers
 
-The web server sends uncompressed responses over plain HTTP. Put TLS
-termination and compression in a reverse proxy or CDN. The go-live section in
+The web app compresses its own responses: `web/server.mjs` wraps the
+standalone handler with the `compression` package, which negotiates brotli
+or gzip per request and sets `Vary: Accept-Encoding`. The server still
+speaks plain HTTP only. TLS termination stays in a reverse proxy or CDN,
+which passes the already-encoded responses through. The go-live section in
 [`maintenance.md`](./maintenance.md) has the verification steps.
 
-Two more jobs belong in that proxy layer:
+Behind a CDN that compresses at the edge the wrapper is redundant but
+harmless. A CDN that pre-compresses static assets offline at the highest
+brotli level compresses them somewhat better than the wrapper does at
+runtime. A deployment that has verified edge compression can
+revert the `start` script to `node ./dist/server/entry.mjs` and the
+Dockerfile CMD to `web/dist/server/entry.mjs`, using the curl check in
+maintenance.md to decide.
+
+More jobs that belong in that proxy layer:
 
 - If the host exposes a generated hostname next to the custom domain (Railway's
   `*.up.railway.app`, Fly's `*.fly.dev`), 301 it to the canonical origin there.

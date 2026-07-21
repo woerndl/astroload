@@ -24,8 +24,9 @@
 # from the host: the public CMS origin once DNS is up, or
 # http://host.docker.internal:3000 against the published port below.
 #
-# TLS and response compression are not handled here. Put a reverse proxy or
-# CDN in front of both apps (see docs/astroload/deployment.md).
+# The web app compresses its own responses (web/server.mjs). TLS is not
+# handled here, put a reverse proxy or CDN in front of both apps (see
+# docs/astroload/deployment.md).
 services:
   mongo:
     image: mongo:8
