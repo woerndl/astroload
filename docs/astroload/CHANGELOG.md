@@ -8,6 +8,11 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Changed
+
+- With S3 configured, media is served through Payload's file route (`/api/media/file/*`) instead of directly from the bucket: the storage plugin call drops `disablePayloadAccessControl` and `acl: 'public-read'`. Stored URLs stay relative, the media collection's read access applies, and buckets without public-read ACLs or a public domain work. Direct serving stays available as an opt-in documented in `deployment.md`.
+  - **Upgrade notes:** A project that wants to keep direct-from-bucket serving keeps the two removed lines. A project adopting the proxied default also backfills the absolute bucket URLs that direct mode persisted: find affected documents with `db.media.find({ url: /^http/ }, { filename: 1, url: 1, sizes: 1 })`, set `url` and the per-size `sizes.*.url` fields to their `/api/media/file/<filename>` form, then rebuild the web image so prerendered pages stop carrying bucket URLs. The bucket objects themselves need no change.
+
 ## [0.6.2] - 2026-07-20
 
 ### Added

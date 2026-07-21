@@ -74,13 +74,15 @@ export const Media: CollectionConfig = {
         withoutEnlargement: true,
       },
     ],
-    // Applies to Payload's own file route, which serves media from local disk.
+    // Applies to Payload's file route, which serves media from local disk or,
+    // with S3 configured, proxies it from the bucket.
     // The web app appends ?v=updatedAt to every media url, so a normal update
     // moves readers to a new URL and the response can be cached for 30 days.
     // max-age stays finite because a variant regeneration can rewrite the
     // bytes behind an unchanged URL without touching updatedAt.
-    // With S3 (disablePayloadAccessControl), this route is bypassed and the
-    // bucket or CDN sets cache headers.
+    // Only the optional direct mode (disablePayloadAccessControl, see
+    // docs/astroload/deployment.md) bypasses this route, and there the
+    // bucket or CDN sets the cache headers.
     modifyResponseHeaders: ({ headers }) => {
       headers.set('Cache-Control', 'public, max-age=2592000')
     },

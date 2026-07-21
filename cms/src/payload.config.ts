@@ -188,11 +188,8 @@ export default buildConfig({
     ...(s3Configured
       ? [
           s3Storage({
-            collections: {
-              media: { disablePayloadAccessControl: true },
-            },
+            collections: { media: true },
             bucket: process.env.S3_BUCKET!,
-            acl: 'public-read',
             config: {
               endpoint: process.env.S3_ENDPOINT,
               region: process.env.S3_REGION ?? 'auto',
