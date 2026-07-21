@@ -59,7 +59,8 @@ ENV NODE_ENV=production HOST=0.0.0.0 PORT=4321
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/web/node_modules ./web/node_modules
 COPY --from=build /app/web/dist ./web/dist
+COPY --from=build /app/web/server.mjs ./web/server.mjs
 
 USER node
 EXPOSE 4321
-CMD ["node", "web/dist/server/entry.mjs"]
+CMD ["node", "web/server.mjs"]

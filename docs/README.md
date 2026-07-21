@@ -180,10 +180,10 @@ Both apps are Node servers with no serverless adapter or provider-specific build
 
 - `pnpm --filter @astroload/web build` then `pnpm --filter @astroload/web start`. The `start` script binds `0.0.0.0:4321` by default. `HOST` and `PORT` override that, and container hosts usually inject them.
 - `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are `astro:env/client` public values, inlined into the output at `astro build`. The web app must be built with the production values. Injecting them only at `start` has no effect.
-- The Astro standalone server does not auto-load `.env`, unlike the CMS's `next start`. The host injects the runtime server vars (`PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `PREVIEW_SECRET`, plus `UMAMI_HOST_URL` for a self-hosted Umami). For local production testing, export them or run `node --env-file=.env ./dist/server/entry.mjs`.
+- The Astro standalone server does not auto-load `.env`, unlike the CMS's `next start`. The host injects the runtime server vars (`PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `PREVIEW_SECRET`, plus `UMAMI_HOST_URL` for a self-hosted Umami). For local production testing, export them or run `node --env-file=web/.env web/server.mjs` from the repo root.
 - Content pages, the sitemap index, and `robots.txt` are prerendered. The per-locale sitemaps and the `/preview` route are SSR, so the CMS must stay reachable for them at runtime. A client-side script POSTs form submissions as JSON to Payload's `/api/form-submissions` endpoint, so `web/` needs no submission route. Submission requires JavaScript.
 - `astro build` reads redirects from the `Redirects` collection through the CMS REST API. The CMS must be reachable during build.
-- The Node server sends uncompressed responses. gzip or brotli comes from the host's proxy or CDN, and [`astroload/maintenance.md`](./astroload/maintenance.md) shows how to verify it. A host that does not compress needs a compressing proxy in front.
+- The web app compresses its own responses: `web/server.mjs` wraps the standalone handler and negotiates brotli or gzip per request. A proxy or CDN in front passes the already-encoded responses through. [`astroload/maintenance.md`](./astroload/maintenance.md) shows how to verify compression end to end.
 
 ### Deploy webhook
 
