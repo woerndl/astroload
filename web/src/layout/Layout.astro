@@ -1,5 +1,6 @@
 ---
 import type { Media } from '@astroload/cms/src/payload-types'
+import { Font } from 'astro:assets'
 import { CONTENT_BUILD_ID } from 'astro:env/server'
 import { ClientRouter } from 'astro:transitions'
 
@@ -42,6 +43,10 @@ const { header, footer, labels, siteSettings } = await getGlobalData({
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {/* Preload the latin uprights only. A late-arriving body font swaps after
+        first paint and reflows the nav and headlines, italic and latin-ext
+        can load lazily. */}
+    <Font cssVariable="--font-inter" preload={[{ subset: 'latin', style: 'normal' }]} />
     {CONTENT_BUILD_ID && <meta name="content-build-id" content={CONTENT_BUILD_ID} />}
     <SEOMetadata
       lang={lang}

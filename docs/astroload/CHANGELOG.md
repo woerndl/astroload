@@ -8,6 +8,11 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Added
+
+- The web app serves Inter through the Astro Fonts API, fetched at build time and served first-party as subsetted WOFF2 under `/_astro/fonts/` with immutable caching. The shared layout preloads the latin uprights and Tailwind's `--font-sans` token reads the generated `--font-inter` variable. The web Dockerfile asserts that font files were emitted, because a provider metadata failure does not fail the build. The 404/500 CMS-down fallbacks stay on system fonts.
+  - **Upgrade notes:** A project that chose its own font family keeps it and moves only the wiring: `fontProviders.local()` for licensed or branded files, the matching remote provider otherwise. A project still on the starter's system stack adopts Inter by applying the diff. Subsets follow the project's locale set. Compare text wrapping and page height before and after, a family or fallback change shifts metrics. Check every page that renders its own `<html>` (`rg -l "<html" web/src`): each needs its own `<Font>` tags or deliberately stays on system fonts. A project that ships a Content-Security-Policy must allow the inline style `<Font>` emits, through Astro's `security.csp` (which hashes page styles) or its own `style-src` values. Add the Dockerfile assert.
+
 ## [0.7.0] - 2026-07-21
 
 ### Removed

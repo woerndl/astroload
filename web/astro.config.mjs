@@ -1,7 +1,7 @@
 // @ts-check
 import node from '@astrojs/node'
 import tailwindcss from '@tailwindcss/vite'
-import { defineConfig, envField } from 'astro/config'
+import { defineConfig, envField, fontProviders } from 'astro/config'
 
 import { getRedirects } from './src/cms/getRedirects'
 import { LOCALE_URL_PREFIX } from './src/cms/types'
@@ -54,6 +54,21 @@ export default defineConfig({
   compressHTML: true,
   trailingSlash: 'never',
   redirects: await getRedirects(),
+  // Fetched from the provider at build time and served first-party under
+  // /_astro/fonts/, no visitor traffic goes to Google. The variable is not
+  // --font-sans because Tailwind's @theme owns that name, app.css maps one
+  // to the other. Subsets follow the project's locale set. The full wiring
+  // is documented in docs/astroload/conventions.md.
+  fonts: [
+    {
+      provider: fontProviders.google(),
+      name: 'Inter',
+      cssVariable: '--font-inter',
+      weights: ['400 700'],
+      subsets: ['latin'],
+      fallbacks: ['ui-sans-serif', 'system-ui', 'sans-serif'],
+    },
+  ],
   // Pinned dev port. Renumber per project. strictPort must sit under
   // vite.server or it is silently ignored (see conventions.md), and with it
   // a second dev server refuses to start instead of hopping to the next

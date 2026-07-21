@@ -176,6 +176,37 @@ leaks the file's `<style>` blocks and ids into the page. Vite inlines
 That is fine as an `<img>` src. Append `&no-inline` when the result must
 stay an HTTP URL, for example one handed to external consumers.
 
+## Webfonts go through the Fonts API
+
+Fonts are configured in the top-level `fonts` array in
+`web/astro.config.mjs`. Astro fetches them from the provider at build time
+and serves them first-party as subsetted WOFF2 under `/_astro/fonts/`, with
+the same immutable caching as other build assets. Do not add a `<link>` to a
+font CDN (a third-party request on every page view) or self-hosted font
+files in `public/` (served with `max-age=0`, see the static-art section
+above). Licensed or branded font files that must not be fetched from a
+public provider go through `fontProviders.local()`.
+
+The wiring has four parts that stay in step:
+
+- The `fonts` entry names the family, weights, styles, subsets, and
+  fallbacks. Subsets follow the project's locale set: `latin` covers the
+  starter's German and English, a locale needing more glyphs adds its
+  subset.
+- The entry's `cssVariable` is not `--font-sans`, because Tailwind's
+  `@theme` owns that name. `app.css` maps the Tailwind token to the
+  generated variable, which already carries the configured fallbacks plus
+  Astro's metric-adjusted one.
+- The shared layout renders `<Font cssVariable="..." preload>` in its head.
+  Preload covers the latin uprights only, italic and latin-ext load lazily.
+  A page that renders its own `<html>` instead of the shared layout (the
+  404/500 CMS-down fallbacks) needs its own `<Font>` tags or deliberately
+  stays on system fonts. Find such pages with `rg -l "<html" web/src`.
+- The web Dockerfile asserts after the build that WOFF2 files were emitted.
+  A provider metadata failure does not fail the build, so without the
+  assert a fontless image would go unnoticed. Keep the assert when
+  changing fonts.
+
 ## CMS calls go through the SDK layer
 
 The Astro side talks to Payload through `web/src/cms/`. Route files do
