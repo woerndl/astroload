@@ -4,6 +4,7 @@ import type { UploadNode } from '@jhb.software/astro-payload-richtext-lexical'
 import type { Media } from '@astroload/cms/src/payload-types'
 
 import { isPopulated } from '../../cms/types'
+import { CONTENT_COLUMN_SIZES } from '../../layout/contentColumn'
 import Img from '../Img.astro'
 
 type Props = { node: UploadNode }
@@ -17,7 +18,7 @@ const { node } = Astro.props
       image={node.value as unknown as Media}
       size="md"
       class="my-6 w-full"
-      sizes="(min-width: 768px) 736px, 100vw"
+      sizes={CONTENT_COLUMN_SIZES}
     />
   ) : null
 }

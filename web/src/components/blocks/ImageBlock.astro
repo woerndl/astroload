@@ -2,6 +2,7 @@
 import type { ImageBlock as ImageBlockType } from '@astroload/cms/src/payload-types'
 
 import { isPopulated } from '../../cms/types'
+import { CONTENT_COLUMN_SIZES } from '../../layout/contentColumn'
 import Img from '../Img.astro'
 
 type Props = Omit<ImageBlockType, 'blockType'>
@@ -13,7 +14,7 @@ const media = isPopulated(image) ? image : null
 {
   media && (
     <figure class="my-6">
-      <Img image={media} size="md" class="w-full" sizes="(min-width: 768px) 736px, 100vw" />
+      <Img image={media} size="md" class="w-full" sizes={CONTENT_COLUMN_SIZES} />
       {caption && <figcaption class="mt-2 text-gray-600">{caption}</figcaption>}
     </figure>
   )
