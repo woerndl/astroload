@@ -6,6 +6,8 @@
 # build time, so it cannot be built before the CMS is up. First boot:
 #
 #   docker compose -f deploy/docker-compose.production.yml up -d mongo cms
+#   (register the admin account and create the two API keys, see
+#    docs/astroload/deployment.md, then put the read key in the build env)
 #   docker compose -f deploy/docker-compose.production.yml build web
 #   docker compose -f deploy/docker-compose.production.yml up -d web
 #

@@ -145,3 +145,11 @@ script the easiest way to run a destructive bulk operation against the wrong
 target. To change deployed content, prefer the admin UI or an
 admin-authenticated REST call against the deployed CMS, where you authenticate
 against that instance explicitly and its access control still applies.
+
+A seed or upload script that does run from a workstation against a deployed
+instance needs `MEDIA_DIR` pointed at a fresh temporary directory, for
+example `MEDIA_DIR="$(mktemp -d)"` in front of the `payload run` command.
+Payload checks the local `staticDir` for duplicate filenames even when S3
+storage is configured. A stale file from an earlier local run makes the new
+upload store as `<name>-1`, and code that looks the document up by its
+original filename no longer finds it.
