@@ -4,11 +4,12 @@
 #   docker build -f web/Dockerfile -t astroload-web \
 #     --build-arg CMS_URL=https://cms.example.com \
 #     --build-arg WEBSITE_URL=https://www.example.com \
-#     --secret id=payload_read_key,env=PAYLOAD_READ_KEY .
+#     --build-arg PAYLOAD_READ_KEY=<read api key> .
 #
 # The site is built into the image: astro build prerenders every page from CMS
 # content and bakes the public env values in. The CMS must be reachable at
-# CMS_URL during the build, and the build args must carry production values.
+# CMS_URL during the build. CMS_URL, WEBSITE_URL, and PAYLOAD_READ_KEY carry
+# production values, the two preview args below default to placeholders.
 # A content publish therefore means rebuilding this image.
 # Keep the tag in step with .nvmrc.
 FROM node:22.22.3-alpine AS build
@@ -29,8 +30,16 @@ ARG CMS_URL
 ARG WEBSITE_URL
 ARG UMAMI_WEBSITE_ID
 ARG CONTENT_BUILD_ID
-RUN --mount=type=secret,id=payload_read_key,env=PAYLOAD_READ_KEY \
-    pnpm --filter @astroload/web build
+# Declared args instead of a BuildKit secret, so builders without secret
+# support work. PAYLOAD_READ_KEY needs its real value: the build fetches the
+# prerendered content with it. PAYLOAD_PREVIEW_KEY and PREVIEW_SECRET only
+# have to be set, astro:env checks that they exist when the prerender
+# imports the preview SDK. Their placeholder defaults keep the real values
+# out of the build, the real ones come from the runtime env.
+ARG PAYLOAD_READ_KEY
+ARG PAYLOAD_PREVIEW_KEY=build-placeholder
+ARG PREVIEW_SECRET=build-placeholder
+RUN pnpm --filter @astroload/web build
 
 # The runtime stage copies node_modules below, so drop devDependencies first.
 # CI=true answers the remove-and-reinstall prompt pnpm raises without a TTY.

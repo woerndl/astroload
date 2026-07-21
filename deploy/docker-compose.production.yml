@@ -9,9 +9,9 @@
 #   docker compose -f deploy/docker-compose.production.yml build web
 #   docker compose -f deploy/docker-compose.production.yml up -d web
 #
-# The web build reads PAYLOAD_READ_KEY through a BuildKit secret. Compose
-# takes it from the shell environment or a .env file next to this compose
-# file. web.env below only reaches the running container, not the build.
+# The web build takes PAYLOAD_READ_KEY as a build arg. Compose takes it from
+# the shell environment or a .env file next to this compose file. web.env
+# below only reaches the running container, not the build.
 #
 # A content publish repeats the last two steps. Point DEPLOY_HOOK_URL at
 # whatever runs them (a CI job, a Coolify service, a shell hook), and have it
@@ -73,9 +73,7 @@ services:
         # passes it, e.g. CONTENT_BUILD_ID=$(date +%s).
         # UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
         # CONTENT_BUILD_ID: ${CONTENT_BUILD_ID:-}
-      # Sourced from the shell env or .env, not web.env (see header comment).
-      secrets:
-        - payload_read_key
+        PAYLOAD_READ_KEY: ${PAYLOAD_READ_KEY:?read api key, the build fetches content with it}
     restart: unless-stopped
     depends_on:
       cms:
@@ -90,10 +88,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
-
-secrets:
-  payload_read_key:
-    environment: PAYLOAD_READ_KEY
 
 volumes:
   mongodata:
