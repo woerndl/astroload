@@ -260,9 +260,9 @@ build alone.
 This is a build-time policy, independent of runtime resilience. The running
 standalone server has no request-time dependency on the CMS for redirects or
 prerendered content (see above), so a CMS outage does not take those down.
-The request-time routes (`/preview`, the per-locale sitemaps, `/latest`, and
-the CMS-backed error pages) can fail during the outage or serve their last
-good response where `staleOnError` applies.
+The request-time routes (`/preview`, the per-locale sitemaps, and any SSR
+opt-in) can fail during the outage or serve their last good response where
+`staleOnError` applies. The error pages fall back to their hardcoded copy.
 
 `redirects.fallback.json` is the committed redirect table for non-strict runs
 (offline dev and CI). It is committed empty, so a fresh project loses nothing.

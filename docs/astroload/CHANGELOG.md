@@ -8,6 +8,11 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Removed
+
+- The `/latest` demo route. The SSR opt-in shape it demonstrated (`prerender = false`, `staleOnError`, `Cache-Control: no-store`, `cacheHeader(false)`) is now a code example in `conventions.md`.
+  - **Upgrade notes:** Applies to the demo route only. A project that turned `latest.astro` into a real route keeps its file.
+
 ### Added
 
 - `GET /api/health` on the CMS answers 200 when a database query succeeds and 503 when it fails, so a healthcheck catches a running process that has lost its database connection. The cms healthcheck in `deploy/docker-compose.production.yml` now requests `/api/health` instead of `/admin`.
