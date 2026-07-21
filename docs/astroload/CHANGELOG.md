@@ -8,6 +8,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-21
+
 ### Added
 
 - The web app serves Inter through the Astro Fonts API, fetched at build time and served first-party as subsetted WOFF2 under `/_astro/fonts/` with immutable caching. The shared layout preloads the latin uprights and Tailwind's `--font-sans` token reads the generated `--font-inter` variable. The web Dockerfile asserts that font files were emitted, because a provider metadata failure does not fail the build. The 404/500 CMS-down fallbacks stay on system fonts.
