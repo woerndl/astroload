@@ -8,7 +8,9 @@ type SizeKey = 'xs' | 'sm' | 'md' | 'lg'
 interface Props {
   image: Media
   size?: SizeKey
-  sizes?: string
+  // Required so every call site states the rendered width. A 100vw default
+  // selects oversized variants for any image narrower than the viewport.
+  sizes: string
   class?: string
   loading?: 'lazy' | 'eager'
 }
@@ -17,7 +19,7 @@ interface Props {
 // with a different aspect ratio, so it is left out.
 const SRCSET_KEYS: SizeKey[] = ['xs', 'sm', 'md', 'lg']
 
-const { image, size = 'md', sizes = '100vw', class: className, loading = 'lazy' } = Astro.props
+const { image, size = 'md', sizes, class: className, loading = 'lazy' } = Astro.props
 
 const variant = image.sizes?.[size]
 const url = variant?.url ?? image.url

@@ -176,6 +176,32 @@ leaks the file's `<style>` blocks and ids into the page. Vite inlines
 That is fine as an `<img>` src. Append `&no-inline` when the result must
 stay an HTTP URL, for example one handed to external consumers.
 
+## Rendered images state their real width
+
+No rendered `<img>` points at a full-size `public/` asset. CMS media
+renders through `Img.astro`, whose `sizes` prop is required: every call
+site states the width the CSS actually gives the image, derived from the
+layout's width rules, not guessed. `100vw` stays valid only as an explicit
+claim for an image that really spans the viewport. A shared layout that
+pads its content column makes the phone width `calc(100vw - <padding>)`,
+not `100vw`, and the difference is enough to push the browser across a
+variant boundary and download an image tier larger than needed. Images
+spanning the shared layout's column reference the `CONTENT_COLUMN_SIZES`
+constant in `web/src/layout/contentColumn.ts`, which owns that arithmetic
+in one place.
+
+Verify a declared `sizes` value against the measured rendered width at a
+phone viewport, per image rather than only the first one on the page: in
+the console, compare the candidate width encoded in `img.currentSrc`
+against `img.getBoundingClientRect().width * devicePixelRatio`. The chosen
+candidate should be the smallest one at or above that product.
+
+Code-owned raster assets go through `astro:assets` `<Image>` or
+`<Picture>` (which need `sharp` in the web workspace), or live in the CMS
+like any other photo. Choose output format and dimensions from the
+rendered CSS size and the device pixel ratios the project supports, not
+from one rule for all images.
+
 ## Webfonts go through the Fonts API
 
 Fonts are configured in the top-level `fonts` array in

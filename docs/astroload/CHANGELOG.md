@@ -15,6 +15,15 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 - The web app compresses its own responses: `web/server.mjs` wraps the standalone adapter handler with the `compression` package, which negotiates brotli or gzip per request. Its filter skips 206 and `Content-Range` responses, whose byte offsets refer to the uncompressed file. The `start` script and the Dockerfile CMD run the wrapper instead of `dist/server/entry.mjs`. Before, a host without a compressing proxy or CDN served every response uncompressed.
   - **Upgrade notes:** Copy `web/server.mjs`, add the `compression` dependency, and point the `start` script and the Dockerfile CMD at the wrapper. A project using the adapter's TLS mode (`SERVER_CERT_PATH`/`SERVER_KEY_PATH`) keeps `entry.mjs`, the wrapper speaks plain HTTP only. Skip the change when the deployment already compresses. Check with a GET against a page (not a HEAD, which the compression filter skips, and not the multi-locale root, whose bodyless 302 carries no encoding): `curl -sS -H 'Accept-Encoding: gzip' -D - -o /dev/null <page-url> | grep -i content-encoding`.
 
+### Changed
+
+- `Img.astro` requires the `sizes` prop. The removed `100vw` default selected oversized variants for every image that renders narrower than the viewport, so each call site now states the width its CSS gives the image.
+  - **Upgrade notes:** Audit `Img` call sites with `rg -n "<Img" web/src`, each needs an explicit `sizes`. Also audit raw `<img` tags pointing into `public/` with `rg -n '<img' web/src`. Verify every `sizes` branch, not only the phone tail: a changed breakpoint, column cap, or padding invalidates the desktop branch too. Compare the candidate width in `img.currentSrc` with `getBoundingClientRect().width * devicePixelRatio`, per image, instead of adopting the starter's values.
+
+### Fixed
+
+- The post cover, rich-text uploads, and the image block declared a `100vw` phone width while the shared layout pads its content column, so phones downloaded a larger image tier than rendered. All three now reference the new `CONTENT_COLUMN_SIZES` constant (`web/src/layout/contentColumn.ts`), which states the real width, `calc(100vw - 2rem)`, next to the column definition it derives from.
+
 ## [0.7.0] - 2026-07-21
 
 ### Removed

@@ -6,6 +6,7 @@ import { resolveSeo } from '../../cms/resolveSeo'
 import { isPopulated, type Locale, type LocalePaths, type PreviewContext } from '../../cms/types'
 import Img from '../../components/Img.astro'
 import LexicalContent from '../../components/lexical/LexicalContent.astro'
+import { CONTENT_COLUMN_SIZES } from '../contentColumn'
 import Layout from '../Layout.astro'
 
 interface Props {
@@ -53,7 +54,7 @@ const seo = resolveSeo(data)
         size="lg"
         class="mb-8 w-full"
         loading="eager"
-        sizes="(min-width: 768px) 736px, 100vw"
+        sizes={CONTENT_COLUMN_SIZES}
       />
     )}
     <LexicalContent content={data.content} />
