@@ -4,6 +4,12 @@ import { APIError } from 'payload'
 
 const MIN_ELAPSED_MS = 1_500
 
+// Bounds on stored submission data, checked before any database lookup. The
+// entry count includes the honeypot and timestamp entries. Raise either
+// constant when a project's forms need more.
+const MAX_ENTRIES = 100
+const MAX_VALUE_LENGTH = 10_000
+
 type SubmissionEntry = { field: string; value: string }
 
 const isEntry = (value: unknown): value is SubmissionEntry => {
@@ -19,8 +25,17 @@ export const spamGuard: CollectionBeforeChangeHook = ({ data, operation, req }) 
     req.payload.logger.info('form submission rejected: missing submissionData')
     throw new APIError('Submission rejected.', 400, undefined, true)
   }
+  if (raw.length > MAX_ENTRIES) {
+    req.payload.logger.info({ entries: raw.length }, 'form submission rejected: too many entries')
+    throw new APIError('Submission rejected.', 400, undefined, true)
+  }
 
   const entries = raw.filter(isEntry)
+  const oversized = (text: string) => text.length > MAX_VALUE_LENGTH
+  if (entries.some((entry) => oversized(entry.field) || oversized(entry.value))) {
+    req.payload.logger.info('form submission rejected: oversized entry')
+    throw new APIError('Submission rejected.', 400, undefined, true)
+  }
   const honeypot = entries.find((entry) => entry.field === 'fax')
   const stamp = entries.find((entry) => entry.field === '_rendered_at')
 
