@@ -194,8 +194,12 @@ the plugin overrides: read is limited to panel users, update is blocked,
 and delete is admin-only. Without the explicit rules, the read-only API
 key could fetch submissions.
 
-There is no body-size limit on `/api/form-submissions` beyond Payload's
-defaults. If your forms accept long-text fields, add an explicit cap.
+The spam-guard hook caps a submission at 100 entries and 10,000
+characters per entry field name or value (constants in
+`cms/src/hooks/spamGuard.ts`). A single accepted submission can then
+store about 1 MB of text. The hook limits stored submission fields
+only. Request-body size limits and rate limiting belong at the host or
+proxy.
 
 ## Preview secret in URLs leaks through Referer
 
@@ -274,7 +278,7 @@ the gaps the template leaves open, not a full production hardening
 checklist:
 
 - Rate-limit rule in front of the CMS (CDN or middleware).
-- Body-size limit on form submissions.
+- HTTP body-size limit in front of the CMS.
 - IP allow-list on `/admin` if your team is in a known network.
 - Automated regression test for draft leakage at populated depth.
 - Server-stamped submit-time check (or alternative) on form submissions

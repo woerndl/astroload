@@ -14,6 +14,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
   - **Upgrade notes:** A healthcheck configured at the host against `/admin` moves to `/api/health`. With the database down, the 503 arrives only after the Mongo driver's server-selection timeout (30 seconds by default), so a probe with a shorter timeout reports the outage as a timeout instead.
 - The 404 and 500 pages keep rendering when the CMS is unreachable: a failed labels fetch now falls back to hardcoded per-locale copy and logs the error. Before, the fetch threw and Astro showed its default error page. The fallback markup skips the shared layout and carries a `noindex` meta tag.
   - **Upgrade notes:** The fallback strings live inline in `web/src/pages/404.astro` and `500.astro` and cover `de` and `en`. A project with other locales or changed error copy extends the `fallback` map in both files. A locale without an entry falls back to English.
+- The spam-guard hook rejects a form submission with more than 100 entries or an entry whose field name or value is longer than 10,000 characters, with the same generic 400 as its other checks. A single submission can then store about 1 MB of text. The hook limits stored submission fields only, request-body size limits and rate limiting belong at the host or proxy.
+  - **Upgrade notes:** Only new submissions are affected, stored data is not touched. A project whose forms approach 100 fields or 10,000-character values raises `MAX_ENTRIES` or `MAX_VALUE_LENGTH` in `cms/src/hooks/spamGuard.ts`.
 
 ### Changed
 

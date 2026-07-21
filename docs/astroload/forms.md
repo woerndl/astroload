@@ -78,8 +78,8 @@ includes a few baseline checks against commodity contact-form spam:
 - A client-stamped `_rendered_at` timestamp for a minimum-submit-time
   check.
 - A `beforeChange` hook (`cms/src/hooks/spamGuard.ts`) on
-  `form-submissions` that rejects honeypot-filled or sub-1.5s
-  submissions and strips both internal fields before save.
+  `form-submissions` that rejects honeypot-filled, sub-1.5s, and
+  oversized submissions and strips both internal fields before save.
 
 The names `fax` and `_rendered_at` are reserved for these checks. The
 Forms collection rejects a form that names a field after either (and any
@@ -119,6 +119,11 @@ fork if your project needs it.
 `form-submissions` and applies the following rules:
 
 - If `submissionData` is missing or not an array, throw `APIError('Submission rejected.', 400)`.
+- If `submissionData` holds more than 100 entries, or any entry's field
+  name or value is longer than 10,000 characters, throw the same error.
+  Both bounds are constants (`MAX_ENTRIES`, `MAX_VALUE_LENGTH`) in
+  `spamGuard.ts`, and the entry count includes the two internal fields.
+  Raise either constant when a project's forms need more.
 - If the honeypot field is non-empty, throw the same error.
 - If `_rendered_at` is missing or unparseable, throw the same error.
 - If `_rendered_at` is less than 1.5s before now, throw the same error.
