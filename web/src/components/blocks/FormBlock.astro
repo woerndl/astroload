@@ -99,7 +99,7 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
                     checked={field.defaultValue ?? false}
                     class="focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
                   />
-                  <label class="text-sm" for={id}>{label}{labelMark}</label>
+                  <label class="flex min-h-6 items-center text-sm" for={id}>{label}{labelMark}</label>
                 </div>
               </div>
             )
