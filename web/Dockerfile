@@ -41,6 +41,10 @@ ARG PAYLOAD_PREVIEW_KEY=build-placeholder
 ARG PREVIEW_SECRET=build-placeholder
 RUN pnpm --filter @astroload/web build
 
+# A font-provider metadata failure does not fail the build, it only leaves
+# the fonts directory empty. Fail here instead of deploying without webfonts.
+RUN test -n "$(ls web/dist/client/_astro/fonts/*.woff2 2>/dev/null)"
+
 # The runtime stage copies node_modules below, so drop devDependencies first.
 # CI=true answers the remove-and-reinstall prompt pnpm raises without a TTY.
 RUN CI=true pnpm install --frozen-lockfile --prod --filter @astroload/web...
