@@ -31,8 +31,20 @@ CMS and production values:
 docker build -f web/Dockerfile -t astroload-web \
   --build-arg CMS_URL=https://cms.example.com \
   --build-arg WEBSITE_URL=https://www.example.com \
-  --secret id=payload_read_key,env=PAYLOAD_READ_KEY .
+  --build-arg PAYLOAD_READ_KEY=<read api key> .
 ```
+
+The read key comes in as a declared build arg rather than a BuildKit
+secret, because PaaS builders that lack secret support fill declared ARGs
+from the service's variables. `PAYLOAD_READ_KEY` needs its real value
+because the build uses it to fetch the content for prerendering.
+`PAYLOAD_PREVIEW_KEY` and `PREVIEW_SECRET` only have to be set, because
+`astro:env` checks that they exist when the prerender imports the preview
+SDK. The Dockerfile defaults both to a placeholder, and the real values
+come from the runtime environment. If a build writes provenance
+attestations, the build-arg values are recorded in them. The image itself
+does not contain the values, its runtime stage copies only the build
+output.
 
 `UMAMI_WEBSITE_ID` and `CONTENT_BUILD_ID` are further optional build args. At
 runtime the container needs `PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, and
@@ -50,7 +62,7 @@ A change that affects prerendered output means a new web image. Point the deploy
 defines the three services, with volumes for the database and uploads.
 Copy it and adapt. Its header comment covers the first boot, which has
 to start the CMS before the web image can build. The web build's
-`PAYLOAD_READ_KEY` comes in through a BuildKit secret that Compose reads from
+`PAYLOAD_READ_KEY` comes in through a build arg that Compose reads from
 the shell environment or a `.env` beside the compose file. `web.env` only
 reaches the running container.
 
