@@ -1,8 +1,24 @@
 # Deployment
 
-Both apps are plain Node servers. The simplest deploy is the one in the
-[README](../README.md#deployment): `build` and `start` per app on a plain
-Node host. This page covers the container path.
+Both apps are plain Node servers. The web app builds for Astro's standalone
+Node adapter, so it runs on container platforms and Node hosts: a PaaS
+container runtime, a VPS with compose, a bare Node process. A platform's
+serverless-native runtime (Cloudflare Workers, Netlify Functions) would need
+an adapter swap and is not covered here. The simplest deploy is the one in
+the [README](../README.md#deployment): `build` and `start` per app on a
+plain Node host. This page covers the container path.
+
+Before committing to a platform, check the constraints the template relies
+on:
+
+- Build-log visibility. Content problems surface during `astro build`, so
+  the platform must show the build output.
+- Build-arg support. The web image takes its keys as declared build args
+  (see below).
+- A configurable healthcheck path. The CMS healthcheck belongs on
+  `/api/health`.
+- Public bucket reads, only when you opt into direct media serving (see
+  below). The proxied default works on any bucket.
 
 ## Images
 
@@ -61,7 +77,15 @@ A change that affects prerendered output means a new web image. Point the deploy
 [`deploy/docker-compose.production.yml`](../../deploy/docker-compose.production.yml)
 defines the three services, with volumes for the database and uploads.
 Copy it and adapt. Its header comment covers the first boot, which has
-to start the CMS before the web image can build. The web build's
+to start the CMS before the web image can build. On first boot, create the
+accounts before the CMS hostname is publicly reachable: registration on an
+empty instance is open and the first account becomes an admin
+([`security.md`](./security.md#authentication-model)). Open `/admin` on the
+not-yet-public origin, register the admin account, and create two API keys
+(types `read-only` and `preview`). The web build needs the read-only key's
+value. A workspace checkout can run the auth seed
+(`pnpm --filter @astroload/cms seed:auth`) instead, but the CMS container
+image does not include it. The web build's
 `PAYLOAD_READ_KEY` comes in through a build arg that Compose reads from
 the shell environment or a `.env` beside the compose file. `web.env` only
 reaches the running container.

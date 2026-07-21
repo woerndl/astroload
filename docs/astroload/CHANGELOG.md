@@ -21,6 +21,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
   - **Upgrade notes:** The fallback strings live inline in `web/src/pages/404.astro` and `500.astro` and cover `de` and `en`. A project with other locales or changed error copy extends the `fallback` map in both files. A locale without an entry falls back to English.
 - The spam-guard hook rejects a form submission with more than 100 entries or an entry whose field name or value is longer than 10,000 characters, with the same generic 400 as its other checks. A single submission can then store about 1 MB of text. The hook limits stored submission fields only, request-body size limits and rate limiting belong at the host or proxy.
   - **Upgrade notes:** Only new submissions are affected, stored data is not touched. A project whose forms approach 100 fields or 10,000-character values raises `MAX_ENTRIES` or `MAX_VALUE_LENGTH` in `cms/src/hooks/spamGuard.ts`.
+- Document in `deployment.md` the supported web hosts and the platform constraints to check before picking one: the web app builds for Astro's standalone Node adapter, so it runs on container platforms and Node hosts, while a serverless runtime such as Cloudflare Workers needs another adapter. Document there too that the admin account and API keys are created before the CMS hostname becomes public.
+- Document in `content-workflow.md` that a seed or upload script run from a workstation against a deployed instance needs `MEDIA_DIR` pointed at a fresh temporary directory. Payload checks the local staticDir for duplicate filenames even with S3 storage, so a stale local file makes the new upload store under a `-1` suffix and filename-keyed lookups miss it.
 
 ### Changed
 
