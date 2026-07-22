@@ -8,6 +8,11 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Changed
+
+- Dependency update: Astro 7.0.6 → 7.1.3, Payload and every `@payloadcms/*` package 3.85.0 → 3.86.0, Next 16.2.6 → 16.2.10 with matching `eslint-config-next`. Bug-fix releases throughout. Payload 3.85.2 patches a transitive `js-cookie` CVE and other audit findings, and 3.86.0 fixes the SDK's empty-array query serialization and the live-preview URL allow-list regex escaping. The Astro 7.1 minor adds only opt-in features. `payload-types.ts` is regenerated: the form builder's field descriptions became translatable upstream, so their static comments left the generated types.
+  - **Upgrade notes:** Applying the diff and running `pnpm install` works as-is, the lockfile carries the resolution. A project that re-resolves instead (its own `pnpm add` or `pnpm update`) hits the 7-day publish cooldown for astro until 2026-07-27, pass `--config.minimumReleaseAgeExclude='astro,@astrojs/*'` for that install. With `trustPolicy: no-downgrade` it also fails on five aged transitive versions that predate npm provenance: `pino@9.14.0`, `undici-types@6.21.0`, `eslint-import-resolver-typescript@3.10.1`, `chokidar@4.0.3`, `semver@6.3.1`. Each was checked against its publisher account and GitHub tag before excluding. Pass one `--trust-policy-exclude='<pkg>@<version>'` per package. Run `pnpm --filter cms generate:types` after installing.
+
 ## [0.8.0] - 2026-07-21
 
 ### Added
