@@ -8,6 +8,12 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-07-22
+
+### Added
+
+- CI regenerates the import map twice, once without S3 env and once with a dummy S3 env group, and fails on any diff against the committed file. This catches a stale `importMap.js` and any config change that makes the generated map depend on the environment.
+
 ### Fixed
 
 - The S3 storage plugin stays in the plugin list with its `enabled` option bound to the S3 env group, replacing the conditional spread. The plugin writes its admin upload handler into the import map whether enabled or not, so the conditional made `generate:importmap`, which runs without S3 env, omit `@payloadcms/storage-s3/client#S3ClientUploadHandler` from `importMap.js`. A deployment with S3 configured then failed to resolve the component and every admin page rendered blank, with the error only in the server log. `importMap.js` is regenerated with the entry.
