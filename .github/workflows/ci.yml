@@ -33,6 +33,19 @@ jobs:
           pnpm --filter @astroload/cms generate:types
           git diff --exit-code
 
+      # Runs twice, without and with a complete S3 env group. The committed
+      # map must match both, or an env-gated plugin drops entries that
+      # S3-enabled deployments need. A new integration that gates admin
+      # components on its own env group extends the second run with its
+      # dummy vars.
+      - name: Import map in sync
+        run: |
+          pnpm --filter @astroload/cms generate:importmap
+          git diff --exit-code
+          S3_BUCKET=ci S3_ACCESS_KEY_ID=ci S3_SECRET_ACCESS_KEY=ci \
+            pnpm --filter @astroload/cms generate:importmap
+          git diff --exit-code
+
       - name: Lint (cms eslint)
         run: pnpm lint
 
