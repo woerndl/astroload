@@ -8,6 +8,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-22
+
 ### Changed
 
 - Dependency update: Astro 7.0.6 → 7.1.3, Payload and every `@payloadcms/*` package 3.85.0 → 3.86.0, Next 16.2.6 → 16.2.10 with matching `eslint-config-next`. Bug-fix releases throughout. Payload 3.85.2 patches a transitive `js-cookie` CVE and other audit findings, and 3.86.0 fixes the SDK's empty-array query serialization and the live-preview URL allow-list regex escaping. The Astro 7.1 minor adds only opt-in features. `payload-types.ts` is regenerated: the form builder's field descriptions became translatable upstream, so their static comments left the generated types.
