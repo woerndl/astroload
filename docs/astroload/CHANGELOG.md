@@ -8,6 +8,11 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Fixed
+
+- The S3 storage plugin stays in the plugin list with its `enabled` option bound to the S3 env group, replacing the conditional spread. The plugin writes its admin upload handler into the import map whether enabled or not, so the conditional made `generate:importmap`, which runs without S3 env, omit `@payloadcms/storage-s3/client#S3ClientUploadHandler` from `importMap.js`. A deployment with S3 configured then failed to resolve the component and every admin page rendered blank, with the error only in the server log. `importMap.js` is regenerated with the entry.
+  - **Upgrade notes:** Apply the config change, then run `pnpm --filter @astroload/cms generate:importmap` instead of copying the generated file, in case the project's map has diverged. A project that sets an S3 `prefix` on the media collection also passes `alwaysInsertFields: true`, so the `prefix` field exists in development where S3 is off.
+
 ## [0.8.1] - 2026-07-22
 
 ### Changed

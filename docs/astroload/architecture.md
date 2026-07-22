@@ -81,11 +81,15 @@ for the threat model around each.
 
 ## Optional integrations are env-gated
 
-The S3 storage plugin loads only when `S3_BUCKET` and credentials are
-set. Without them, uploads land on local disk under `cms/media/`. The
-Resend email adapter is gated the same way on `RESEND_API_KEY` and
-`RESEND_FROM_ADDRESS`. Without them, Payload falls back to
-console-logging outgoing email. Both branches live in
+The S3 storage plugin is always in the plugin list, with its `enabled`
+option bound to `S3_BUCKET` and the credential variables. It stays
+listed while disabled so that `generate:importmap`, which runs without
+S3 env, still writes the plugin's admin component into the import map
+that S3-enabled deployments read. Disabled, the plugin does nothing
+else, and uploads land on local disk under `cms/media/`. The Resend
+email adapter loads only when `RESEND_API_KEY` and
+`RESEND_FROM_ADDRESS` are set. Without them, Payload falls back to
+console-logging outgoing email. Both gates live in
 `payload.config.ts`.
 
 ## Localization runs through the URL

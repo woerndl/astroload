@@ -187,21 +187,22 @@ export default buildConfig({
         },
       },
     }),
-    ...(s3Configured
-      ? [
-          s3Storage({
-            collections: { media: true },
-            bucket: process.env.S3_BUCKET!,
-            config: {
-              endpoint: process.env.S3_ENDPOINT,
-              region: process.env.S3_REGION ?? 'auto',
-              credentials: {
-                accessKeyId: process.env.S3_ACCESS_KEY_ID!,
-                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
-              },
-            },
-          }),
-        ]
-      : []),
+    // Always in the plugin list, gated by `enabled`: the plugin registers its
+    // admin component unconditionally, so a conditional spread makes local
+    // `generate:importmap` (no S3 env) drop an entry every S3-configured
+    // deployment needs and the admin renders blank.
+    s3Storage({
+      enabled: s3Configured,
+      collections: { media: true },
+      bucket: process.env.S3_BUCKET!,
+      config: {
+        endpoint: process.env.S3_ENDPOINT,
+        region: process.env.S3_REGION ?? 'auto',
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
+        },
+      },
+    }),
   ],
 })
