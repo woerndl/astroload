@@ -24,6 +24,11 @@ const eslintConfig = [
     },
   },
   {
+    // The admin logo and icon are SVG files, which next/image does not optimize, so they use a plain img element.
+    files: ['src/admin/**'],
+    rules: { '@next/next/no-img-element': 'off' },
+  },
+  {
     ignores: ['.next/', 'src/payload-types.ts'],
   },
 ]
