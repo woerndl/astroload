@@ -41,21 +41,13 @@ export const Labels: GlobalConfig = {
       name: 'notFound',
       type: 'group',
       label: 'Not found (404) page',
-      fields: [
-        labelField('title'),
-        labelField('description'),
-        labelField('homePageButton'),
-      ],
+      fields: [labelField('title'), labelField('description'), labelField('homePageButton')],
     },
     {
       name: 'serverError',
       type: 'group',
       label: 'Server error (500) page',
-      fields: [
-        labelField('title'),
-        labelField('description'),
-        labelField('homePageButton'),
-      ],
+      fields: [labelField('title'), labelField('description'), labelField('homePageButton')],
     },
     {
       name: 'preview',

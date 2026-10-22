@@ -23,7 +23,8 @@ export const GET: APIRoute = async () => {
   }
 
   const entries = LOCALES.map(
-    (code) => `  <sitemap>\n    <loc>${absoluteSiteURL(`/${code}/sitemap.xml`)}</loc>\n  </sitemap>`,
+    (code) =>
+      `  <sitemap>\n    <loc>${absoluteSiteURL(`/${code}/sitemap.xml`)}</loc>\n  </sitemap>`,
   )
 
   const xml =

@@ -1,0 +1,9 @@
+pnpm-lock.yaml
+cms/src/payload-types.ts
+cms/src/app/(payload)/admin/importMap.js
+cms/next-env.d.ts
+web/.playwright/
+# Prettier splits the one-line code examples and pads the tables in the docs.
+*.md
+# astro.config.mjs lists the CSP hash of the inline style in this component.
+web/src/components/LayerOrder.astro

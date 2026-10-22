@@ -31,7 +31,9 @@ const fullTitle = title ? `${title}${suffix}` : siteSettings.siteName
 
 const finalDescription = description ?? siteSettings.defaultSeo?.description ?? undefined
 
-const defaultImage = isPopulated<Media>(siteSettings.defaultSeo?.image) ? siteSettings.defaultSeo.image : null
+const defaultImage = isPopulated<Media>(siteSettings.defaultSeo?.image)
+  ? siteSettings.defaultSeo.image
+  : null
 const ogMedia = image ?? defaultImage
 const ogVariant = ogMedia?.sizes?.og
 const ogUrlPath = ogVariant?.url ?? ogMedia?.url ?? null

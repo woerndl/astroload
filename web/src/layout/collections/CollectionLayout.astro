@@ -17,12 +17,10 @@ const { result, paths, lang, preview = false } = Astro.props
 const previewCtx = preview ? { collection: result.collection, id: result.data.id } : undefined
 ---
 
-{
-  result.collection === 'pages' ? (
-    <PageLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
-  ) : result.collection === 'posts' ? (
-    <PostLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
-  ) : (
-    <AuthorLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
-  )
-}
+{result.collection === 'pages' ? (
+  <PageLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
+) : result.collection === 'posts' ? (
+  <PostLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
+) : (
+  <AuthorLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
+)}

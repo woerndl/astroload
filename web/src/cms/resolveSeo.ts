@@ -10,7 +10,8 @@ export interface ResolvedSeo {
 
 export function resolveSeo(data: PageData): ResolvedSeo {
   const title = data.meta?.title || ('title' in data ? data.title : data.name) || ''
-  const description = data.meta?.description || ('excerpt' in data ? data.excerpt : null) || undefined
+  const description =
+    data.meta?.description || ('excerpt' in data ? data.excerpt : null) || undefined
   const image = isPopulated<Media>(data.meta?.image) ? data.meta.image : null
   return { title, description, image }
 }
