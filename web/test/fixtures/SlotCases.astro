@@ -1,0 +1,29 @@
+---
+import Card from './Card.astro'
+
+interface Props {
+  show: boolean
+}
+
+const { show } = Astro.props
+---
+
+<section data-case="element">
+  <Card>{show && <p slot="footer">Footer</p>}</Card>
+</section>
+<section data-case="fragment">
+  <Card>
+    <Fragment slot="footer">{show && <p>Footer</p>}</Fragment>
+  </Card>
+</section>
+<section data-case="text">
+  <Card>
+    <p slot="footer">{show ? 'Footer' : ''}</p>
+  </Card>
+</section>
+<section data-case="prop">
+  <Card hasFooter={show}>{show && <p slot="footer">Footer</p>}</Card>
+</section>
+<section data-case="no-slot">
+  <Card />
+</section>

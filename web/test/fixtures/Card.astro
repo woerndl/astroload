@@ -1,0 +1,16 @@
+---
+interface Props {
+  hasFooter?: boolean
+}
+
+const { hasFooter } = Astro.props
+const showFooter = hasFooter ?? Astro.slots.has('footer')
+---
+
+<div>
+  {showFooter && (
+    <footer>
+      <slot name="footer" />
+    </footer>
+  )}
+</div>
