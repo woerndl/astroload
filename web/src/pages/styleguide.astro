@@ -1,0 +1,122 @@
+---
+import type { Form } from '@astroload/cms/src/payload-types'
+import { Font, Image } from 'astro:assets'
+
+import sample from '../assets/styleguide-sample.jpg'
+import FormBlock from '../components/blocks/FormBlock.astro'
+import LayerOrder from '../components/LayerOrder.astro'
+import MainContent from '../components/MainContent.astro'
+import SkipLink from '../components/SkipLink.astro'
+import { CONTENT_COLUMN_SIZES } from '../layout/contentColumn'
+import '../styles/styles.css'
+
+export const prerender = true
+
+const form: Form = {
+  id: 'styleguide',
+  title: 'Styleguide',
+  fields: [
+    { blockType: 'text', name: 'name', label: 'Text', width: 66.7, required: true },
+    { blockType: 'email', name: 'email', label: 'Email', width: 33.3 },
+    {
+      blockType: 'select',
+      name: 'topic',
+      label: 'Select',
+      placeholder: 'Choose an option',
+      options: [
+        { label: 'First option', value: 'first' },
+        { label: 'Second option', value: 'second' },
+      ],
+    },
+    { blockType: 'textarea', name: 'message', label: 'Textarea' },
+    { blockType: 'checkbox', name: 'consent', label: 'Checkbox' },
+  ],
+  submitButtonLabel: 'Submit',
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
+}
+---
+
+<!doctype html>
+{/* The page text is English whatever the default locale. */}
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <LayerOrder />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex" />
+    <title>Styleguide</title>
+    <Font cssVariable="--font-inter" preload={[{ subset: 'latin', style: 'normal' }]} />
+  </head>
+  <body>
+    <SkipLink lang="en" />
+    <MainContent class="page">
+      <h1>Styleguide</h1>
+
+      <section id="type" class="section">
+        <h2 class="heading">Type</h2>
+        <p>
+          Body text in the default size. A <a href="#type">link</a> keeps the text color, and
+          <strong>strong text</strong> uses a heavier weight.
+        </p>
+        <p class="muted">Muted text for secondary information.</p>
+        <p class="subtle">Subtle text for dates and captions.</p>
+      </section>
+
+      <section class="section">
+        <h2 class="heading">Form</h2>
+        <FormBlock
+          form={form}
+          labels={{ submit: 'Submit', sending: 'Sending', error: 'Submission failed.' }}
+        />
+      </section>
+
+      <section class="section">
+        <h2 class="heading">Image</h2>
+        <Image
+          src={sample}
+          alt="Gray gradient with a light circle"
+          width={736}
+          sizes={CONTENT_COLUMN_SIZES}
+        />
+      </section>
+    </MainContent>
+  </body>
+</html>
+
+<style>
+  @layer components {
+    .page {
+      max-width: var(--content-width);
+      margin-inline: auto;
+      padding: 3rem 1rem;
+    }
+
+    .section {
+      margin-top: 2.5rem;
+    }
+
+    .heading {
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .section p + p {
+      margin-top: 0.75rem;
+    }
+
+    .section a {
+      text-decoration: underline;
+    }
+
+    .muted {
+      color: var(--color-text-muted);
+    }
+
+    .subtle {
+      font-size: var(--text-sm);
+      color: var(--color-text-subtle);
+    }
+  }
+</style>
