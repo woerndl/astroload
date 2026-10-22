@@ -1,0 +1,36 @@
+/* Astro puts its image styles in astro.images. LayerOrder.astro and
+   web/e2e/styles.e2e.ts repeat this statement, and the security.csp block
+   in astro.config.mjs lists its hash, so change all four together. */
+@layer astro.images, tokens, base, components, utilities;
+
+@import url('./tokens.css');
+@import url('./base.css');
+
+@layer utilities {
+  /* A component rule that sets display would otherwise show a hidden element. */
+  [hidden] {
+    display: none;
+  }
+
+  .skip-link {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 100;
+    padding: 0.5rem 1rem;
+    background: var(--color-surface);
+    color: var(--color-text);
+    transform: translateY(-200%);
+  }
+
+  .skip-link:focus {
+    transform: none;
+  }
+
+  /* Honeypot wrapper. The rule ships in an external .css file, so a spam bot
+     that parses only the HTML does not see display: none and fills the
+     field. */
+  .form-extra {
+    display: none;
+  }
+}

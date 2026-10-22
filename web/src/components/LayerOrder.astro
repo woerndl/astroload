@@ -1,0 +1,6 @@
+---
+// Repeats the layer statement from src/styles/styles.css ahead of the bundled
+// stylesheet. astro.config.mjs lists the hash of this exact text.
+---
+
+<style is:inline>@layer astro.images, tokens, base, components, utilities;</style>

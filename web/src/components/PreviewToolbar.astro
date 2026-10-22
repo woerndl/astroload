@@ -11,22 +11,47 @@ interface Props extends PreviewContext {
 const { collection, id, labels } = Astro.props
 
 // Safari before 16.4 sends no Sec-Fetch-Dest, so there the toolbar also
-// renders inside the admin live-preview iframe. Acceptable degradation for an
-// editor-only surface.
+// renders inside the admin live preview iframe.
 const insideIframe = Astro.request.headers.get('sec-fetch-dest') === 'iframe'
 const adminHref = absoluteCmsURL(`/admin/collections/${collection}/${id}`)
 ---
 
-{
-  !insideIframe && (
-    <div
-      class="sticky top-0 z-50 flex items-center justify-between border-b border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 shadow"
-      role="status"
-    >
-      <span>{labels.editingDraft}</span>
-      <a href={adminHref} class="inline-flex min-h-6 items-center font-medium underline hover:no-underline">
-        {labels.openInAdmin}
-      </a>
-    </div>
-  )
-}
+{!insideIframe && (
+  <div class="toolbar" role="status">
+    <span>{labels.editingDraft}</span>
+    <a href={adminHref} class="admin-link">
+      {labels.openInAdmin}
+    </a>
+  </div>
+)}
+
+<style>
+  @layer components {
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--color-notice-border);
+      background: var(--color-notice-surface);
+      color: var(--color-notice-text);
+      font-size: var(--text-sm);
+      box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
+    }
+
+    .admin-link {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: 1.5rem;
+      font-weight: 500;
+      text-decoration: underline;
+    }
+
+    .admin-link:hover {
+      text-decoration: none;
+    }
+  }
+</style>

@@ -16,20 +16,58 @@ const links = LOCALES.map((code) => ({
 }))
 ---
 
-<nav aria-label={label} class="flex items-center gap-2 text-sm uppercase tracking-wide">
-  {
-    links.map((link, i) => (
-      <>
-        {i > 0 && <span class="text-gray-300" aria-hidden="true">/</span>}
-        <a
-          href={link.href}
-          hreflang={link.code}
-          aria-current={link.active ? 'page' : undefined}
-          class:list={['inline-flex min-h-6 min-w-6 items-center justify-center transition-colors', link.active ? 'font-semibold text-gray-900' : 'text-gray-500 hover:text-gray-900']}
-        >
-          {link.code}
-        </a>
-      </>
-    ))
-  }
+<nav aria-label={label} class="switcher">
+  {links.map((link, i) => (
+    <>
+      {i > 0 && (
+        <span aria-hidden="true" class="separator">
+          /
+        </span>
+      )}
+      <a
+        href={link.href}
+        hreflang={link.code}
+        aria-current={link.active ? 'page' : undefined}
+        class="link"
+      >
+        {link.code}
+      </a>
+    </>
+  ))}
 </nav>
+
+<style>
+  @layer components {
+    .switcher {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: var(--text-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    .separator {
+      color: var(--color-border);
+    }
+
+    .link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-block-size: 1.5rem;
+      min-inline-size: 1.5rem;
+      color: var(--color-text-subtle);
+      transition: color 150ms;
+    }
+
+    .link:hover,
+    .link[aria-current='page'] {
+      color: var(--color-text);
+    }
+
+    .link[aria-current='page'] {
+      font-weight: 600;
+    }
+  }
+</style>

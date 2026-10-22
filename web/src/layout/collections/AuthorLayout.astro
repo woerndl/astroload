@@ -30,19 +30,51 @@ const seo = resolveSeo(data)
   preview={preview}
 >
   <article>
-    <header class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-      {photo && (
-        <Img image={photo} size="sm" class="h-24 w-24 rounded-full object-cover" sizes="96px" />
-      )}
+    <header class="header">
+      {photo && <Img image={photo} size="sm" class="photo" sizes="96px" />}
       <div>
-        <h1 class="text-3xl font-semibold">{data.name}</h1>
-        {data.role && <p class="mt-1 text-gray-600">{data.role}</p>}
+        <h1>{data.name}</h1>
+        {data.role && <p class="role">{data.role}</p>}
       </div>
     </header>
     {data.bio && (
-      <div class="mt-8">
+      <div class="bio">
         <LexicalContent content={data.bio} />
       </div>
     )}
   </article>
 </Layout>
+
+<style>
+  @layer components {
+    .header {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    @media (width >= 40rem) {
+      .header {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    .photo {
+      inline-size: 6rem;
+      block-size: 6rem;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .role {
+      margin-top: 0.25rem;
+      color: var(--color-text-muted);
+    }
+
+    .bio {
+      margin-top: 2rem;
+    }
+  }
+</style>

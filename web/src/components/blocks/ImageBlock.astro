@@ -11,11 +11,26 @@ const { image, caption } = Astro.props
 const media = isPopulated(image) ? image : null
 ---
 
-{
-  media && (
-    <figure class="my-6">
-      <Img image={media} size="md" class="w-full" sizes={CONTENT_COLUMN_SIZES} />
-      {caption && <figcaption class="mt-2 text-gray-600">{caption}</figcaption>}
-    </figure>
-  )
-}
+{media && (
+  <figure class="figure">
+    <Img image={media} size="md" class="image" sizes={CONTENT_COLUMN_SIZES} />
+    {caption && <figcaption class="caption">{caption}</figcaption>}
+  </figure>
+)}
+
+<style>
+  @layer components {
+    .figure {
+      margin-block: 1.5rem;
+    }
+
+    .image {
+      inline-size: 100%;
+    }
+
+    .caption {
+      margin-top: 0.5rem;
+      color: var(--color-text-muted);
+    }
+  }
+</style>

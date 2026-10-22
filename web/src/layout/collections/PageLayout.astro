@@ -38,9 +38,26 @@ const { labels } = await getGlobalData({
   preview={preview}
 >
   <article>
-    <h1 class="text-3xl font-semibold">{data.title}</h1>
-    <div class="mt-8 space-y-6">
-      {sections.map((block) => <SectionBlock block={block} lang={lang} labels={labels} />)}
+    <h1>{data.title}</h1>
+    <div class="sections page-sections">
+      {sections.map((block) => (
+        <SectionBlock block={block} lang={lang} labels={labels} />
+      ))}
     </div>
   </article>
 </Layout>
+
+<style>
+  @layer components {
+    .sections {
+      margin-top: 2rem;
+    }
+
+    /* A rich text section renders its paragraphs without a wrapper, so this
+       rule spaces every direct child. :where() keeps the specificity at zero,
+       so a block's own margin wins. */
+    :global(:where(.page-sections > :not(:last-child))) {
+      margin-block-end: 1.5rem;
+    }
+  }
+</style>

@@ -1,5 +1,8 @@
 ---
-import type { Author, AuthorsListBlock as AuthorsListBlockType } from '@astroload/cms/src/payload-types'
+import type {
+  Author,
+  AuthorsListBlock as AuthorsListBlockType,
+} from '@astroload/cms/src/payload-types'
 
 import { isPopulated } from '../../cms/types'
 import Img from '../Img.astro'
@@ -10,34 +13,78 @@ const { authors, emptyLabel } = Astro.props
 const items = (authors ?? []).filter((a): a is Author => isPopulated(a))
 ---
 
-{
-  items.length === 0 ? (
-    <p class="my-6 text-gray-500">{emptyLabel}</p>
-  ) : (
-    <ul class="my-6 flex flex-col gap-6">
-      {items.map((author) => {
-        const photo = isPopulated(author.photo) ? author.photo : null
-        return (
-          <li>
-            <a href={author.path} class="flex gap-4 group items-center">
-              {photo && (
-                <div class="w-20 shrink-0">
-                  <Img
-                    image={photo}
-                    size="sm"
-                    class="aspect-square w-full rounded-full object-cover"
-                    sizes="80px"
-                  />
-                </div>
-              )}
-              <div class="flex-1">
-                <h3 class="font-semibold group-hover:underline">{author.name}</h3>
-                {author.role && <p class="mt-1 text-gray-600">{author.role}</p>}
+{items.length === 0 ? (
+  <p class="empty">{emptyLabel}</p>
+) : (
+  <ul class="list">
+    {items.map((author) => {
+      const photo = isPopulated(author.photo) ? author.photo : null
+      return (
+        <li>
+          <a href={author.path} class="item">
+            {photo && (
+              <div class="photo">
+                <Img image={photo} size="sm" class="avatar" sizes="80px" />
               </div>
-            </a>
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
+            )}
+            <div class="text">
+              <h3 class="name">{author.name}</h3>
+              {author.role && <p class="role">{author.role}</p>}
+            </div>
+          </a>
+        </li>
+      )
+    })}
+  </ul>
+)}
+
+<style>
+  @layer components {
+    .empty {
+      margin-block: 1.5rem;
+      color: var(--color-text-subtle);
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-block: 1.5rem;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .photo {
+      flex-shrink: 0;
+      inline-size: 5rem;
+    }
+
+    .avatar {
+      inline-size: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .text {
+      flex: 1;
+    }
+
+    .name {
+      font-weight: 600;
+    }
+
+    .item:hover .name {
+      text-decoration: underline;
+    }
+
+    .role {
+      margin-top: 0.25rem;
+      color: var(--color-text-muted);
+    }
+  }
+</style>

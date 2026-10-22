@@ -15,26 +15,55 @@ const columns = (footer.columns ?? []).map((column) => ({
 }))
 ---
 
-<footer class="mx-auto max-w-3xl px-4 py-8 text-gray-600">
-  {
-    columns.length > 0 && (
-      <div class="grid gap-8 sm:grid-cols-3">
-        {columns.map((column) => (
-          <div>
-            <p class="font-semibold text-gray-900">{column.heading}</p>
-            {column.links.length > 0 && (
-              <ul>
-                {column.links.map((link) => (
-                  <li>
-                    <a href={link.href}>{link.label}</a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </div>
-    )
-  }
-  {footer.copyright && <p class="mt-8">{footer.copyright}</p>}
+<footer class="footer">
+  {columns.length > 0 && (
+    <div class="columns">
+      {columns.map((column) => (
+        <div>
+          <p class="heading">{column.heading}</p>
+          {column.links.length > 0 && (
+            <ul>
+              {column.links.map((link) => (
+                <li>
+                  <a href={link.href}>{link.label}</a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  )}
+  {footer.copyright && <p class="copyright">{footer.copyright}</p>}
 </footer>
+
+<style>
+  @layer components {
+    .footer {
+      max-width: var(--content-width);
+      margin-inline: auto;
+      padding: 2rem 1rem;
+      color: var(--color-text-muted);
+    }
+
+    .columns {
+      display: grid;
+      gap: 2rem;
+    }
+
+    @media (width >= 40rem) {
+      .columns {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .heading {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .copyright {
+      margin-top: 2rem;
+    }
+  }
+</style>

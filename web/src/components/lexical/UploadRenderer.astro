@@ -12,13 +12,20 @@ type Props = { node: UploadNode }
 const { node } = Astro.props
 ---
 
-{
-  node.relationTo === 'media' && isPopulated(node.value) ? (
-    <Img
-      image={node.value as unknown as Media}
-      size="md"
-      class="my-6 w-full"
-      sizes={CONTENT_COLUMN_SIZES}
-    />
-  ) : null
-}
+{node.relationTo === 'media' && isPopulated(node.value) ? (
+  <Img
+    image={node.value as unknown as Media}
+    size="md"
+    class="upload"
+    sizes={CONTENT_COLUMN_SIZES}
+  />
+) : null}
+
+<style>
+  @layer components {
+    .upload {
+      inline-size: 100%;
+      margin-block: 1.5rem;
+    }
+  }
+</style>

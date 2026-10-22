@@ -2,18 +2,21 @@
 import { getGlobalData } from '../cms/getGlobalData'
 import { pickLocale } from '../cms/pickLocale'
 import { stripLocalePath } from '../cms/types'
+import LayerOrder from '../components/LayerOrder.astro'
+import MainContent from '../components/MainContent.astro'
+import SkipLink from '../components/SkipLink.astro'
 import Layout from '../layout/Layout.astro'
 
-// SSR so Astro.url.pathname holds the originally requested URL and the
+// Rendered on demand so Astro.url.pathname holds the requested URL and the
 // locale can be picked from it.
 export const prerender = false
 
 const lang = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
 const homeHref = stripLocalePath(`/${lang}`)
 
-// When the CMS is unreachable the page renders the fallback branch below.
-// Without it the labels fetch would throw and Astro would show its default
-// error page. Keyed by string so a locale without an entry falls back to en.
+// When the labels fetch fails, the page renders the fallback branch below
+// instead of Astro's default error page. Keyed by string so a locale without
+// an entry falls back to en.
 const fallback: Record<string, { title: string; description: string; homePageButton: string }> = {
   de: {
     title: 'Seite nicht gefunden',
@@ -33,40 +36,70 @@ try {
   cmsLabels = labels.notFound
 } catch (error) {
   console.error('404 page renders its fallback, the labels fetch failed:', error)
-  cmsLabels = null
 }
 const { title, description, homePageButton } = cmsLabels ?? fallback[lang] ?? fallback.en
 ---
 
-{
-  cmsLabels ? (
-    <Layout title={title} description={description} lang={lang}>
-      <section class="flex flex-col items-center gap-5 py-24 text-center">
-        <h1 class="text-3xl font-semibold">{title}</h1>
-        <p>{description}</p>
-        <a
-          href={homeHref}
-          class="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-gray-800"
-        >
-          {homePageButton}
-        </a>
-      </section>
-    </Layout>
-  ) : (
-    <html lang={lang}>
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="robots" content="noindex" />
-        <title>{title}</title>
-      </head>
-      <body style="font-family: system-ui, sans-serif; text-align: center; padding: 6rem 1rem;">
+{cmsLabels ? (
+  <Layout title={title} description={description} lang={lang}>
+    <section class="message">
+      <h1>{title}</h1>
+      <p>{description}</p>
+      <a href={homeHref} class="button">
+        {homePageButton}
+      </a>
+    </section>
+  </Layout>
+) : (
+  <html lang={lang}>
+    <head>
+      <meta charset="utf-8" />
+      <LayerOrder />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="robots" content="noindex" />
+      <title>{title}</title>
+    </head>
+    <body class="fallback">
+      <SkipLink lang={lang} />
+      <MainContent>
         <h1>{title}</h1>
         <p>{description}</p>
         <p>
           <a href={homeHref}>{homePageButton}</a>
         </p>
-      </body>
-    </html>
-  )
-}
+      </MainContent>
+    </body>
+  </html>
+)}
+
+<style>
+  @layer components {
+    .message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      padding-block: 6rem;
+      text-align: center;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      background: var(--color-accent);
+      color: var(--color-on-accent);
+    }
+
+    .button:hover {
+      background: var(--color-accent-hover);
+    }
+
+    .fallback {
+      padding: 6rem 1rem;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+    }
+  }
+</style>
