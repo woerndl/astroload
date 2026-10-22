@@ -8,6 +8,11 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Fixed
+
+- `scripts/commit-msg.test.mjs` deletes its temporary folder after the run. Before, each `pnpm test` left one `commit-msg-*` folder in the system temp directory.
+  - **Upgrade notes:** Run `rg -n "mkdtemp" scripts web/test cms/src` and check that each hit deletes its folder with `rmSync(dir, { recursive: true, force: true })` in a `finally` block or an `after()` hook. Delete the old folders with `find "${TMPDIR:-/tmp}" -maxdepth 1 -name 'commit-msg-*' -type d -exec rm -rf {} +`.
+
 ## [0.9.0] - 2026-10-22
 
 ### Added

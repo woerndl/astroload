@@ -1,12 +1,13 @@
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import test from 'node:test'
+import test, { after } from 'node:test'
 import assert from 'node:assert/strict'
 
 const hook = new URL('../.githooks/commit-msg', import.meta.url).pathname
 const dir = mkdtempSync(join(tmpdir(), 'commit-msg-'))
+after(() => rmSync(dir, { recursive: true, force: true }))
 
 function accepts(message) {
   const file = join(dir, 'msg')
