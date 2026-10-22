@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreExportsUsedInFile": true,
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.mjs"]
+    },
+    "cms": {
+      "entry": ["src/scripts/*.ts", "src/payload-types.ts", "src/upsertByKey.ts"],
+      "ignoreIssues": {
+        "src/shared.ts": ["exports"]
+      }
+    },
+    "web": {
+      "entry": ["e2e/*.e2e.ts"]
+    }
+  }
+}
