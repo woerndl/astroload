@@ -4,11 +4,10 @@ import { getStaticPathItems } from '../../cms/getStaticPaths'
 import { escapedSiteURL, sitemapHeaders, urlEntry, urlsetDocument } from '../../cms/sitemap'
 import { DEFAULT_LOCALE, isLocale, LOCALE_URL_PREFIX, MULTIPLE_LOCALES } from '../../cms/types'
 
-// Rendered on demand in every build. A prerendered dynamic endpoint has no
-// 404 path in the Node adapter (only prerendered pages are exempt from
-// on-demand rendering), so /fr/sitemap.xml would answer 500 from the
-// renderer. Per request, the locale guard below turns that into a 404, and
-// the per-locale sitemaps track publishes without waiting for a redeploy.
+// Rendered on demand in every build, so the locale guard below returns the 404
+// for an unknown locale such as /fr/sitemap.xml, and the sitemaps reflect
+// publishes without a redeploy. Before @astrojs/node 11.1.2 a prerendered
+// dynamic endpoint answered it with a 500.
 export const prerender = false
 
 export const GET: APIRoute = async ({ params }) => {
@@ -24,10 +23,9 @@ export const GET: APIRoute = async ({ params }) => {
   for (const item of items) {
     const ownPath = item.paths[lang]
     if (!ownPath) continue
-    // hreflang alternates only exist with more than one locale, so a forced
-    // prefix alone stays in sync with the page head, which gates on the same
-    // flag. x-default matches the head too: it names the configured default
-    // locale and is omitted when that translation is missing.
+    // The page head emits hreflang alternates only with more than one locale,
+    // so this checks the same flag. x-default also matches the head: it names
+    // the default locale and is left out when that translation is missing.
     const alternateLinks: string[] = []
     if (MULTIPLE_LOCALES) {
       for (const [code, path] of Object.entries(item.paths)) {

@@ -4,9 +4,8 @@ import { readPublishedOrDraft } from './readPublishedOrDraft'
 
 export const contentAccess = {
   read: readPublishedOrDraft,
-  // Version documents are not status-filtered by `read`, so without this an
-  // api-key could read drafts through the versions endpoints. Lock them to
-  // panel users. The public site does not need version history.
+  // `read` does not filter version documents by status, so API keys would
+  // reach drafts through the versions endpoints.
   readVersions: isPanelUser,
   create: isAdminOrEditor,
   update: isAdminOrEditor,

@@ -8,11 +8,10 @@ import {
 } from '../hooks/triggerDeploy'
 import { CollectionGroups } from '../shared'
 
-// Redirects has no draft/published state, so contentAccess does not apply.
-// Read-only API keys need read so the website can apply redirects.
-// Astro reads the table when its config is evaluated, so any save needs a
-// new deploy (or a dev restart) to take effect. The hooks below fire the
-// deploy webhook on every change.
+// Redirects have no draft state, so contentAccess does not apply. Read-only
+// API keys need read access so the website can apply redirects. Astro reads
+// them when it evaluates its config, so a change takes effect with the next
+// deploy (or dev restart), which the hooks below trigger.
 export const Redirects: RedirectsCollectionConfig = {
   slug: 'redirects',
   admin: {
@@ -29,6 +28,6 @@ export const Redirects: RedirectsCollectionConfig = {
     afterDelete: [triggerDeployAlwaysAfterDelete],
   },
   redirects: {},
-  // Source, destination, type, reason are added by the pages-plugin.
+  // The pages plugin adds sourcePath, destinationPath, type, and reason.
   fields: [],
 }

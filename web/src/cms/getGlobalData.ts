@@ -9,9 +9,8 @@ export type { GlobalData }
 
 async function fetchGlobalData(locale: Locale, preview: boolean): Promise<GlobalData> {
   const query = new URLSearchParams({ locale, preview: String(preview) })
-  // The global-data endpoint rejects preview reads from the read-only key, so
-  // a preview render must ask with the preview-scoped SDK. The SDK throws on
-  // any non-ok response, so there is no status branch here.
+  // The global-data endpoint rejects preview reads with the read-only key. The
+  // SDK throws on a non-ok response, so there is no status check here.
   const sdk = preview ? previewPayloadSDK : payloadSDK
   const response = await sdk.request({
     method: 'GET',
@@ -35,12 +34,12 @@ export function getGlobalData({
   preview: boolean
   locals?: App.Locals
 }): Promise<GlobalData> {
-  // Without a request scope (build-time prerender, endpoints), fetch directly.
-  // The SDK LRU already dedupes repeat calls in production.
+  // Prerenders and endpoints have no request locals. The SDK's LRU cache
+  // covers their repeat calls in production.
   if (!locals) return fetchGlobalData(locale, preview)
 
-  // Memoize the in-flight promise on per-request Astro.locals so one render that
-  // needs globals in several places makes a single CMS round-trip.
+  // Keep the pending promise on Astro.locals so a render that needs globals in
+  // several places makes one CMS request.
   const memo = (locals.globalData ??= new Map<string, Promise<GlobalData>>())
 
   const key = `${locale}:${preview}`

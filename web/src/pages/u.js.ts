@@ -6,16 +6,15 @@ export const prerender = false
 
 const TRACKER_URL = `${UMAMI_HOST_URL}/script.js`
 
-// Refetch the tracker at most this often. Between fetches every request is
-// served from memory. On a failed refetch the cached copy keeps serving, so an
-// upstream outage costs nothing once one fetch has succeeded.
+// Refetch the tracker at most this often and serve it from memory in between.
+// On a failed refetch the cached copy keeps serving.
 const TRACKER_TTL_MS = 15 * 60 * 1000
 let cachedScript = ''
 let fetchedAt = 0
 
-// Serve Umami's tracker from this origin so a content blocker keyed on the
-// Umami hosts cannot strip it. Collect requests are routed through the
-// /api/send proxy by data-host-url="/" on the tag (see Umami.astro).
+// Serves Umami's tracker from this origin so content blockers that match the
+// Umami hosts do not block it. The tag's data-host-url="/" sends events to the
+// /api/send proxy (see Umami.astro).
 export const GET: APIRoute = async () => {
   if (!UMAMI_WEBSITE_ID) return script('')
 
@@ -24,8 +23,8 @@ export const GET: APIRoute = async () => {
       const upstream = await fetch(TRACKER_URL)
       if (upstream.ok) cachedScript = await upstream.text()
     } catch {
-      // A failed fetch must never break the page: fall through to the cached
-      // copy, or to an empty script when nothing has been fetched yet.
+      // A failed fetch must not break the page, so serve the cached copy, or an
+      // empty script when nothing has been fetched yet.
     }
     fetchedAt = Date.now()
   }

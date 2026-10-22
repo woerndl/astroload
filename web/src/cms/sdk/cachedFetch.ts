@@ -9,7 +9,7 @@ export const cacheHeader = (useCache: boolean): Record<string, string> => ({
 })
 
 // Hash the auth header into the key so rotating the API key invalidates old
-// entries and the raw secret never appears in cache keys or diagnostics.
+// entries and the raw secret does not appear in cache keys or diagnostics.
 const hashAuth = (value: string): string =>
   value ? createHash('sha256').update(value).digest('hex').slice(0, 16) : ''
 
@@ -19,12 +19,13 @@ export function createCachedFetch(baseFetch: typeof fetch): typeof fetch {
       typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
     const method = init?.method ?? 'GET'
 
-    // The marker is SDK-internal routing, not part of the CMS request.
+    // The marker only tells this wrapper whether to cache, so the CMS does not
+    // receive it.
     const headers = new Headers(init?.headers)
     const useCache = headers.get(USE_CACHE_HEADER) === 'true'
     headers.delete(USE_CACHE_HEADER)
-    // A stalled CMS would otherwise hold a build until the host kills it.
-    // staleOnError handles the resulting rejection where a fallback exists.
+    // Without a timeout a stalled CMS holds a build until the host kills it.
+    // staleOnError handles the rejection where a fallback exists.
     const cleanInit = { ...init, headers, signal: init?.signal ?? AbortSignal.timeout(15_000) }
 
     // Disabled in dev so CMS edits propagate without an Astro restart.

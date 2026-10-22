@@ -4,9 +4,9 @@ import { APIError } from 'payload'
 
 const MIN_ELAPSED_MS = 1_500
 
-// Bounds on stored submission data, checked before any database lookup. The
-// entry count includes the honeypot and timestamp entries. Raise either
-// constant when a project's forms need more.
+// Limits on submission data, checked before any database lookup. The entry
+// count includes the honeypot and timestamp entries. Raise either constant if
+// a project's forms need more.
 const MAX_ENTRIES = 100
 const MAX_VALUE_LENGTH = 10_000
 

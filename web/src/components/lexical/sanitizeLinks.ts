@@ -1,13 +1,12 @@
 import type { LexicalNode } from '@jhb.software/astro-payload-richtext-lexical'
 import { ALLOWED_LINK_SCHEMES } from '@astroload/cms/src/shared'
 
-// Dangerous: absolute URLs with a disallowed scheme (javascript:, data:),
-// protocol-relative `//host` (off-origin), and anything holding an ASCII
-// control character, which browsers strip while resolving a URL, so
-// '/\t/evil.com' would navigate off-origin as '//evil.com', and anything
-// holding a backslash, which browsers treat as a slash in http(s) URLs, so
-// '/\evil.example' would navigate off-origin as '//evil.example'.
-// Relative/schemeless are left to the renderer.
+// Dangerous: an absolute URL with a disallowed scheme (javascript:, data:), a
+// protocol-relative `//host`, an ASCII control character, or a backslash.
+// Browsers strip control characters and read a backslash as a slash in
+// http(s) URLs, so '/\t/evil.com' and '/\evil.example' resolve as
+// '//evil.com' and '//evil.example'. Relative and schemeless values are left
+// to the renderer.
 function isDangerousHref(url: string): boolean {
   const trimmed = url.trim()
   // eslint-disable-next-line no-control-regex
@@ -28,17 +27,21 @@ type LinkFields = {
   doc?: { value?: unknown } | null
 }
 
-// LinkComponent throws during SSR rendering on any link it can't resolve to an
-// href. Mirror its accept conditions: true for anything it would reject.
+// LinkComponent throws during rendering on any link it cannot resolve to an
+// href. This mirrors its checks and returns true for anything it would reject.
 function isUnrenderableLink(fields: LinkFields | undefined): boolean {
   if (!fields) return true
   if (fields.linkType === 'internal') {
     const value = fields.doc?.value
-    return !(value && typeof value === 'object' && typeof (value as { path?: unknown }).path === 'string')
+    return !(
+      value &&
+      typeof value === 'object' &&
+      typeof (value as { path?: unknown }).path === 'string'
+    )
   }
   if (fields.linkType !== 'custom') return true
-  // Check the raw value, not a trimmed copy: the renderer does not trim, so
-  // ' /blog' fails its startsWith('/') and throws in its new URL().
+  // The renderer does not trim, so ' /blog' fails its startsWith('/') and
+  // throws in its new URL(). Check the raw value for that reason.
   const url = typeof fields.url === 'string' ? fields.url : ''
   if (!url) return true
   if (isDangerousHref(url)) return true
@@ -51,11 +54,11 @@ function isUnrenderableLink(fields: LinkFields | undefined): boolean {
   }
 }
 
-// Sink-side guard for links that bypass the CMS validator
-// (cms/src/lexical/editor.ts): draft autosave, seeds, imports, DB restores, or a
-// richtext field wired without lexicalEditorWithSafeLinks. Unwrap unrenderable
-// links to plain text, and drop a malformed node list or null entry, rather than
-// letting the renderer throw on them.
+// Links can bypass the CMS validator (cms/src/lexical/editor.ts) through draft
+// autosave, seeds, imports, DB restores, or a richtext field without
+// lexicalEditorWithSafeLinks. This unwraps unrenderable links to their plain
+// text and drops malformed node lists and null entries, so the renderer does
+// not throw on them.
 export function sanitizeLexicalLinks(nodes: LexicalNode[]): LexicalNode[] {
   if (!Array.isArray(nodes)) return []
   return nodes.flatMap((node) => {

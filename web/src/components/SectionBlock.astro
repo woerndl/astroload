@@ -10,10 +10,9 @@ import RichTextBlock from './blocks/RichTextBlock.astro'
 
 type Section = NonNullable<Page['sections']>[number]
 
-// The CMS section-block list and this map must stay in step: `satisfies`
-// fails the build until every block type in the union has a renderer. The
-// template below dispatches through the destructured names so each block
-// keeps its own typed props.
+// `satisfies` fails the build until every block type in the CMS section union
+// has a renderer. The template uses the destructured names so each block keeps
+// its own typed props.
 const renderers = {
   richText: RichTextBlock,
   image: ImageBlock,
@@ -22,7 +21,13 @@ const renderers = {
   authorsList: AuthorsListBlock,
 } satisfies Record<Section['blockType'], unknown>
 
-const { richText: RichText, image: Image, form: Form, postsList: PostsList, authorsList: AuthorsList } = renderers
+const {
+  richText: RichText,
+  image: Image,
+  form: Form,
+  postsList: PostsList,
+  authorsList: AuthorsList,
+} = renderers
 
 interface Props {
   block: Section
@@ -36,5 +41,9 @@ const { block, lang, labels } = Astro.props
 {block.blockType === 'richText' && <RichText {...block} />}
 {block.blockType === 'image' && <Image {...block} />}
 {block.blockType === 'form' && <Form {...block} labels={labels.form} />}
-{block.blockType === 'postsList' && <PostsList {...block} lang={lang} emptyLabel={labels.lists.noPosts} />}
-{block.blockType === 'authorsList' && <AuthorsList {...block} emptyLabel={labels.lists.noAuthors} />}
+{block.blockType === 'postsList' && (
+  <PostsList {...block} lang={lang} emptyLabel={labels.lists.noPosts} />
+)}
+{block.blockType === 'authorsList' && (
+  <AuthorsList {...block} emptyLabel={labels.lists.noAuthors} />
+)}

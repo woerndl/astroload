@@ -6,29 +6,16 @@ import type { Config } from '@astroload/cms/src/payload-types'
 import fallbackRedirects from './redirects.fallback.json'
 import { stripLocalePath } from './types'
 
-// Runs while Astro config is evaluated, before Vite loads .env for app code,
-// so astro:env is not available and process.env only sees what the shell
-// exported. dotenv/config fills the gap for a plain `pnpm dev` or `pnpm build`.
+// Runs while Astro config is evaluated, before Vite loads .env, so astro:env
+// is not available. dotenv/config loads .env into process.env for a plain
+// `pnpm dev` or `pnpm build`.
 //
-// Strictness is keyed on REDIRECTS_STRICT, set by the `build` script, not on
-// NODE_ENV: astro check forces NODE_ENV=production while resolving the config
-// and must not abort on a temporary CMS outage. Failure modes:
-//   - REDIRECTS_STRICT=1 (the deploy build): a failed fetch is retried with
-//     backoff to ride out a CMS that is briefly down during a coordinated
-//     deploy. If it is still unreachable after the retries, the build fails
-//     rather than shipping a redirect-less site over the last good deploy
-//     that is already serving. A missing CMS_URL/PAYLOAD_READ_KEY throws
-//     the same way. The CMS is trusted when it answers, so an empty collection
-//     produces an empty table.
-//   - otherwise (dev, astro check, plain astro build): one attempt, then the
-//     committed fallback so the run still ships. Editors lose redirect changes
-//     until the next strict build.
-//
-// redirects.fallback.json is the committed redirect table for non-strict runs
-// (offline dev and CI). It ships empty. An operator who would rather keep a
-// deploy alive through a CMS outage than fail it can return `fallback` instead
-// of throwing in the strict branch below, after populating that file by
-// exporting the redirects collection into it.
+// The `build` script sets REDIRECTS_STRICT=1. NODE_ENV does not work as the
+// switch because astro check sets it to production and must not abort on a
+// CMS outage. A strict build retries with backoff to cover a CMS restart
+// during a coordinated deploy, then fails so the last good deploy keeps
+// serving. Other runs make one attempt and then use redirects.fallback.json,
+// which ships empty. See docs/astroload/maintenance.md.
 const STRICT_MAX_ATTEMPTS = 6
 const fallback = fallbackRedirects as Record<string, RedirectConfig>
 
@@ -60,15 +47,13 @@ export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
   let lastError: unknown
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      // Redirects key off sourcePath/destinationPath, not a localized `path`,
-      // so this read skips findPublicDocs. The paths still need the locale
-      // strip: a slug-change redirect is recorded against the stored
-      // `/${locale}/...` path, which a single-locale site never serves.
-      // stripLocalePath is a multi-locale no-op and idempotent on paths an
-      // editor entered without a prefix.
-      // This SDK instance bypasses cachedFetch and its timeout, so the signal
-      // rides along here. Without it a connection that stalls after connecting
-      // holds this attempt forever and the retry loop never runs.
+      // Redirects have no localized `path`, so this read skips findPublicDocs.
+      // A slug change records its redirect against the stored `/${locale}/...`
+      // path, which a single-locale site does not serve, so both paths get the
+      // locale strip. stripLocalePath leaves unprefixed paths unchanged.
+      // This SDK instance bypasses cachedFetch and its timeout. Without the
+      // signal a stalled connection holds this attempt and the retries do not
+      // start.
       const result = await sdk.find(
         {
           collection: 'redirects',
@@ -97,11 +82,6 @@ export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
     }
   }
 
-  // Out of attempts. A coordinated cms+web deploy can leave the CMS briefly
-  // unreachable while it restarts, and the retries above cover that gap. A
-  // longer outage fails the strict build, which leaves the last good deploy
-  // serving rather than replacing it with a redirect-less build. Non-strict
-  // runs fall back to the committed table so dev and CI still ship.
   if (strict) {
     throw new Error(
       '[getRedirects] CMS unreachable after retries during a strict build; refusing to ' +

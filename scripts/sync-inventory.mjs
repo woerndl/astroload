@@ -31,10 +31,12 @@ try {
 if (!opts.upstream || !opts.to) fail(usage)
 if (opts.format !== 'md' && opts.format !== 'json') fail(`unknown --format '${opts.format}'`)
 
-// ponytail: quotePath=off keeps non-ASCII paths unescaped. Paths containing
-// tabs, quotes, or newlines stay unsupported until this parses -z output
+// quotePath=off keeps non-ASCII paths unescaped. Paths with tabs, quotes or
+// newlines are not supported until this parses -z output.
 const git = (cwd, ...args) =>
-  execFileSync('git', ['-C', cwd, '-c', 'core.quotePath=off', ...args], { encoding: 'utf8' }).trimEnd()
+  execFileSync('git', ['-C', cwd, '-c', 'core.quotePath=off', ...args], {
+    encoding: 'utf8',
+  }).trimEnd()
 const tryGit = (cwd, ...args) => {
   try {
     return git(cwd, ...args)
@@ -47,14 +49,16 @@ const up = opts.upstream
 if (tryGit(up, 'rev-parse', '--is-inside-work-tree') === null)
   fail(`--upstream '${up}' is not a git checkout`)
 
-if (!existsSync(opts.marker))
-  fail(`no ${opts.marker} here. Run from the derived project's root`)
-const markerSha = /^upstream_commit:\s*([0-9a-f]{7,40})\s*$/m.exec(readFileSync(opts.marker, 'utf8'))?.[1]
+if (!existsSync(opts.marker)) fail(`no ${opts.marker} here. Run from the derived project's root`)
+const markerSha = /^upstream_commit:\s*([0-9a-f]{7,40})\s*$/m.exec(
+  readFileSync(opts.marker, 'utf8'),
+)?.[1]
 if (!markerSha) fail(`${opts.marker} has no usable 'upstream_commit: <sha>' line`)
-// resolve to the full sha so the JSON `base` is always full-length
 const base = tryGit(up, 'rev-parse', '--verify', '--quiet', `${markerSha}^{commit}`)
 if (base === null)
-  fail(`upstream_commit ${markerSha} not found in ${up}. Fetch the template clone or check the --upstream path`)
+  fail(
+    `upstream_commit ${markerSha} not found in ${up}. Fetch the template clone or check the --upstream path`,
+  )
 const target = tryGit(up, 'rev-parse', '--verify', '--quiet', `${opts.to}^{commit}`)
 if (target === null) fail(`--to '${opts.to}' not found in ${up}`)
 if (tryGit(up, 'merge-base', '--is-ancestor', base, target) === null)
@@ -79,29 +83,50 @@ const commits = git(up, 'log', '--reverse', '--format=%H\x1f%s', `${base}..${tar
     return {
       sha,
       subject,
-      // ponytail: one git call per commit and 2-3 per file below. Fine for
-      // tens of commits, switch to `git cat-file --batch-check` if it gets slow
-      files: parseNameStatus(git(up, 'diff-tree', '-r', '-M', '--no-commit-id', '--name-status', sha)),
+      // One git call per commit and two or three per file below. This is fast
+      // enough for tens of commits. Switch to `git cat-file --batch-check` if it
+      // gets slow.
+      files: parseNameStatus(
+        git(up, 'diff-tree', '-r', '-M', '--no-commit-id', '--name-status', sha),
+      ),
     }
   })
 
 const blob = (rev, path) => tryGit(up, 'rev-parse', '--verify', '--quiet', `${rev}:${path}`)
-const UPSTREAM = { A: 'added', M: 'modified', D: 'deleted', R: 'renamed', C: 'copied', T: 'retyped' }
+const UPSTREAM = {
+  A: 'added',
+  M: 'modified',
+  D: 'deleted',
+  R: 'renamed',
+  C: 'copied',
+  T: 'retyped',
+}
 
 const files = parseNameStatus(git(up, 'diff', '--name-status', '-M', base, target)).map((f) => {
-  // hash only regular files. A directory or symlink at the path would make
-  // hash-object throw, so anything else reports as diverged
+  // Hash regular files only. hash-object throws on a directory and follows a
+  // symlink, so any other file type reports as diverged.
   const stat = lstatSync(f.path, { throwIfNoEntry: false })
   const local = stat?.isFile() ? git('.', 'hash-object', '--', f.path) : null
   const downstream =
-    stat && !stat.isFile() ? 'diverged'
-    : local === null && f.status === 'D' ? 'matches target'
-    : local === null && f.status === 'R' && existsSync(f.from) ? `still at ${f.from}`
-    : local === null ? 'missing'
-    : local === blob(target, f.path) ? 'matches target'
-    : local === blob(base, f.from ?? f.path) ? 'matches base'
-    : 'diverged'
-  return { path: f.path, ...(f.from && { from: f.from }), upstream: UPSTREAM[f.status] ?? f.status, downstream }
+    stat && !stat.isFile()
+      ? 'diverged'
+      : local === null && f.status === 'D'
+        ? 'matches target'
+        : local === null && f.status === 'R' && existsSync(f.from)
+          ? `still at ${f.from}`
+          : local === null
+            ? 'missing'
+            : local === blob(target, f.path)
+              ? 'matches target'
+              : local === blob(base, f.from ?? f.path)
+                ? 'matches base'
+                : 'diverged'
+  return {
+    path: f.path,
+    ...(f.from && { from: f.from }),
+    upstream: UPSTREAM[f.status] ?? f.status,
+    downstream,
+  }
 })
 
 if (opts.format === 'json') {

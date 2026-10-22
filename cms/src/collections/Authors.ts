@@ -1,10 +1,7 @@
 import type { PageCollectionConfig } from '@jhb.software/payload-pages-plugin'
 
 import { contentAccess } from '../access/contentAccess'
-import {
-  triggerDeployAfterChange,
-  triggerDeployAfterDelete,
-} from '../hooks/triggerDeploy'
+import { triggerDeployAfterChange, triggerDeployAfterDelete } from '../hooks/triggerDeploy'
 import { draftVersions, livePreviewBreakpoints } from '../shared'
 
 export const Authors: PageCollectionConfig = {
@@ -27,8 +24,8 @@ export const Authors: PageCollectionConfig = {
       sharedDocument: true,
     },
   },
-  // bio is left out of defaultPopulate so resolving authors on a post
-  // list does not pull a localized rich-text body.
+  // bio is left out so a post list that populates authors does not load a
+  // localized rich-text body per author.
   defaultPopulate: {
     name: true,
     path: true,

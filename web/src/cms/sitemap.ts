@@ -13,13 +13,14 @@ export function escapedSiteURL(localePath: string): string {
   return escapeXml(absoluteSiteURL(localePath))
 }
 
-// Build one `<url>` entry. `alternateLinks` are pre-rendered `<xhtml:link>`
-// lines (already indented), appended verbatim before the closing tag. The
-// single-locale sitemap passes none.
+// `alternateLinks` are indented `<xhtml:link>` lines, appended as they are
+// before the closing tag. The single-locale sitemap passes none.
 export function urlEntry(loc: string, lastmod: string, alternateLinks: string[] = []): string {
   const head = `  <url>\n    <loc>${escapedSiteURL(loc)}</loc>\n    <lastmod>${escapeXml(lastmod)}</lastmod>`
   const tail = '\n  </url>'
-  return alternateLinks.length === 0 ? `${head}${tail}` : `${head}\n${alternateLinks.join('\n')}${tail}`
+  return alternateLinks.length === 0
+    ? `${head}${tail}`
+    : `${head}\n${alternateLinks.join('\n')}${tail}`
 }
 
 // Wrap `<url>` entries in a `<urlset>` document. `xhtml` adds the xhtml
@@ -36,9 +37,9 @@ export function urlsetDocument(entries: string[], options: { xhtml?: boolean } =
   )
 }
 
-// Live headers for the on-demand per-locale sitemap. The sitemap index and
-// the single-locale sitemap are prerendered, so there these apply only in
-// dev and the static file's headers come from the host.
+// Headers for the on-demand per-locale sitemap. The sitemap index and the
+// single-locale sitemap are prerendered, so these headers reach them only in
+// dev, and the host sets the headers of the static files.
 export const sitemapHeaders = {
   'Content-Type': 'application/xml; charset=utf-8',
   'Cache-Control': 'public, max-age=300',

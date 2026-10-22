@@ -10,9 +10,8 @@ interface Props {
   inline?: boolean
 }
 
-// The lexical editor's BlocksFeature allows only these block types. Adding one
-// there means adding it here too: `satisfies` fails the build until every type
-// in the union has a renderer, so the map can't silently miss a union entry.
+// Keep in step with the BlocksFeature blocks in the CMS editor config.
+// `satisfies` fails the build until every type in the union has a renderer.
 type LexicalBlockType = 'image'
 
 const renderers = {

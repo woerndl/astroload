@@ -1,7 +1,6 @@
 import type { PayloadRequest } from 'payload'
 
-// Counts users so the response depends on a database round trip. The
-// endpoint answers 503 when the CMS loses its database connection.
+// Counts users so the check fails with 503 when the database is unreachable.
 export async function getHealth(req: PayloadRequest): Promise<Response> {
   try {
     await req.payload.count({ collection: 'users', overrideAccess: true })

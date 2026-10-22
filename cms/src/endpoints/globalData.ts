@@ -41,14 +41,13 @@ export async function getGlobalData(req: PayloadRequest): Promise<Response> {
       req.payload.findGlobal({ slug: 'site-settings', ...baseOptions }),
     ])
 
-    // Header and Footer carry populated nav-link paths. Published responses
-    // serve every populated path un-prefixed in single-locale mode. Preview
-    // keeps the prefix so the admin live-preview routes still resolve.
+    // Header and Footer contain populated nav link paths. Published responses
+    // drop the locale prefix when the site serves un-prefixed URLs. Preview
+    // keeps it so the live preview routes resolve.
     const body: GlobalData = preview
       ? { footer, header, labels, siteSettings }
       : stripLocalePathsDeep({ footer, header, labels, siteSettings })
-    // private: the response requires an API key, so a shared cache must not
-    // serve it across clients.
+    // The response requires an API key, so shared caches must not store it.
     const cacheControl = preview ? 'no-cache' : `private, max-age=${PUBLIC_MAX_AGE_SECONDS}`
 
     return new Response(JSON.stringify(body), {

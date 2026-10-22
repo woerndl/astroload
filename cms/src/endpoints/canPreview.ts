@@ -1,8 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
-// A preview request reads drafts, so only callers allowed to see drafts may make
-// one: panel users and the preview API key. A read-only key requesting preview
-// is rejected, so it does not reach draft content through these endpoints.
+// Preview requests read drafts, so only panel users and the preview API key
+// may make them.
 export function canPreview(req: PayloadRequest): boolean {
   const { user } = req
   if (!user) return false

@@ -6,7 +6,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const SCRIPT = join(import.meta.dirname, 'sync-inventory.mjs')
-// the non-ASCII filename checks that quotePath=off keeps paths unescaped
 
 const env = {
   ...process.env,
@@ -17,8 +16,10 @@ const env = {
   GIT_COMMITTER_NAME: 't',
   GIT_COMMITTER_EMAIL: 't@t',
 }
-const git = (cwd, ...args) => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', env }).trimEnd()
-const run = (cwd, args) => execFileSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8', cwd, env })
+const git = (cwd, ...args) =>
+  execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', env }).trimEnd()
+const run = (cwd, args) =>
+  execFileSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8', cwd, env })
 
 let dir, up, down, baseSha
 before(() => {
@@ -33,6 +34,7 @@ before(() => {
   writeFileSync(join(up, 'mod-gone-local.txt'), 'base\n')
   writeFileSync(join(up, 'del-upstream.txt'), 'base\n')
   writeFileSync(join(up, 'del-ported.txt'), 'base\n')
+  // the non-ASCII filename checks that quotePath=off keeps paths unescaped
   writeFileSync(join(up, 'übergabe.txt'), 'base\n')
   writeFileSync(join(up, 'becomes-dir.txt'), 'base\n')
   writeFileSync(join(up, 'old-name.txt'), 'stable content\n')
@@ -42,10 +44,16 @@ before(() => {
 
   // independent downstream repo built from the base files, no shared history
   const gitDir = join(up, '.git')
-  cpSync(up, down, { recursive: true, filter: (src) => src !== gitDir && !src.startsWith(gitDir + '/') })
+  cpSync(up, down, {
+    recursive: true,
+    filter: (src) => src !== gitDir && !src.startsWith(gitDir + '/'),
+  })
   git(down, 'init', '-q')
   // abbreviated, the script must resolve it to the full sha
-  writeFileSync(join(down, '.astroload.yml'), `upstream_commit: ${baseSha.slice(0, 12)}\nupstream_release: v-base\n`)
+  writeFileSync(
+    join(down, '.astroload.yml'),
+    `upstream_commit: ${baseSha.slice(0, 12)}\nupstream_release: v-base\n`,
+  )
 
   writeFileSync(join(up, 'mod-clean.txt'), 'target\n')
   writeFileSync(join(up, 'mod-diverged.txt'), 'target\n')

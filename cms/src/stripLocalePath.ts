@@ -1,10 +1,10 @@
 import type { LocalePaths } from './shared'
 import { DEFAULT_LOCALE, LOCALE_URL_PREFIX } from './site-config'
 
-// The pages-plugin always stores `path` as `/${locale}/...` while localization
-// is active. Single-locale projects serve un-prefixed URLs, so this rewrites a
-// stored path to its public form. It is a no-op in multi-locale mode and
-// idempotent on an already-public path, so callers can apply it unconditionally.
+// The pages plugin stores `path` as `/${locale}/...` while localization is on.
+// When LOCALE_URL_PREFIX is off the site serves un-prefixed URLs, so this
+// rewrites a stored path to its public form. It returns the path unchanged
+// when LOCALE_URL_PREFIX is on or the path is already public.
 export function stripLocalePath(path: string): string {
   if (LOCALE_URL_PREFIX) return path
   const prefix = `/${DEFAULT_LOCALE}`
@@ -12,19 +12,16 @@ export function stripLocalePath(path: string): string {
   return path.startsWith(`${prefix}/`) ? path.slice(prefix.length) : path
 }
 
-// Walk a populated document and rewrite every string `path` property to its
-// public form, covering nav links, breadcrumbs, list-block items, and rich-text
-// internal links. All of these carry the prefixed `path` the plugin emits.
-// Returns the value untouched in multi-locale mode. Non-plain objects (Date and
-// the like) pass through unchanged so serialization is unaffected. Input is
-// assumed to be an acyclic JSON-serializable tree (it is always a Payload
-// response that is about to be JSON-stringified), so the walk has no cycle guard.
+// Rewrites every string `path` property in a populated document to its public
+// form: nav links, breadcrumbs, list block items, and rich-text internal links.
+// Non-plain objects such as Date pass through. The input is a Payload response
+// about to be serialized to JSON, so it has no cycles and the walk has no
+// cycle guard.
 export function stripLocalePathsDeep<T>(value: T): T {
   if (LOCALE_URL_PREFIX) return value
   return walk(value) as T
 }
 
-// Apply stripLocalePath across a per-locale path map.
 export function toPublicPaths(paths: LocalePaths): LocalePaths {
   if (LOCALE_URL_PREFIX) return paths
   const out: LocalePaths = {}

@@ -1,13 +1,12 @@
 import type { Access, AccessArgs } from 'payload'
 
-// Read-only API keys are the public site identity and do not receive drafts.
-// Use only on collections with versions + drafts. The _status filter has no
-// effect on collections without a draft state.
+// Use only on collections with drafts enabled, because the API key filter
+// queries the _status field.
 export const readPublishedOrDraft: Access = ({ req: { user } }: AccessArgs) => {
   if (!user) return false
 
-  // Every API key except the preview key is filtered to published content.
-  // A later key type therefore does not receive drafts by omission.
+  // Every key type except preview is filtered, so a key type added later
+  // gets published content only.
   if (user.collection === 'api-keys' && user.type !== 'preview') {
     return { _status: { equals: 'published' } }
   }

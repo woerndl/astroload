@@ -9,16 +9,13 @@ import {
 } from '../hooks/triggerDeploy'
 import { CollectionGroups } from '../shared'
 
-// Convert generated images to WebP. og stays JPEG because some social-card
-// scrapers still do not render a WebP og:image.
+// og stays JPEG because some social card scrapers do not render a WebP og:image.
 const toWebp = { format: 'webp' as const, options: { quality: 80 } }
 const ogJpeg = { format: 'jpeg' as const, options: { quality: 82 } }
 
-// Payload resolves a relative staticDir against the process working directory,
-// so a server started from the repo root would read and write a different
-// directory than one started from cms/. Pin the path to this package.
-// MEDIA_DIR overrides it where the package path is not the right place for
-// persistent files, such as a container with a volume mount.
+// Payload resolves a relative staticDir against the working directory, so the
+// path is pinned to this package. MEDIA_DIR overrides it, for example to point
+// at a container volume.
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 const mediaDir = process.env.MEDIA_DIR ?? path.resolve(dirname, '../../media')
 
@@ -63,8 +60,8 @@ export const Media: CollectionConfig = {
       { name: 'sm', width: 768, formatOptions: toWebp },
       { name: 'md', width: 1024, formatOptions: toWebp },
       { name: 'lg', width: 1920, formatOptions: toWebp },
-      // withoutEnlargement keeps the og variant for sources smaller than the
-      // target, so og:image does not fall through to the WebP main file.
+      // withoutEnlargement still generates og for a source smaller than the
+      // target, so og:image does not fall back to the WebP original.
       {
         name: 'og',
         width: 1200,
@@ -74,15 +71,13 @@ export const Media: CollectionConfig = {
         withoutEnlargement: true,
       },
     ],
-    // Applies to Payload's file route, which serves media from local disk or,
-    // with S3 configured, proxies it from the bucket.
-    // The web app appends ?v=updatedAt to every media url, so a normal update
-    // moves readers to a new URL and the response can be cached for 30 days.
-    // max-age stays finite because a variant regeneration can rewrite the
-    // bytes behind an unchanged URL without touching updatedAt.
-    // Only the optional direct mode (disablePayloadAccessControl, see
-    // docs/astroload/deployment.md) bypasses this route, and there the
-    // bucket or CDN sets the cache headers.
+    // Applies to Payload's file route, which serves local files or proxies
+    // them from S3. The web app adds ?v=updatedAt to media URLs, so an update
+    // changes the URL and the file can be cached for 30 days. max-age stays
+    // finite because regenerating variants can change the bytes without
+    // touching updatedAt. The direct S3 mode (disablePayloadAccessControl, see
+    // docs/astroload/deployment.md) skips this route, and there the bucket or
+    // CDN sets the cache headers.
     modifyResponseHeaders: ({ headers }) => {
       headers.set('Cache-Control', 'public, max-age=2592000')
     },

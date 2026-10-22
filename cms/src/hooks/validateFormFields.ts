@@ -2,16 +2,14 @@ import type { CollectionBeforeValidateHook } from 'payload'
 
 import { APIError } from 'payload'
 
-// Field names the submission pipeline claims for itself: `fax` is the
-// honeypot input every rendered form carries, `_rendered_at` is the client
-// time stamp. A form field with either name would collide in the posted
-// FormData, and spamGuard would then read visitor input as spam signals.
+// `fax` is the honeypot input on every rendered form, and `_rendered_at` is the
+// client timestamp. A form field with either name would collide in the posted
+// FormData, and spamGuard would read visitor input as spam signals.
 const RESERVED_FIELD_NAMES = ['fax', '_rendered_at']
 
-// Authoring-time guard on the Forms collection, so an editor gets a clear
-// message on save instead of a form whose submissions all reject in
-// production. validateSubmission relies on the uniqueness rule: it treats a
-// duplicate field name in a submission as forged.
+// Runs when an editor saves a form, so a bad field name fails there instead of
+// rejecting every submission later. validateSubmission relies on unique names:
+// it treats a duplicate field name in a submission as forged.
 export const validateFormFields: CollectionBeforeValidateHook = ({ data }) => {
   const fields = (data?.fields ?? []) as { name?: unknown }[]
   const seen = new Set<string>()

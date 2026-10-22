@@ -1,8 +1,6 @@
-// Last good value per on-demand SSR route, so a route can keep serving when
-// its CMS read fails. A plain Map is enough while keys are fixed route
-// labels, because its size stays the number of opt-in routes. Key it by
-// something high-cardinality (per path, per user) and it must become an
-// LRUCache (see cache.ts) to bound the memory.
+// Last good value per on-demand route, so a route keeps serving when its CMS
+// read fails. A plain Map is enough while the keys are fixed route labels.
+// Keys per path or per user need an LRUCache (see cache.ts) to bound memory.
 const lastGood = new Map<string, unknown>()
 
 export interface StaleResult<T> {
@@ -10,12 +8,9 @@ export interface StaleResult<T> {
   stale: boolean
 }
 
-// Fetch fresh on every call. If the fetch throws (the CMS read fails for any
-// reason), serve the last good value for this key instead, flagged stale. On a
-// cold start with no prior value the error propagates, because there is nothing
-// to fall back to. Concurrent calls are not deduped, so "last good" is whichever
-// fetch completes last. That is fine here because every fetch is a live read of
-// the same data.
+// When the fetch throws, serve the last good value for this key, flagged stale.
+// With no prior value the error propagates. Concurrent calls are not
+// deduplicated, so the fetch that completes last sets the last good value.
 export async function staleOnError<T>(
   key: string,
   fetcher: () => Promise<T>,
@@ -26,8 +21,7 @@ export async function staleOnError<T>(
     return { data, stale: false }
   } catch (err) {
     if (!lastGood.has(key)) throw err
-    // Serving stale hides the failure from the response, so log it: a CMS that
-    // keeps failing is invisible otherwise, since the page still renders.
+    // The page still renders, so without this log a failing CMS goes unnoticed.
     console.error(`[astroload] staleOnError serving stale '${key}':`, err)
     return { data: lastGood.get(key) as T, stale: true }
   }
