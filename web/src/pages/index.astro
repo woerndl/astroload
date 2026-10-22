@@ -4,8 +4,10 @@ import { getPageByPath, type PageByPathResult } from '../cms/getPageByPath'
 import { getStaticPathItems } from '../cms/getStaticPaths'
 import { loadPageResult } from '../cms/loadPage'
 import { pickLocale } from '../cms/pickLocale'
+import { isTemplatedPage } from '../cms/templatedPages'
 import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type LocalePaths } from '../cms/types'
 import CollectionLayout from '../layout/collections/CollectionLayout.astro'
+import TemplatedBody from '../layout/routes/TemplatedBody.astro'
 
 // Single-locale prerenders the home page at the site root. Multi-locale
 // redirects to the locale home, which needs the request, so prerenderOverrides
@@ -16,9 +18,9 @@ const localeRedirect = LOCALE_URL_PREFIX
   ? `/${pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))}`
   : null
 if (localeRedirect) {
-  // The target depends on Accept-Language, so shared caches must not reuse
-  // it across users, and a 301 would let caches pin one visitor's language.
-  // Astro.redirect cannot set headers, so the Response is built by hand.
+  // The target depends on Accept-Language, so shared caches must not reuse it
+  // across visitors, and a 301 would let caches keep one visitor's language.
+  // Astro.redirect does not set headers, so the Response is built by hand.
   return new Response(null, {
     status: 302,
     headers: {
@@ -37,17 +39,25 @@ let result: PageByPathResult | null
 let paths: LocalePaths | undefined
 
 if (import.meta.env.DEV) {
-  // Resolve the home page directly by path so dev navigation skips the
-  // full static-paths scan the prerendered build amortizes.
+  // Dev resolves the home page by path and skips the full static-paths fetch.
   const found = await getPageByPath('/')
   result = found
   paths = found?.paths
 } else {
-  // Prerendered build: getStaticPaths already scanned every path, so reusing the
-  // snapshot here is free.
+  // The build already fetched the static paths in getStaticPaths, so this read
+  // comes from the SDK cache.
   const items = await getStaticPathItems()
   const home = items.find((item) => item.paths[DEFAULT_LOCALE] === '/')
-  result = home ? await loadPageResult(home.collection, home.id, DEFAULT_LOCALE) : null
+  result = home
+    ? await loadPageResult(home.collection, home.id, DEFAULT_LOCALE, home.template)
+    : null
+  // A home that was enumerated but no longer loads must fail the build, because
+  // Astro skips a prerendered page without a body.
+  if (home && !result) {
+    throw new Error(
+      `home page ${home.collection}/${home.id} was enumerated but is no longer published`,
+    )
+  }
   paths = home?.paths
 }
 
@@ -60,4 +70,8 @@ if (!result) {
 await globalData
 ---
 
-<CollectionLayout result={result} paths={paths} lang={DEFAULT_LOCALE} />
+{isTemplatedPage(result) ? (
+  <TemplatedBody result={result} paths={paths} lang={DEFAULT_LOCALE} />
+) : (
+  <CollectionLayout result={result} paths={paths} lang={DEFAULT_LOCALE} />
+)}

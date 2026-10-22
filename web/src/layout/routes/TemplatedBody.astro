@@ -1,0 +1,49 @@
+---
+import type { Page } from '@astroload/cms/src/payload-types'
+
+import { resolveSeo } from '../../cms/resolveSeo'
+import type { TemplatedPageResult } from '../../cms/templatedPages'
+import type { Locale, LocalePaths, PageTemplate } from '../../cms/types'
+import Layout from '../Layout.astro'
+
+interface Props {
+  result: TemplatedPageResult
+  paths?: LocalePaths
+  lang: Locale
+  preview?: boolean
+}
+
+export interface TemplatedBodyProps {
+  locale: Locale
+  page: Page
+  preview: boolean
+}
+
+// One body component per entry in pageTemplates, each taking
+// TemplatedBodyProps. `satisfies` makes astro check fail for a template
+// without a body. Example: import HomeBody from './HomeBody.astro', then
+// { home: HomeBody }.
+const bodies = {} satisfies Record<PageTemplate, unknown>
+
+const { result, paths, lang, preview = false } = Astro.props
+const page = result.data
+const Body = (bodies as Record<string, ((props: TemplatedBodyProps) => unknown) | undefined>)[
+  page.template
+]
+if (!Body) {
+  throw new Error(`no body component for page template ${page.template}`)
+}
+const seo = resolveSeo(page)
+---
+
+<Layout
+  title={seo.title}
+  description={seo.description}
+  image={seo.image}
+  result={result}
+  lang={lang}
+  paths={paths}
+  preview={preview ? { collection: 'pages', id: page.id } : undefined}
+>
+  <Body locale={lang} page={page} preview={preview} />
+</Layout>

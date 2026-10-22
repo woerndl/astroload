@@ -2,7 +2,8 @@ import type { StaticPathItem } from '@astroload/cms/src/endpoints/staticPaths'
 
 import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
-import { LOCALE_URL_PREFIX } from './types'
+import { missingTemplates } from './templatedPages'
+import { LOCALE_URL_PREFIX, LOCALES, pageTemplates } from './types'
 import type { Locale, PageCollectionSlug } from './types'
 
 export type { StaticPathItem }
@@ -13,6 +14,7 @@ export interface StaticPageParams {
     id: string | number
     collection: PageCollectionSlug
     paths: Partial<Record<Locale, string>>
+    template?: string
   }
 }
 
@@ -25,9 +27,8 @@ export async function getStaticPathItems(): Promise<StaticPathItem[]> {
   })
 
   const items = (await response.json()) as StaticPathItem[]
-  // Everything downstream (route enumeration, sitemaps, the home lookup)
-  // trusts this shape. Failing here names the cause instead of failing
-  // mid-render.
+  // Route enumeration, sitemaps and the home lookup trust this shape, so a
+  // wrong shape fails here with a clear message instead of during a render.
   if (!Array.isArray(items)) {
     throw new Error('the static-paths endpoint did not return an array')
   }
@@ -36,12 +37,21 @@ export async function getStaticPathItems(): Promise<StaticPathItem[]> {
 
 export async function getStaticPaths(): Promise<StaticPageParams[]> {
   const items = await getStaticPathItems()
+  const missing = missingTemplates(items, pageTemplates, LOCALES)
+  if (missing.length > 0) {
+    throw new Error(`templates without a published page: ${missing.join(', ')}`)
+  }
   const out: StaticPageParams[] = []
 
   for (const item of items) {
     for (const [lang, fullPath] of Object.entries(item.paths)) {
       if (!fullPath) continue
-      const props = { id: item.id, collection: item.collection, paths: item.paths }
+      const props = {
+        id: item.id,
+        collection: item.collection,
+        paths: item.paths,
+        template: item.template,
+      }
       if (LOCALE_URL_PREFIX) {
         const prefix = `/${lang}`
         const trimmed = fullPath.startsWith(prefix) ? fullPath.slice(prefix.length) : fullPath

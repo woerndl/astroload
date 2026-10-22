@@ -7,13 +7,25 @@ import { stripLocalePath, type Locale, type LocalePaths, type PageCollectionSlug
 // Build a render result from a static-path item's id and collection. Both
 // catch-all routes need this shape for their prerendered branch, where Astro
 // carries id/collection as props rather than resolving the page by path.
+// `template` is the template that getStaticPaths listed. A document with
+// another template throws, so the build fails instead of rendering the wrong
+// body.
 export async function loadPageResult(
   collection: PageCollectionSlug,
   id: string | number,
   locale: Locale,
+  template?: string,
 ): Promise<PageByPathResult | null> {
   const data = await getPageData(collection, id, locale)
-  return data ? ({ collection, data } as PageByPathResult) : null
+  if (!data) return null
+  const actual =
+    collection === 'pages' ? ((data as { template?: string }).template ?? 'default') : undefined
+  if (actual !== template) {
+    throw new Error(
+      `page ${collection}/${id} was enumerated with template ${template} but has ${actual}`,
+    )
+  }
+  return { collection, data } as PageByPathResult
 }
 
 // The shared body of the two catch-all routes. Returns null for a 404.
@@ -32,12 +44,12 @@ export async function loadCatchAllPage({
   // the same Astro.locals memo (see getGlobalData).
   const globalData = getGlobalData({ locale, preview: false, locals })
 
-  const { id, collection, paths } = props
+  const { id, collection, paths, template } = props
   let result: PageByPathResult | null = null
   let resolvedPaths: LocalePaths | undefined = paths
 
   if (id && collection) {
-    result = await loadPageResult(collection, id, locale)
+    result = await loadPageResult(collection, id, locale, template)
     // This branch only runs while prerendering, and Astro skips a page whose
     // response has no body instead of failing the build. A doc that was
     // enumerated by getStaticPaths but vanished or moved before this load

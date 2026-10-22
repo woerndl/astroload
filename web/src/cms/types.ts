@@ -4,9 +4,18 @@ import {
   type Locale,
   type LocalePaths,
   type PageCollectionSlug,
+  type PageTemplate,
+  pageTemplates,
 } from '@astroload/cms/src/shared'
 
-export { isLocale, type Locale, type LocalePaths, type PageCollectionSlug }
+export {
+  isLocale,
+  type Locale,
+  type LocalePaths,
+  type PageCollectionSlug,
+  type PageTemplate,
+  pageTemplates,
+}
 export {
   LOCALES,
   DEFAULT_LOCALE,
@@ -44,9 +53,7 @@ export function resolveNavLinks(links: NavLink[] | null | undefined): ResolvedNa
   return (links ?? [])
     .map((link) => {
       const target = link.page.value
-      return isPopulated(target) && target.path
-        ? { href: target.path, label: link.label }
-        : null
+      return isPopulated(target) && target.path ? { href: target.path, label: link.label } : null
     })
     .filter((link): link is ResolvedNavLink => link !== null)
 }

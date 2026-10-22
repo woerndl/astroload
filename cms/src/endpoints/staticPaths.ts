@@ -7,6 +7,7 @@ interface PathDoc {
   id: string | number
   path: Partial<Record<Locale, string>>
   updatedAt: string
+  template?: string
 }
 
 export interface StaticPathItem {
@@ -14,6 +15,8 @@ export interface StaticPathItem {
   id: string | number
   paths: Partial<Record<Locale, string>>
   updatedAt: string
+  // Set for pages only. 'default' renders the sections blocks.
+  template?: string
 }
 
 export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
@@ -29,7 +32,10 @@ export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
           depth: 0,
           limit: 0,
           locale: 'all',
-          select: { path: true, updatedAt: true },
+          select:
+            collection === 'pages'
+              ? { path: true, updatedAt: true, template: true }
+              : { path: true, updatedAt: true },
           where: { _status: { equals: 'published' } },
           overrideAccess: false,
           req,
@@ -41,18 +47,24 @@ export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
     for (const [i, collection] of pageCollectionsSlugs.entries()) {
       const docs = results[i]!.docs as PathDoc[]
       for (const doc of docs) {
-        items.push({ collection, id: doc.id, paths: toPublicPaths(doc.path), updatedAt: doc.updatedAt })
+        items.push({
+          collection,
+          id: doc.id,
+          paths: toPublicPaths(doc.path),
+          updatedAt: doc.updatedAt,
+          ...(doc.template && { template: doc.template }),
+        })
       }
     }
 
-    // Slug uniqueness is per collection, so a Page and a Post can claim the
-    // same public path, and the page lookup serves whichever collection
-    // queries first. The warning makes the collision visible.
+    // Slugs are unique per collection only, so a page and a post can claim the
+    // same public path. pageByPath then serves the first collection in
+    // pageCollectionsSlugs.
     const owners = new Map<string, string>()
     for (const item of items) {
       for (const [locale, path] of Object.entries(item.paths)) {
-        // A locale key can hold undefined for an untranslated document. Those
-        // are not paths, and treating them as one warns on every such pair.
+        // An untranslated document holds undefined for that locale. Skipping
+        // it avoids a warning for every pair of untranslated documents.
         if (!path) continue
         const key = `${locale}:${path}`
         const owner = owners.get(key)

@@ -10,23 +10,56 @@ export { LOCALES, DEFAULT_LOCALE, LOCALE_URL_PREFIX } from './site-config'
 export const isLocale = (value: unknown): value is Locale =>
   typeof value === 'string' && (LOCALES as readonly string[]).includes(value)
 
-// Allowed rich-text link schemes. The CMS validator
-// (cms/src/lexical/editor.ts) rejects everything else at authoring, and the
-// web sanitizer (web/src/components/lexical/sanitizeLinks.ts) unwraps
-// anything that slips past it (imports, seeds, autosaved drafts). Both sides
-// use this list.
+// Allowed rich-text link schemes, used by the CMS validator
+// (cms/src/lexical/editor.ts) and the web sanitizer
+// (web/src/components/lexical/sanitizeLinks.ts). The sanitizer catches links
+// that skip the validator, such as imports, seeds, and autosaved drafts.
 export const ALLOWED_LINK_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:']
 
 export const pageCollectionsSlugs = ['pages', 'posts', 'authors'] as const
 
 export type PageCollectionSlug = (typeof pageCollectionsSlugs)[number]
 
+// Templates whose body is a component in
+// web/src/layout/routes/TemplatedBody.astro instead of the sections blocks.
+// Each has one Pages document, which seedTemplatedPage() writes with a fixed
+// slug, parent and root state. Example: ['home'].
+export const pageTemplates = [] as const satisfies readonly string[]
+
+export type PageTemplate = (typeof pageTemplates)[number]
+
+// Admin labels for the template select, one entry per template.
+export const pageTemplateLabels: Record<'default' | PageTemplate, Record<string, string>> = {
+  default: { en: 'Standard page', de: 'Standardseite' },
+}
+
 export type LocalePaths = Partial<Record<Locale, string>>
 
 const AUTOSAVE_INTERVAL = 1500
 
-// Shared draft config for the page-like collections. maxPerDoc caps the stored
-// version history so autosave does not grow it without bound.
+// date-fns patterns for the admin. admin.dateFormat in payload.config.ts
+// formats list columns of date fields without their own displayFormat, such
+// as createdAt and updatedAt. The date picker reads only its field's
+// displayFormat, so set admin.date on every date field to dateTimeField or
+// dateOnlyField, or spread one into the field's own admin.date. For another
+// format, change these two constants and timeFormat below.
+export const DATE_FORMAT = 'dd.MM.yyyy HH:mm'
+export const DATE_ONLY_FORMAT = 'dd.MM.yyyy'
+
+// timeFormat sets the picker's time list, which defaults to 'h:mm aa'.
+export const dateTimeField = {
+  pickerAppearance: 'dayAndTime',
+  displayFormat: DATE_FORMAT,
+  timeFormat: 'HH:mm',
+} as const
+
+export const dateOnlyField = {
+  pickerAppearance: 'dayOnly',
+  displayFormat: DATE_ONLY_FORMAT,
+} as const
+
+// maxPerDoc caps the version history, which autosave would otherwise grow
+// without limit.
 export const draftVersions = {
   maxPerDoc: 50,
   drafts: {
@@ -35,7 +68,6 @@ export const draftVersions = {
   },
 } satisfies CollectionConfig['versions']
 
-// The {page, label} pair the Header and Footer nav-link arrays both use.
 export const navLinkFields: Field[] = [
   {
     name: 'page',
@@ -57,8 +89,7 @@ export const livePreviewBreakpoints = [
   { name: 'desktop', label: 'Desktop', width: 1280, height: 800 },
 ] as const
 
-// Pages, Posts, and Authors stay in the default Collections group, so only
-// the custom groups are listed here.
+// Pages, Posts, and Authors use Payload's default group.
 export const CollectionGroups = {
   Media: {
     de: 'Medien',

@@ -3,8 +3,10 @@ import type { InferGetStaticPropsType } from 'astro'
 
 import { getStaticPaths as getCmsStaticPaths } from '../cms/getStaticPaths'
 import { loadCatchAllPage } from '../cms/loadPage'
+import { isTemplatedPage } from '../cms/templatedPages'
 import { DEFAULT_LOCALE, LOCALE_URL_PREFIX } from '../cms/types'
 import CollectionLayout from '../layout/collections/CollectionLayout.astro'
+import TemplatedBody from '../layout/routes/TemplatedBody.astro'
 
 export const prerender = true
 
@@ -31,4 +33,8 @@ if (!loaded) {
 }
 ---
 
-<CollectionLayout result={loaded.result} paths={loaded.paths} lang={DEFAULT_LOCALE} />
+{isTemplatedPage(loaded.result) ? (
+  <TemplatedBody result={loaded.result} paths={loaded.paths} lang={DEFAULT_LOCALE} />
+) : (
+  <CollectionLayout result={loaded.result} paths={loaded.paths} lang={DEFAULT_LOCALE} />
+)}

@@ -16,8 +16,8 @@ import { canPreview } from './canPreview'
 interface PageByPathBody {
   collection: PageCollectionSlug
   data: unknown
-  // The matched doc's path in every locale, so the web layer resolves
-  // alternates and canonicals without a separate all-paths fetch.
+  // The matched doc's path in every locale, so the web layer can build
+  // alternates and canonicals without another request.
   paths: LocalePaths
 }
 
@@ -42,8 +42,8 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
   if (preview && !canPreview(req)) {
     return new Response('Forbidden', { status: 403 })
   }
-  // Single-locale projects request public, un-prefixed paths. Preview keeps the
-  // prefixed scheme end to end so the live-preview route is unchanged.
+  // Without URL prefixes, callers request the public, un-prefixed path. Preview
+  // keeps the locale prefix so the live preview route stays the same.
   const usePublicPath = !LOCALE_URL_PREFIX && !preview
 
   const segments = fullPath.split('/').filter(Boolean)
@@ -88,19 +88,18 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
       )
       if (!match) continue
 
-      // Load the full doc at the request locale for rendering, and the same
-      // doc's `path` across every locale (cheap id lookup, virtual field only)
-      // so the response carries the alternate paths the web layer needs.
-      // The `all`-locale call must not share `req`: Payload's createLocalReq
-      // writes its locale onto the passed req in place, so two concurrent
-      // calls with different locales corrupt each other. Passing `user`
-      // instead gives it a fresh request with the same access control.
+      // Load the full doc in the request locale and its `path` in every
+      // locale. The `all` locale call does not get `req`, because Payload's
+      // createLocalReq writes the locale onto the passed req, and two
+      // concurrent calls with different locales would overwrite each other.
+      // Passing `user` gives it a fresh request with the same access control.
       const [data, pathDoc] = await Promise.all([
         req.payload.findByID({
           collection,
           id: match.id,
           locale,
           draft: preview,
+          depth: 2,
           overrideAccess: false,
           req,
         }),
@@ -116,8 +115,8 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
         }),
       ])
       const rawPaths = ((pathDoc as { path?: LocalePaths }).path ?? {}) as LocalePaths
-      // Public single-locale requests get the doc, breadcrumbs, and populated
-      // relations in public form. Preview keeps the prefix.
+      // Public requests get every path in the doc in public form, including
+      // breadcrumbs and populated relations.
       const body: PageByPathBody = {
         collection,
         data: usePublicPath ? stripLocalePathsDeep(data) : data,

@@ -17,6 +17,7 @@ export async function getPageData(
       },
       limit: 1,
       pagination: false,
+      depth: 2,
     },
     { headers: cacheHeader(true) },
   )

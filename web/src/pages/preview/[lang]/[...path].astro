@@ -5,8 +5,10 @@ import { PREVIEW_SECRET } from 'astro:env/server'
 
 import { getPageByPath } from '../../../cms/getPageByPath'
 import { previewPayloadSDK } from '../../../cms/previewSdk'
+import { isTemplatedPage } from '../../../cms/templatedPages'
 import { isLocale } from '../../../cms/types'
 import CollectionLayout from '../../../layout/collections/CollectionLayout.astro'
+import TemplatedBody from '../../../layout/routes/TemplatedBody.astro'
 
 export const prerender = false
 
@@ -53,4 +55,8 @@ for (const [name, value] of Object.entries(previewResponseHeaders)) {
 
 {/* paths feeds the language switcher. PreviewNav rewrites the switch target
     back into /preview. SEOMetadata suppresses alternates in preview. */}
-<CollectionLayout result={result} paths={result.paths} lang={lang} preview={true} />
+{isTemplatedPage(result) ? (
+  <TemplatedBody result={result} paths={result.paths} lang={lang} preview={true} />
+) : (
+  <CollectionLayout result={result} paths={result.paths} lang={lang} preview={true} />
+)}
