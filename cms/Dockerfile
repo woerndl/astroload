@@ -3,7 +3,7 @@
 # Build from the repo root so the pnpm workspace is in context:
 #   docker build -f cms/Dockerfile -t astroload-cms .
 # Keep the tag aligned with .nvmrc.
-FROM node:22.22.3-alpine AS build
+FROM node:22.23.4-alpine AS build
 RUN corepack enable
 WORKDIR /app
 
@@ -12,23 +12,24 @@ COPY cms/package.json cms/
 RUN pnpm install --frozen-lockfile --filter @astroload/cms
 
 COPY cms/ cms/
-# The build compiles the app and touches neither the database nor real
-# secrets. SKIP_ENV_VALIDATION defers the required-vars check to runtime,
-# where the real values are injected.
+# The build needs no database and no secrets. SKIP_ENV_VALIDATION defers the
+# required-vars check to runtime.
 ENV SKIP_ENV_VALIDATION=1
 RUN NEXT_OUTPUT=standalone pnpm --filter @astroload/cms build
 
-FROM node:22.22.3-alpine AS run
+FROM node:22.23.4-alpine AS run
 WORKDIR /app
 ENV NODE_ENV=production
-# Uploads are written here when S3 is not configured. Mount a volume at this path or
-# the files vanish with the container.
+# Uploads go here when S3 is not configured. Mount a volume at this path, or
+# the files are lost with the container.
 ENV MEDIA_DIR=/app/media
 
-# Standalone output mirrors the workspace layout: the server entry is
-# cms/server.js and static assets are served from cms/.next/static.
+# Standalone output mirrors the workspace layout, so the server entry is
+# cms/server.js. The standalone output leaves out the static files in
+# cms/.next/static and cms/public.
 COPY --from=build /app/cms/.next/standalone ./
 COPY --from=build /app/cms/.next/static ./cms/.next/static
+COPY --from=build /app/cms/public ./cms/public
 # The media volume and Next's image cache are the two paths the server writes.
 RUN mkdir -p /app/media cms/.next/cache && chown -R node:node /app/media cms/.next/cache
 

@@ -181,6 +181,7 @@ export interface Page {
   parent?: (string | null) | Page;
   path: string;
   breadcrumbs: Breadcrumbs;
+  template: 'default';
   title: string;
   sections?: (RichTextBlock | ImageBlock | FormBlock | PostsListBlock | AuthorsListBlock)[] | null;
   meta?: {
@@ -579,6 +580,7 @@ export interface ApiKey {
   enableAPIKey?: boolean | null;
   apiKey?: string | null;
   apiKeyIndex?: string | null;
+  hasAPIKey?: boolean | null;
   collection: 'api-keys';
 }
 /**
@@ -610,6 +612,7 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -761,6 +764,7 @@ export interface PagesSelect<T extends boolean = true> {
   parent?: T;
   path?: T;
   breadcrumbs?: T | BreadcrumbsSelect<T>;
+  template?: T;
   title?: T;
   sections?:
     | T
@@ -974,6 +978,7 @@ export interface ApiKeysSelect<T extends boolean = true> {
   enableAPIKey?: T;
   apiKey?: T;
   apiKeyIndex?: T;
+  hasAPIKey?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1002,6 +1007,7 @@ export interface UsersSelect<T extends boolean = true> {
   resetPasswordExpiration?: T;
   salt?: T;
   hash?: T;
+  resetPasswordRequestedAt?: T;
   loginAttempts?: T;
   lockUntil?: T;
   sessions?:

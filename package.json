@@ -8,13 +8,16 @@
     "dev:cms": "pnpm --filter @astroload/cms dev",
     "dev:web": "pnpm --filter @astroload/web dev",
     "build": "pnpm -r build",
-    "lint": "pnpm --filter @astroload/cms lint",
+    "lint": "pnpm -r lint && prettier --check . && stylelint \"web/src/**/*.{css,astro}\"",
     "check": "pnpm --filter @astroload/cms check && pnpm --filter @astroload/web check",
-    "test": "pnpm --filter @astroload/web test && node --test 'scripts/*.test.mjs'"
+    "test": "pnpm --filter @astroload/web test && pnpm --filter @astroload/cms test && node --test 'scripts/*.test.mjs'",
+    "knip": "SKIP_ENV_VALIDATION=1 knip",
+    "verify": "pnpm lint && pnpm check && pnpm test && pnpm --filter @astroload/cms generate:types && pnpm --filter @astroload/cms generate:importmap && git diff --exit-code -- cms/src/payload-types.ts 'cms/src/app/(payload)/admin/importMap.js' && pnpm knip && sh scripts/gates.sh source && pnpm --filter @astroload/web build && sh scripts/gates.sh dist",
+    "setup": "git config core.hooksPath .githooks"
   },
   "engines": {
-    "node": ">=22.12.0",
-    "pnpm": "^9 || ^10"
+    "node": ">=22.23.4",
+    "pnpm": "^10"
   },
   "packageManager": "pnpm@10.24.0",
   "pnpm": {
@@ -23,5 +26,13 @@
       "sharp",
       "unrs-resolver"
     ]
+  },
+  "devDependencies": {
+    "knip": "6.41.0",
+    "postcss-html": "2.0.0",
+    "prettier": "3.8.3",
+    "prettier-plugin-astro": "1.1.1",
+    "stylelint": "17.16.0",
+    "stylelint-config-standard": "40.0.0"
   }
 }

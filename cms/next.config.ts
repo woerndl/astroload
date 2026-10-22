@@ -8,13 +8,16 @@ const dirname = path.dirname(__filename)
 const workspaceRoot = path.resolve(dirname, '..')
 
 const nextConfig: NextConfig = {
-  // Trace standalone output from the workspace root, not cms/, so the Docker
-  // image gets the dependencies pnpm hoists to the workspace root.
+  // Trace standalone output from the workspace root so the Docker image gets
+  // the dependencies pnpm hoists there.
   outputFileTracingRoot: workspaceRoot,
-  // cms/Dockerfile runs standalone output. The env flag avoids a warning from
-  // `next start`, which does not use standalone output.
+  // Only cms/Dockerfile sets NEXT_OUTPUT=standalone, because `next start`
+  // warns when output is standalone.
   ...(process.env.NEXT_OUTPUT === 'standalone' ? { output: 'standalone' as const } : {}),
-  // The CMS is admin-only. Send the bare root to the admin panel instead of 404.
+  // Next 16.3 writes cms/AGENTS.md on every `next dev` run by a coding agent.
+  // This repo keeps agent guidance in the root AGENTS.md.
+  agentRules: false,
+  // The CMS has no public pages, so / redirects to the admin panel.
   async redirects() {
     return [{ source: '/', destination: '/admin', permanent: false }]
   },
