@@ -6,15 +6,22 @@ const required = [
   'PREVIEW_SECRET',
 ] as const
 
-const optional = ['DEPLOY_HOOK_URL'] as const
+const optional = [
+  'DEPLOY_HOOK_URL',
+  'DEPLOY_HOOK_BODY',
+  'DEPLOY_HOOK_HEADERS',
+  'DEPLOY_RAILWAY_TOKEN',
+  'DEPLOY_RAILWAY_SERVICE_ID',
+  'RAILWAY_PROJECT_ID',
+  'RAILWAY_ENVIRONMENT_ID',
+] as const
 
 type RequiredEnv = (typeof required)[number]
 type OptionalEnv = (typeof optional)[number]
 type LoadedEnv = Record<RequiredEnv, string> & Partial<Record<OptionalEnv, string>>
 
-// Skip the required-vars check in CI lint/typecheck, where secrets are absent.
-// Only SKIP_ENV_VALIDATION=1 or true disables validation. CI=true and
-// SKIP_ENV_VALIDATION=0 leave it enabled in deployments.
+// CI and the Docker build have no secrets and set SKIP_ENV_VALIDATION. Only
+// '1' or 'true' skips the check. CI=true alone does not.
 const skipValidation =
   process.env.SKIP_ENV_VALIDATION === '1' || process.env.SKIP_ENV_VALIDATION === 'true'
 
