@@ -1,0 +1,10 @@
+#!/bin/sh
+subject=$(grep -v -e '^#' -e '^[[:space:]]*$' "$1" | head -n 1)
+fail() { echo "commit-msg: $1" >&2; echo "  $subject" >&2; exit 1; }
+case $subject in *.) fail 'subject ends with a full stop' ;; esac
+# Git writes these subjects for a merge, a pull that merges, a revert, and the revert of a revert.
+kind="(remote-tracking )?(branch|branches|tag|tags|commit|commits)"
+printf '%s' "$subject" | grep -Eq "^Merge $kind '[^[:space:]]+'((, | and )($kind )?'[^[:space:]]+')*( of [^ ]+)?( into [^ ]+)?\$|^(Revert|Reapply) \".+\"\$" && exit 0
+printf '%s' "$subject" | grep -Eq '^(feat|fix|chore|docs|refactor|perf|ci|test)(\([a-z0-9-]+\))?!?: [^A-Z[:space:]]' \
+  || fail 'expected "type(scope): subject" with a known type and no upper-case first letter'
+[ "${#subject}" -le 72 ] || fail "subject has ${#subject} characters, at most 72 allowed"
