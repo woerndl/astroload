@@ -9,14 +9,23 @@ on:
 permissions:
   contents: read
 
+# A new pull request run cancels the older run of the same pull request. Runs
+# on main are not cancelled, because Railway's "Wait for CI" skips the deploy
+# of a commit whose run was cancelled.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       SKIP_ENV_VALIDATION: '1'
     steps:
-      # Actions are pinned to commit SHAs so a moved tag cannot swap the code
-      # this workflow runs. Bump by updating the SHA and the version comment.
+      # Actions are pinned to commit SHAs so a moved tag does not change the
+      # code this workflow runs. To bump one, update the SHA and the version
+      # comment.
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
@@ -33,11 +42,10 @@ jobs:
           pnpm --filter @astroload/cms generate:types
           git diff --exit-code
 
-      # Runs twice, without and with a complete S3 env group. The committed
-      # map must match both, or an env-gated plugin drops entries that
-      # S3-enabled deployments need. A new integration that gates admin
-      # components on its own env group extends the second run with its
-      # dummy vars.
+      # Runs without and with the S3 env vars. The committed map must match
+      # both, or a plugin that registers admin components only when its env
+      # is set drops entries that S3 deployments need. An integration with
+      # its own env group adds its dummy vars to the second run.
       - name: Import map in sync
         run: |
           pnpm --filter @astroload/cms generate:importmap
@@ -46,11 +54,79 @@ jobs:
             pnpm --filter @astroload/cms generate:importmap
           git diff --exit-code
 
-      - name: Lint (cms eslint)
+      - name: Lint (cms and web eslint, prettier, stylelint)
         run: pnpm lint
 
       - name: Typecheck (cms tsc, web astro check)
         run: pnpm check
 
-      - name: Test (web vitest)
+      - name: Unit tests (web, cms, scripts)
         run: pnpm test
+
+  e2e:
+    # MongoDB 8 stops at startup on Linux kernels 6.19 to 7.0.13
+    # (SERVER-121912), and the ubuntu-24.04 and ubuntu-26.04 images run kernels
+    # in that range. Move to ubuntu-latest once its kernel is 7.0.14 or later
+    # and the installed Playwright version supports its Ubuntu release.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    services:
+      mongo:
+        image: mongo:8
+        ports:
+          - 27330:27017
+        # GitHub waits until mongod answers this ping and fails the job during
+        # setup when it does not.
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @astroload/web exec playwright install --with-deps chromium
+
+      # A later line in a .env file overrides an earlier one with the same name.
+      - name: Env files with fixed test values
+        run: |
+          cp cms/.env.example cms/.env
+          cat >> cms/.env <<'EOF'
+          PAYLOAD_SECRET=e2e-payload-secret
+          PREVIEW_SECRET=e2e-preview-secret
+          PAYLOAD_READ_KEY=e2e-read-key
+          PAYLOAD_PREVIEW_KEY=e2e-preview-key
+          DEPLOY_HOOK_URL=http://127.0.0.1:4322/deploy
+          EOF
+          cp web/.env.example web/.env
+          cat >> web/.env <<'EOF'
+          PREVIEW_SECRET=e2e-preview-secret
+          PAYLOAD_READ_KEY=e2e-read-key
+          PAYLOAD_PREVIEW_KEY=e2e-preview-key
+          UMAMI_WEBSITE_ID=e2e-website
+          UMAMI_HOST_URL=http://127.0.0.1:4322
+          CONTENT_BUILD_ID=e2e-build
+          EOF
+
+      - run: pnpm --filter @astroload/cms seed
+
+      - run: pnpm --filter @astroload/web test:e2e
+
+      - name: Dist checks on the e2e build
+        run: sh scripts/gates.sh dist
+
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright
+          path: web/.playwright/
+          include-hidden-files: true
