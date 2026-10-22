@@ -1,11 +1,13 @@
 ---
 import type { Author, SiteSetting } from '@astroload/cms/src/payload-types'
 import { Schema } from 'astro-seo-schema'
-import type { Article, Distance, Graph, Organization, Person, Thing, WebPage, WebSite } from 'schema-dts'
+import type { Distance, Graph, ImageObject, Thing, WebPage, WebSite } from 'schema-dts'
 
 import type { PageByPathResult } from '../cms/getPageByPath'
-import { isPopulated, stripLocalePath, type Locale } from '../cms/types'
+import { articleLd, organizationLd, personLd, profilePageLd } from '../cms/structuredData'
+import { isPopulated, type Locale } from '../cms/types'
 import { absoluteSiteURL, versionedMediaURL } from '../cms/urls'
+import { localePath } from '../lib/localePath'
 
 interface Props {
   result: PageByPathResult
@@ -17,12 +19,13 @@ interface Props {
 const { result, lang, pathname, siteSettings } = Astro.props
 
 const siteOrigin = new URL(absoluteSiteURL('/')).origin
-// Public home path: `/${lang}` while prefixed, `/` once the prefix is dropped.
-const homePath = stripLocalePath(`/${lang}`)
+const homePath = localePath(lang, '/')
 const homeURL = `${siteOrigin}${homePath}`
 const pageURL = absoluteSiteURL(pathname)
 
-const defaultImage = isPopulated(siteSettings.defaultSeo?.image) ? siteSettings.defaultSeo.image : null
+const defaultImage = isPopulated(siteSettings.defaultSeo?.image)
+  ? siteSettings.defaultSeo.image
+  : null
 
 function mediaURL(
   media: { url?: string | null; updatedAt?: string | null } | null | undefined,
@@ -35,19 +38,14 @@ const isHome = pathname === homePath || pathname === `${homePath}/`
 
 const graph: Thing[] = []
 
-// A generic Organization is the publisher for every page. A project that is a
-// physical business should emit LocalBusiness instead: add address, geo, and
-// contact fields to the SiteSettings global, then set '@type' to the matching
-// LocalBusiness subtype and map those fields here. The extra properties are
-// what earns the richer business result, so adding fields without emitting them
-// changes nothing.
-const organization: Organization = {
-  '@type': 'Organization',
+// The builders in web/src/cms/structuredData.ts accept more fields than these
+// calls pass. Before passing a field, show its data on the page, unless
+// docs/astroload/conventions.md lists the field as an exception.
+const organization = organizationLd({
   name: siteSettings.siteName,
   url: siteOrigin,
-}
-const logoURL = mediaURL(defaultImage)
-if (logoURL) organization.logo = logoURL
+  logo: mediaURL(defaultImage),
+})
 
 const webSite: WebSite = {
   '@type': 'WebSite',
@@ -62,46 +60,45 @@ if (isHome) {
   const post = result.data
   const authors = (post.authors ?? []).filter((a): a is Author => isPopulated(a))
   const cover = isPopulated(post.image) ? post.image : null
-  const article: Article = {
-    '@type': 'Article',
-    headline: post.title,
-    url: pageURL,
-    inLanguage: lang,
-    mainEntityOfPage: pageURL,
-    publisher: organization,
-  }
-  if (post.excerpt) article.description = post.excerpt
-  if (post.publishedAt) article.datePublished = post.publishedAt
-  if (post.updatedAt) article.dateModified = post.updatedAt
-  if (authors.length > 0) {
-    article.author = authors.map((a) => ({ '@type': 'Person', name: a.name }))
-  }
   const ogVariant = cover?.sizes?.og
+  let image: string | ImageObject | undefined
   if (ogVariant?.url && ogVariant.width && ogVariant.height) {
-    article.image = {
+    image = {
       '@type': 'ImageObject',
       url: versionedMediaURL(ogVariant.url, cover?.updatedAt),
-      // schema-dts types these as Distance/QuantitativeValue. Google wants a bare integer.
+      // schema-dts types these as Distance/QuantitativeValue, but Google expects a bare integer.
       width: ogVariant.width as unknown as Distance,
       height: ogVariant.height as unknown as Distance,
     }
   } else {
-    const fallback = mediaURL(cover)
-    if (fallback) article.image = fallback
+    image = mediaURL(cover)
   }
-  graph.push(article)
+  graph.push(
+    articleLd({
+      headline: post.title,
+      url: pageURL,
+      description: post.excerpt,
+      inLanguage: lang,
+      datePublished: post.publishedAt ?? undefined,
+      dateModified: post.updatedAt,
+      authors: authors.map((a) => ({
+        name: a.name,
+        url: a.path ? absoluteSiteURL(a.path) : undefined,
+      })),
+      images: image ? [image] : [],
+      publisher: organization,
+    }),
+  )
 } else if (result.collection === 'authors') {
   const author = result.data
   const photo = isPopulated(author.photo) ? author.photo : null
-  const person: Person = {
-    '@type': 'Person',
+  const person = personLd({
     name: author.name,
     url: pageURL,
-  }
-  if (author.role) person.jobTitle = author.role
-  const personImage = mediaURL(photo)
-  if (personImage) person.image = personImage
-  graph.push(person)
+    image: mediaURL(photo),
+    jobTitle: author.role ?? undefined,
+  })
+  graph.push(profilePageLd({ url: pageURL, person }))
 } else if (result.collection === 'pages') {
   const webPage: WebPage = {
     '@type': 'WebPage',
