@@ -1,9 +1,8 @@
-# Production scaffold. Copy it and adapt. It is a starting point, not a
-# turnkey stack, and deliberately separate from the dev docker-compose.yml at
-# the repo root.
+# Production starting point to copy and adapt. The dev setup is the
+# docker-compose.yml at the repo root.
 #
-# The web image bakes public env values and reads page content from the CMS at
-# build time, so it cannot be built before the CMS is up. First boot:
+# The web image bakes in public env values and reads page content from the CMS
+# at build time, so the CMS must be up before the web build. First boot:
 #
 #   docker compose -f deploy/docker-compose.production.yml up -d mongo cms
 #   (register the admin account and create the two API keys, see
@@ -17,18 +16,21 @@
 #
 # A content publish repeats the last two steps. Point DEPLOY_HOOK_URL at
 # whatever runs them (a CI job, a Coolify service, a shell hook), and have it
-# pass a fresh CONTENT_BUILD_ID (see the build args below) so a same-commit
-# rebuild cannot be served from a cached build layer.
+# pass a fresh CONTENT_BUILD_ID (see the build args below) so a rebuild of the
+# same commit does not reuse a cached build layer.
 #
 # The build runs outside the compose network, so CMS_URL must be reachable
 # from the host: the public CMS origin once DNS is up, or
 # http://host.docker.internal:3000 against the published port below.
 #
-# The web app compresses its own responses (web/server.mjs). TLS is not
-# handled here, put a reverse proxy or CDN in front of both apps (see
+# The web app compresses its own responses (web/server.mjs). This file does
+# not set up TLS. Put a reverse proxy or CDN in front of both apps (see
 # docs/astroload/deployment.md).
 services:
   mongo:
+    # MongoDB 8 stops at startup on Linux kernels 6.19 to 7.0.13. Check the
+    # host kernel with `uname -r` when you upgrade it (see
+    # docs/astroload/deployment.md).
     image: mongo:8
     restart: unless-stopped
     volumes:
@@ -71,8 +73,8 @@ services:
         CMS_URL: ${CMS_URL:?public CMS origin, baked into the build}
         WEBSITE_URL: ${WEBSITE_URL:?public web origin, baked into the build}
         # Optional. UMAMI_WEBSITE_ID (baked, public) turns analytics on.
-        # CONTENT_BUILD_ID must change per publish-driven rebuild, or the
-        # docker build cache replays the old prerender. The publish hook
+        # CONTENT_BUILD_ID must change on every rebuild after a publish, or
+        # the docker build cache replays the old prerender. The publish hook
         # passes it, e.g. CONTENT_BUILD_ID=$(date +%s).
         # UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
         # CONTENT_BUILD_ID: ${CONTENT_BUILD_ID:-}

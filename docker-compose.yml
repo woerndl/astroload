@@ -1,21 +1,19 @@
-# Local MongoDB for the astroload starter. Dev only, never production.
-# Standalone mongod, no replica set: the CMS disables transactions
-# (transactionOptions: false in cms/src/payload.config.ts), so a single
-# node is enough. CMS and Astro run natively via
+# Local MongoDB for development. A standalone mongod is enough because the
+# CMS disables transactions (transactionOptions: false in
+# cms/src/payload.config.ts). The CMS and Astro run on the host with
 # `pnpm --filter @astroload/cms dev` and `pnpm --filter @astroload/web dev`.
 services:
   mongo:
+    # MongoDB 8 stops at startup on Linux kernels 6.19 to 7.0.13. Check the
+    # kernel with `docker run --rm alpine uname -r` when you update Docker
+    # Desktop, Colima or WSL (see docs/astroload/deployment.md).
     image: mongo:8
     restart: unless-stopped
-    # Loopback only (this mongod has no auth), and a pinned host port to
-    # renumber per project, like the web dev port: when several projects
-    # share one host port, whichever container is up answers for all of
-    # them, and a seed or SEED_FORCE aimed at this project reads or wipes
-    # another one's data. A unique port fails with connection refused
-    # instead. The template itself uses 27330 because its checkout is also
-    # a running project on contributor machines. A derived project picks
-    # its own number. Keep DATABASE_URI in cms/.env on the same port and
-    # give each project its own database name as the second guard.
+    # Loopback only, because this mongod has no auth. Give each project its
+    # own host port (the template uses 27330) and its own database name.
+    # When projects share a port, whichever container is up answers for all
+    # of them, and a seed or SEED_FORCE can read or wipe another project's
+    # data. Keep DATABASE_URI in cms/.env on the same port.
     ports:
       - '127.0.0.1:27330:27017'
     volumes:
