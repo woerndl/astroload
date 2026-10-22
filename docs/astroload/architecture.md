@@ -35,9 +35,9 @@ generated `payload-types.ts` (`SectionBlock.astro`,
 `lexical/BlockRenderer.astro`). There is deliberately no adapter or
 view-model layer between the two apps. Such a layer restates every CMS
 type by hand, drifts from the schema on the first collection change, and
-doubles the surface every change has to cross. When a shape needs
-massaging, do it in the CMS response (a hook or an endpoint) or in the
-component that consumes it, not in a translation layer between them.
+makes every change touch one more layer. When a shape needs adjusting,
+change it in the CMS response (a hook or an endpoint) or in the component
+that consumes it.
 
 ## How content reaches the public site
 
@@ -53,13 +53,13 @@ The frontend reads content in three modes:
    and any route that opts in with `prerender = false`
    run on each request. Editor previews go through
    this path so changes appear without a redeploy. A public route can opt
-   in the same way to stay always-current, degrading to its last good
-   response through the `staleOnError` helper when the CMS read fails. See
+   in the same way to stay current. When the CMS read fails, the
+   `staleOnError` helper serves the route's last good response. See
    [`conventions.md`](./conventions.md) for which routes prerender and how
    a route opts into request-time rendering.
 3. Astro config evaluation. Redirects are fetched from the CMS once when
    `astro.config.mjs` is evaluated. The result is baked into the server
-   manifest, so request-time has no extra round-trip. See
+   manifest, so a request makes no extra call to the CMS. See
    [`maintenance.md`](./maintenance.md) for the dotenv import detail this
    requires.
 
@@ -73,8 +73,8 @@ scoped API keys instead:
 - A preview-scoped key the `/preview` route uses on the server. It can
   read drafts but cannot write.
 
-In addition, the `/preview` route is gated by `PREVIEW_SECRET`, a value the
-CMS and the Astro app both know. The secret authorizes access to the
+The `/preview` route also checks `PREVIEW_SECRET`, a value the CMS and the
+Astro app both know. The secret authorizes access to the
 preview route itself. The API key authorizes access to draft data through
 the CMS. The two are separate on purpose. See [`security.md`](./security.md)
 for the threat model around each.
@@ -86,10 +86,10 @@ option bound to `S3_BUCKET` and the credential variables. It stays
 listed while disabled so that `generate:importmap`, which runs without
 S3 env, still writes the plugin's admin component into the import map
 that S3-enabled deployments read. Disabled, the plugin does nothing
-else, and uploads land on local disk under `cms/media/`. The Resend
+else, and uploads are stored on local disk under `cms/media/`. The Resend
 email adapter loads only when `RESEND_API_KEY` and
 `RESEND_FROM_ADDRESS` are set. Without them, Payload falls back to
-console-logging outgoing email. Both gates live in
+console-logging outgoing email. Both checks are in
 `payload.config.ts`.
 
 ## Localization runs through the URL
@@ -128,7 +128,7 @@ one URL segment. CMS-translated slugs, where the same page is
 that model. The editor owns the slug per locale, so the routes have to
 come from the CMS, which is what `getStaticPaths` over the static-paths
 endpoint does. If a project ever wants Astro's i18n helper functions
-(`redirectToDefaultLocale` and friends), `i18n.routing: "manual"`
+(`redirectToDefaultLocale` and similar), `i18n.routing: "manual"`
 enables them without the routing middleware and works alongside the
 CMS-derived routes. Nothing in the starter needs them.
 
@@ -138,6 +138,16 @@ from `locale: 'all'` queries, not read from the pages plugin's
 `alternatePathsField()`. That map also feeds the single-locale
 prefix-stripping and the endpoint responses, which the plugin field does
 not provide. Leaving the field unused is deliberate.
+
+A localized field without a value in the read locale falls back to the
+default locale. The page `path` does not. With Payload 3.91.0 and pages
+plugin 0.8.0, a `de` read of a page that has an `en` slug and no `de` slug
+returns the English `slug` and `title` but no `path`, and the
+`locale: 'all'` path map lists only the locales where the document has its
+own slug. So no `de` URL serves the page. The `de` sitemap leaves the page
+out, the `hreflang` alternates omit `de`, and the language switcher links
+to the `de` home. After upgrading either package, read such a page with
+`locale: 'de'` and confirm that `path` is still absent.
 
 ## Page identity stays on the document when the layout is implemented in code
 
@@ -157,6 +167,12 @@ field to a constant in code. Each of these takes part of the page's
 identity away from its document. Put it back on the document and keep
 only layout in code.
 
+Templated pages keep their title, SEO fields and preview on the document.
+Their slug stays on the document too, but only the seed sets it. The Pages
+guard rejects editor changes to slug, parent and root state, because the
+body is written for that path.
+[`conventions.md`](./conventions.md) describes how to add one.
+
 ## What we give up by decoupling
 
 Running the CMS and the frontend as separate processes has costs. The
@@ -173,12 +189,12 @@ ones that show up most in this starter:
   site on another, so live preview, form submissions, and any
   browser-to-CMS request crosses an origin boundary. CORS and cookie
   scoping are explicit.
-- A more involved editor preview. The in-process iframe preview Payload +
-  Next.js has by default is not free here. Astroload pairs Payload
+- A more involved editor preview. The in-process iframe preview that
+  Payload + Next.js has by default takes extra work here. Astroload pairs Payload
   autosave (on Pages, Posts, and Authors) with an iframe reload, plus a
   standalone `/preview` SSR route for sharing draft URLs. Updates appear
-  after each autosave cycle, which is acceptable for editorial work but
-  not as tight as a single-process setup.
+  after each autosave cycle. That is slower than a single-process setup
+  and fast enough for editorial work.
 - No shared component bundle between admin and frontend. The admin
   renders in React, the frontend in Astro, so the Next.js + Payload
   monorepo pattern of importing the same React component from both does
@@ -196,12 +212,12 @@ are tracked in [`maintenance.md`](./maintenance.md).
 
 The template is single-tenant. The collections, the access helpers, and
 the frontend's `WEBSITE_URL` handling are kept simple so a future
-`tenant` field is an additive change rather than a rewrite. Concretely:
-access logic lives in helpers under `cms/src/access/` (one place to add
+`tenant` field is an additive change rather than a rewrite. Access
+logic lives in helpers under `cms/src/access/` (one place to add
 a tenant filter), slugs are plain fields (a compound `(slug, tenant)`
 index can be added later), and the frontend reads `WEBSITE_URL` without
 parsing or routing on it (a host-to-tenant resolver can replace the
-env-read at a few callsites).
+env read at a few call sites).
 
 If you fork the template for a single site, ignore this layer. If you
 have a multi-site project in mind, plan the tenancy migration before you

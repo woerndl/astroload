@@ -3,7 +3,7 @@
 How to change content in this starter, and where a mutation script belongs when
 you need one.
 
-Most changes need no script. When one is warranted, a script that has to be
+Most changes need no script. When you need one, a script that has to be
 reproducible, such as a migration or a backfill, is committed and reviewed
 like any other code. A one-off edit is written in the gitignored scratch
 directory instead, so it does not enter git history.
@@ -15,7 +15,7 @@ directory instead, so it does not enter git history.
    Nothing to clean up.
 2. MCP is the recommended path for an agent. With the Payload MCP plugin
    enabled, an assistant edits content through typed tools instead of writing a
-   script. See [Enabling MCP](#enabling-mcp). Off by default in this starter.
+   script. See [Enabling MCP](#enabling-mcp). It is off by default in this starter.
 3. The REST API is the path for a program or a CI step. Authenticate, then call
    the documented endpoints. See [REST](#rest).
 4. A Local API script is for a change the paths above cannot express, or one
@@ -27,9 +27,9 @@ the admin UI, not a script.
 
 ## Enabling MCP
 
-With MCP enabled, an assistant mutates content through typed tools, access
-control still enforced, and writes nothing to the tree. It is opt-in so the
-starter adds no extra server surface or key collection by default. A project
+With MCP enabled, an assistant changes content through typed tools and
+writes no files to the working tree. Access control still applies. MCP is
+opt-in so the starter adds no extra endpoint or key collection by default. A project
 that does agent-driven editing should turn it on.
 
 Add the Payload MCP plugin (`@payloadcms/plugin-mcp`) to
@@ -64,10 +64,10 @@ instance.
 
 The web app already reads content over REST with a scoped API key, sent as
 `Authorization: api-keys API-Key <key>` (see `web/src/cms/sdk.ts`). Those seeded
-keys are read-only and preview, so they cannot mutate.
+keys are read-only and preview, so they cannot write.
 
-A write needs a user session. Content collections (Pages, Posts, Authors) gate
-create, update, and delete on `isAdminOrEditor`, so log in as an `admin` or
+A write needs a user session. Content collections (Pages, Posts, Authors)
+allow create, update, and delete only through `isAdminOrEditor`, so log in as an `admin` or
 `editor` user and use the returned token:
 
 ```bash
@@ -95,7 +95,7 @@ like any other code, and is written to be idempotent so a second run is safe.
 stable key (a slug, or another value with at most one match), updates it when
 it exists, creates it when missing, and throws when the key matches more than
 one document. A bulk content script built on it converges on the same
-documents instead of duplicating them run over run. Its lookup includes
+documents on every run instead of duplicating them. Its lookup includes
 drafts, so a re-run also overwrites an editor's unpublished draft with the
 script's values. A script that may run again once editors manage the
 content must either skip documents that already exist or write only empty
@@ -104,8 +104,8 @@ exist.
 `cms/src/scripts/seed.ts` is the worked example: re-running it skips once
 users exist, and `--force` or `SEED_FORCE=1` clears the seeded collections,
 users and API keys included, and recreates the demo content. The auth
-bootstrap (admin user and API
-keys) lives separately in `cms/src/seedAuth.ts` with its own script entry
+bootstrap (admin user and API keys) is in `cms/src/seedAuth.ts` with its own
+script entry
 (`pnpm --filter @astroload/cms seed:auth` from the repo root), so a real
 project can delete the demo seed without losing the path that provisions a
 fresh database.

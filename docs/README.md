@@ -6,7 +6,6 @@
 
 [![Astro](https://img.shields.io/badge/Astro-7-FF5D01?logo=astro&logoColor=white)](https://astro.build)
 [![Payload](https://img.shields.io/badge/Payload-3-000000?logo=payloadcms&logoColor=white)](https://payloadcms.com)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![MongoDB](https://img.shields.io/badge/MongoDB-8-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com)
 [![pnpm](https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
@@ -30,8 +29,8 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 ### Frontend rendering
 
 - Astro 7 with prerendered pages in production. Dev renders on demand so CMS edits show up without restarts
-- Tailwind v4 via `@tailwindcss/vite`, no PostCSS layer
-- View transitions via `<ClientRouter />`
+- Plain scoped CSS in cascade layers, with tokens and a reset in `web/src/styles/`
+- Full page loads on every link click, so each script runs once per document
 - Lexical rich text with custom block and upload renderers
 - Typed data layer backed by an LRU cache, bypassed in dev and for preview reads
 
@@ -61,7 +60,7 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 ### Operations
 
 - Build-time redirects fetched from a `Redirects` collection, no runtime hop
-- Deploy webhook (`DEPLOY_HOOK_URL`) for any plain endpoint. Repeated edits are throttled to at most two webhook calls per five-minute window
+- Deploy webhook (`DEPLOY_HOOK_URL`) for any plain endpoint, or on Railway a `CONTENT_BUILD_ID` update through the Railway API. Repeated edits trigger at most two deploys per five-minute window
 - Optional S3 storage, on when its env vars are set. Without it, uploads go to the local filesystem under `cms/media/`
 - Optional Resend email, on when its env vars are set. Without it, emails are logged to the console
 - Optional Umami analytics, Cloud or self-hosted: cookieless, proxied through first-party routes so content blockers that match the Umami hostnames miss it
@@ -72,14 +71,13 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 - Astro 7 with the Node adapter (`@astrojs/node`)
 - Payload 3 on Next 16 and React 19
 - MongoDB 8 via `@payloadcms/db-mongodb`, standalone (transactions disabled). Postgres remains available as a documented alternative, see [`astroload/maintenance.md`](./astroload/maintenance.md)
-- Tailwind CSS v4 via `@tailwindcss/vite`
-- TypeScript 5.7
+- TypeScript 5.9
 - pnpm 10 workspaces
-- Node `>=22.12` (see `.nvmrc` for the pinned version)
+- Node `>=22.23.4` (see `.nvmrc` for the pinned version)
 
 ## Quickstart
 
-Prerequisites: Node `>=22.12` (see `.nvmrc`), pnpm `>=9`, Docker. The package scripts assume a POSIX shell, so on Windows run them under WSL or Git Bash.
+Prerequisites: Node `>=22.23.4` (see `.nvmrc`), pnpm `>=9`, Docker. The package scripts assume a POSIX shell, so on Windows run them under WSL or Git Bash.
 
 ```bash
 # 1. Get the code
@@ -133,7 +131,8 @@ Variables are declared in `cms/.env.example` and `web/.env.example`, which are t
 - `SERVER_URL` origin the admin is served from. Must match the browser origin for CSRF checks.
 - `WEBSITE_URL` Astro frontend origin used by `generatePageURL`.
 - `PREVIEW_SECRET` shared secret for the `/preview` route. Must match `web/.env`.
-- `DEPLOY_HOOK_URL` optional. Any plain webhook endpoint.
+- `DEPLOY_HOOK_URL` optional. Any plain webhook endpoint. `DEPLOY_HOOK_BODY` and `DEPLOY_HOOK_HEADERS` optional, the JSON body and request headers of the POST.
+- `DEPLOY_RAILWAY_TOKEN`, `DEPLOY_RAILWAY_SERVICE_ID` optional. A Railway project token and the web service id.
 - `RESEND_API_KEY`, `RESEND_FROM_ADDRESS`, `RESEND_FROM_NAME` optional.
 - `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` optional.
 
@@ -187,11 +186,11 @@ Both apps are Node servers with no serverless adapter or provider-specific build
 
 ### Deploy webhook
 
-- Setting `DEPLOY_HOOK_URL` in the CMS fires a POST when published content changes or is deleted, when Media, Forms, or Redirects change, or when any global changes. Works with Railway, Vercel, Coolify, or any plain webhook endpoint as-is. A burst of edits triggers one immediate call plus at most one trailing call per five-minute window while edits continue. See `cms/.env.example` for URL shapes and `docs/astroload/maintenance.md` for how long publishes take to go live and for using `CONTENT_BUILD_ID` to avoid stale build caches.
+- Setting `DEPLOY_HOOK_URL` in the CMS fires a POST when published content changes or is deleted, when Media, Forms, or Redirects change, or when any global changes. Works with Vercel, Coolify, or any plain webhook endpoint as-is. On Railway, which has no deploy hook URL, set `DEPLOY_RAILWAY_TOKEN` and `DEPLOY_RAILWAY_SERVICE_ID` instead. The CMS then sets `CONTENT_BUILD_ID` on the web service through the Railway API. A burst of edits triggers one immediate call plus at most one trailing call per five-minute window while edits continue. See `cms/.env.example` for URL shapes and `docs/astroload/maintenance.md` for how long publishes take to go live and for using `CONTENT_BUILD_ID` to avoid stale build caches.
 
 ## Contributing
 
-Issues and pull requests are welcome. Run `pnpm lint`, `pnpm check`, and `pnpm test` before opening a PR.
+Issues and pull requests are welcome. Run `pnpm verify` before opening a PR. It needs a running CMS. See [Lints and checks before opening a PR](./astroload/conventions.md#lints-and-checks-before-opening-a-pr).
 
 ## Acknowledgements
 

@@ -37,7 +37,7 @@ re-exports both, `payload.config.ts` derives `localization.locales` and
 `localization.defaultLocale` from them, and the Astro side reads them
 through `web/src/cms/types.ts`. The sitemap `x-default` emission and the
 public page lookup read the same `DEFAULT_LOCALE`, so the Payload
-config cannot drift from the value those consumers use.
+config and those consumers use the same value.
 
 `site-config.ts` asserts at import that `DEFAULT_LOCALE` is one of
 `LOCALES`. A default outside the shipped set fails at import, instead
@@ -47,11 +47,15 @@ in production sitemaps.
 To swap the default, or to change which locales ship, edit
 `site-config.ts`, then regenerate the CMS types
 (`pnpm --filter @astroload/cms generate:types`) so the generated `locale`
-union tracks the new set. No other file needs a matching edit, but two maps
-in `site-config.ts` itself take an entry per locale. `LOCALE_LABELS` holds
-the admin label and falls back to the locale code. `OG_LOCALE` holds the
-`og:locale` value, and a locale without an entry emits no `og:locale` tag,
-because the territory half cannot be derived from the language code.
+union tracks the new set. Four maps take an entry per locale, three in
+`site-config.ts` and one in `web/src/layout/shellLabels.ts`.
+`LOCALE_LABELS` holds the admin label and falls back to the locale code.
+`OG_LOCALE` holds the `og:locale` value, and a locale without an entry
+emits no `og:locale` tag, because the territory half cannot be derived
+from the language code. `INTL_LOCALE` holds the locale for dates and
+numbers, and a missing entry uses the code itself. `SHELL_LABELS` holds
+the skip link and navigation labels, and a missing entry uses the English
+labels.
 
 By default a project carries the `/{locale}` URL prefix only when it ships more
 than one locale. To keep the prefix on a single-locale project, so its URLs
@@ -82,17 +86,17 @@ interim content and keep its documents publishable.
 
 The web app serves prerendered HTML. Publishing in admin does not change
 the live site on its own. It posts to `DEPLOY_HOOK_URL`, the host rebuilds
-and redeploys, and the new build goes live. Publish-to-live latency is the
-host's build and deploy time, typically minutes. There is no per-request
-CMS read on the published path, and the latency is the cost of that.
+and redeploys, and the new build goes live. The delay from publish to live
+is the host's build and deploy time. That delay is the
+cost of having no per-request CMS read on the published path.
 
 The deploy hook (`cms/src/hooks/triggerDeploy.ts`) coalesces bursts with one
-process-wide window shared by all documents. The first
-deploy-worthy save fires the webhook immediately. Every further save during
-the window collapses into one pending deploy that fires when the window
+process-wide window shared by all documents. The first save that triggers
+a deploy fires the webhook immediately. Every further save during the
+window collapses into one pending deploy that fires when the window
 closes. A burst inside one window costs at most two builds: one leading, one
 trailing. Saves that keep arriving after a trailing fire open a fresh window,
-so sustained activity costs one build per window for as long as deploy-worthy
+so sustained activity costs one build per window for as long as such
 saves continue, not a flat cap of two.
 
 The hook fires whenever the published output changes: a doc that is or was
@@ -104,21 +108,25 @@ or a manual Save Draft, even over a published doc), a re-publish with no
 edits, and global or always-deploy saves that leave the document identical
 apart from `updatedAt`. The skip check errs toward firing, since a missed
 change leaves the live site stale while a redundant fire only wastes a
-build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body and no
-auth header.
+build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body
+(`DEPLOY_HOOK_BODY` replaces it). `DEPLOY_HOOK_HEADERS`, a JSON object, adds
+request headers such as `Authorization` or replaces the default
+`Content-Type: application/json`.
 
 The window (`WINDOW_MS`) is set in code, not env, and defaults to
 300000 ms (five minutes). The default suits hosts
-that bill per build minute. Shorten it for faster publishing, lengthen it to
-batch harder. A window shorter than the build time can overlap builds.
+that bill per build minute. Shorten it for faster publishing. Lengthen it
+to group more saves into one build. A window shorter than the build time can overlap builds.
 
 Rebuild now: to skip the wait, trigger the host's redeploy (its dashboard
-button, or `curl -X POST "$DEPLOY_HOOK_URL"`). A manual rebuild always picks
-up the current published state.
+button, or `curl -X POST "$DEPLOY_HOOK_URL"` for a hook without
+`DEPLOY_HOOK_BODY` or `DEPLOY_HOOK_HEADERS`). On Railway, set a new value for
+`CONTENT_BUILD_ID` in the web service's Variables tab, then deploy the staged
+change. A manual rebuild picks up the current published state.
 
 Edit bursts: a long editing session coalesces to the leading build plus one
-trailing build per window while it lasts. A deploy-worthy save during an
-open window becomes that window's trailing build, and one after the window
+trailing build per window while it lasts. A save that triggers a deploy
+during an open window becomes that window's trailing build, and one after the window
 closes fires immediately, so no save is left waiting for a later save. When
 you finish a burst, confirm the live site reflects your last change and
 rebuild if it does not (the restart hazard below can drop a queued trailing
@@ -126,34 +134,66 @@ build).
 
 Time-relative content: a static build freezes content at build time. Pages
 that show relative dates ("posted 3 days ago") or that should reveal a
-future-dated post drift until the next build. Schedule a periodic rebuild on
-the host (a daily cron hitting `DEPLOY_HOOK_URL`) so time-sensitive output
-stays current without an editor action.
+future-dated post go stale until the next build. A scheduled rebuild (see
+[Recovering a lost deploy](#recovering-a-lost-deploy)) keeps time-relative
+content current without an editor action.
 
-Restart hazard: the throttle window lives in process
-memory. A trailing deploy queued when the CMS process restarts (a redeploy
-of the CMS itself, a crash, a scale-to-zero) is lost. The leading deploy is
-far less exposed because its request is sent immediately, though the hook
-does not await it, so a restart at that instant can still cut off the
-in-flight request. To guarantee no publish is
-dropped without adding database-backed deploy state, schedule a
-low-frequency rebuild on the host as a backstop: a periodic `DEPLOY_HOOK_URL`
-POST eventually deploys any change a lost trailing deploy missed. The same
-cron that covers time-relative content covers this.
+Restart hazard: the throttle window lives in process memory. A trailing
+deploy queued when the CMS process restarts (a redeploy of the CMS itself, a
+crash, a scale-to-zero) is lost. The hook sends the leading deploy request at
+once but does not await it. A restart at that instant can cut off the
+request.
+
+### Recovering a lost deploy
+
+At its next successful run, a scheduled rebuild picks up any change that a
+lost deploy missed. On a host with a deploy hook, schedule a POST to
+`DEPLOY_HOOK_URL` with the body and headers the CMS sends (`DEPLOY_HOOK_BODY`
+and `DEPLOY_HOOK_HEADERS`, or their defaults). On Railway, add a cron service
+that sets `CONTENT_BUILD_ID` the way the CMS does. Set `DEPLOY_RAILWAY_TOKEN`
+and `DEPLOY_RAILWAY_SERVICE_ID` in it, pick an image with `sh`, `curl` and
+`grep`, and set the start command below. Railway runs the start command of an
+image service without a shell, so the command starts one with `/bin/sh -c`
+([docs](https://docs.railway.com/deployments/start-command)).
+
+```sh
+/bin/sh -c 'curl -sS --max-time 30 https://backboard.railway.com/graphql/v2 -H "Content-Type: application/json" -H "Project-Access-Token: $DEPLOY_RAILWAY_TOKEN" -d "{\"query\":\"mutation (\$i: VariableUpsertInput!) { variableUpsert(input: \$i) }\",\"variables\":{\"i\":{\"projectId\":\"$RAILWAY_PROJECT_ID\",\"environmentId\":\"$RAILWAY_ENVIRONMENT_ID\",\"serviceId\":\"$DEPLOY_RAILWAY_SERVICE_ID\",\"name\":\"CONTENT_BUILD_ID\",\"value\":\"$(date +%s)\"}}}" | grep -q "\"variableUpsert\": *true"'
+```
+
+Railway cron schedules run in UTC, at least 5 minutes apart. The process
+must exit when its task is done, and Railway skips a run while the previous
+run is still active ([docs](https://docs.railway.com/reference/cron-jobs)).
+Railway has no time limit setting, so each job sets its own (`--max-time`
+above, `timeout 15m` before a `mongodump`). Give each scheduled job, such as
+the rebuild and a database dump, its own cron service. A stuck dump then
+does not block the rebuild.
+
+A persisted pending flag deploys a lost change at the next CMS start instead
+of at the next scheduled run. The starter does not ship it. A project adds a
+global with the flag and the time of the last change. The project passes
+`req.payload` to `scheduleDeploy` in `cms/src/hooks/triggerDeploy.ts` and
+makes it set both before it sends or queues a deploy. An `onInit` check in
+`payload.config.ts` deploys when the flag is set. The project clears the flag
+after a deploy request succeeds, but only if the stored time of the last
+change is earlier than the start of the request. A publish that arrives during
+the request then keeps the flag set. A project that adds the global runs
+`pnpm --filter @astroload/cms generate:types`.
+
+Start with the scheduled rebuild, which needs no code. Add the pending flag
+when a lost publish must go live before the next scheduled run.
 
 ## Same-commit redeploys and the content build id
 
-A publish-driven rebuild runs on the same git commit as the last one, only
+A publish-driven rebuild runs on the same git commit as the last one. Only
 the CMS content differs. Hosts that cache build output by commit
 SHA can serve the previous build for that second deploy, so the new content
 does not reach the edge. The site looks stuck on stale HTML even though the
 deploy "succeeded".
 
-The fix is `CONTENT_BUILD_ID`. Set it to a value that changes
-every deploy and the web build stamps it into every page rendered through
-the shared layout as
-`<meta name="content-build-id">`, so the output differs build over
-build. What the operator must do:
+Set `CONTENT_BUILD_ID` to a value that changes every deploy. The web
+build stamps it into every page rendered through the shared layout as
+`<meta name="content-build-id">`, so the output differs between builds.
+The operator must:
 
 - Pass a fresh `CONTENT_BUILD_ID` on each deploy (the host's deploy id, a
   timestamp, the build number). Most hosts hash build env vars into the
@@ -165,11 +205,20 @@ build. What the operator must do:
 
 Host examples:
 
-- Railway: set `CONTENT_BUILD_ID=${{ RAILWAY_DEPLOYMENT_ID }}` (or another
-  per-deploy variable) on the web service. Unverified whether Railpack
-  hashes build env into its build-layer cache key, so check the meta tag
-  after the first publish-driven redeploy and disable build caching for
-  the service if the value did not change.
+- Railway (no deploy hook URL): set `DEPLOY_RAILWAY_TOKEN` (a project token of
+  the web service's environment) and `DEPLOY_RAILWAY_SERVICE_ID` (the web
+  service id, for example `${{web.RAILWAY_SERVICE_ID}}`) in the CMS service.
+  Replace `web` with the name of the web service. On each content change, the
+  CMS calls the Railway API (`variableUpsert`) to set `CONTENT_BUILD_ID` on
+  the web service to a new value, and Railway rebuilds the service. The CMS
+  then skips the POST to `DEPLOY_HOOK_URL`. The CMS overwrites any value set
+  for `CONTENT_BUILD_ID` on the web service. Keep "Skipped Builds" off in
+  the web service settings (it is off by default). With it on, Railway ignores
+  variable changes and deploys the cached image
+  ([docs](https://docs.railway.com/builds/skipped-builds)). The CMS reads the
+  project and environment ids from `RAILWAY_PROJECT_ID` and
+  `RAILWAY_ENVIRONMENT_ID`, which Railway sets in every service. When the CMS
+  runs outside the web service's Railway environment, set both by hand.
 - Vercel/Netlify: set `CONTENT_BUILD_ID` to the deploy id env the platform
   exposes, or turn off build cache for the project.
 - Coolify/Docker hosts: pass `--build-arg CONTENT_BUILD_ID=$(date +%s)` or an
@@ -191,19 +240,19 @@ generated widths, so pass a `sizes` that matches the rendered box (the call
 sites already do).
 
 The media file route sends `Cache-Control: public, max-age=2592000`, so a CDN
-or browser may cache a media url for 30 days. That is only safe because every
-media url the web app emits carries a `?v=<updatedAt>` marker
+or browser may cache a media URL for 30 days. That is only safe because every
+media URL the web app emits carries a `?v=<updatedAt>` marker
 (`versionedMediaURL`), which changes when the file changes and so produces a new
-url. The header is deliberately not `immutable`: the max-age bounds the one case
+URL. The header is not `immutable`: the max-age bounds the one case
 the marker does not cover, a script that regenerates variant bytes without touching
-the document's `updatedAt`. Two operational consequences:
+the document's `updatedAt`. This has two consequences:
 
 - A CDN in front of the CMS must keep the query string in its cache key. If it
   strips query strings, an updated image keeps serving the old bytes because
   every version resolves to the same cached key. Most CDNs include the query string by
-  default. Confirm before fronting media.
-- Any new code that builds a media url must go through `versionedMediaURL`, not
-  `absoluteCmsURL`, or it opts that url out of cache busting.
+  default. Confirm this before you put a CDN in front of media.
+- Any new code that builds a media URL must go through `versionedMediaURL`, not
+  `absoluteCmsURL`, or it opts that URL out of cache busting.
 
 ## Redirects load at Astro config evaluation, not at request time
 
@@ -213,12 +262,11 @@ top-level `redirects` option. With the Node standalone adapter the rules
 end up in the server manifest and apply at request time with no extra
 round-trip.
 
-Consequence: editing a redirect in admin has no effect until the next
+Editing a redirect in admin therefore has no effect until the next
 deploy. The Redirects collection registers
 `triggerDeployAlwaysAfterChange` on save and
-`triggerDeployAlwaysAfterDelete` on delete. These fire unconditionally
-on any save or delete in that collection, not on a draft-to-published
-transition (Redirects do not use drafts), but a save that leaves the
+`triggerDeployAlwaysAfterDelete` on delete. Redirects do not use drafts, so
+these fire on any save or delete in that collection. A save that leaves the
 document unchanged apart from `updatedAt` is skipped. The webhook call goes
 through the same global throttle as every other deploy trigger, so editor
 bursts coalesce. A configured `DEPLOY_HOOK_URL` means redirects refresh
@@ -231,33 +279,33 @@ import, `process.env.CMS_URL` and `process.env.PAYLOAD_READ_KEY` are
 undefined at the moment `getRedirects()` runs, the function returns
 `{}`, and the dev server boots with no redirects even though `.env` is
 on disk. Anything else added to `astro.config.mjs` that reads
-`process.env` needs the same treatment.
+`process.env` needs the same import.
 
-The fetch keys its behaviour on the `REDIRECTS_STRICT` flag, which the
+The fetch behaves differently under the `REDIRECTS_STRICT` flag, which the
 `build` script in `web/package.json` sets so a normal
 `pnpm --filter @astroload/web build` is strict:
 
 - A failed CMS fetch retries with backoff under strict (six attempts over
-  roughly a minute and a half), to ride out a CMS that is briefly down while
-  a coordinated deploy restarts it. Non-strict makes a single attempt.
+  roughly a minute and a half), so a build survives a CMS that is briefly
+  down while a coordinated deploy restarts it. Non-strict makes a single attempt.
 - If the CMS is still unreachable after the strict retries, the build fails
   rather than producing a site with no redirects. The last good deploy is
   already serving, so failing leaves it in place instead of replacing it with
   a build that 404s every removed URL. A missing `CMS_URL`/`PAYLOAD_READ_KEY`
-  fails the same way, since that is a wiring error, not an outage.
+  fails the same way, since that is a configuration error that no retry
+  fixes.
 - A non-strict run (dev, `astro check`, plain `astro build`) makes one
   attempt and then returns the committed fallback so the run still completes.
 - The CMS is trusted when it answers. An empty Redirects collection produces
   an empty table, in strict and non-strict alike, so deleting every redirect
-  takes effect rather than being overridden.
+  takes effect.
 
-Strictness keys on the flag instead of `NODE_ENV` because `astro check`
-forces `NODE_ENV=production` while resolving the config. Keying on
-`NODE_ENV` would then make a type-check abort on a transient CMS outage.
-The flag scopes the retry effort and the build-failure policy to the deploy
-build alone.
+Strictness depends on the flag instead of `NODE_ENV` because `astro check`
+forces `NODE_ENV=production` while resolving the config. With `NODE_ENV`,
+a type-check would abort on a short CMS outage. The flag limits the retries
+and the build failure to the deploy build.
 
-This is a build-time policy, independent of runtime resilience. The running
+This policy applies to the build only. The running
 standalone server has no request-time dependency on the CMS for redirects or
 prerendered content (see above), so a CMS outage does not take those down.
 The request-time routes (`/preview`, the per-locale sitemaps, and any SSR
@@ -266,8 +314,8 @@ opt-in) can fail during the outage or serve their last good response where
 
 `redirects.fallback.json` is the committed redirect table for non-strict runs
 (offline dev and CI). It is committed empty, so a fresh project loses nothing.
-An operator who would rather
-keep a deploy alive through a CMS outage than fail it can populate the file
+An operator who would rather keep a deploy alive through a CMS outage than
+fail it can populate the file
 (export the Redirects collection into it) and return `fallback` instead of
 throwing in the final strict branch of `getRedirects.ts`.
 
@@ -285,7 +333,7 @@ public values into the build output at `astro build`. Running the built
 standalone server later with a different env does not change them, because
 they are already compiled into the JS.
 
-Consequence: a build produced against staging or localhost URLs keeps those
+As a result, a build produced against staging or localhost URLs keeps those
 URLs in production even when the deploy environment "sets" the right values.
 The CMS's server-side secrets behave the opposite way, since the running
 process reads them from its environment at runtime. There is no code change
@@ -296,55 +344,92 @@ correct public URLs.
 
 ## Taking the site live or moving hosts
 
-Taking the site live, or moving it to a new host, touches two public hostnames
-and one build-cache pitfall. Work through these in order.
+Taking the site live, or moving it to a new host, involves the public host
+names of both services and the build cache. Deploy and check the site on the
+platform's generated host names, then move both services to the custom domains
+in one rebuild.
 
-Two hostnames are public, not one. The web origin (`WEBSITE_URL`) serves visitors.
-The CMS origin (`CMS_URL`) is also public: every media url the web app emits
-points at it, so each `<img>` and the `og:image` resolve through the CMS
-host. A CMS reachable only on a private network renders a site with broken
-images and social cards. Both hostnames must resolve over HTTPS from the public
-internet.
+The web origin (`WEBSITE_URL`) serves visitors. The CMS origin (`CMS_URL`) is
+also public: every media URL the web app emits points at it, so each `<img>`
+and the `og:image` resolve through the CMS host. A CMS reachable only on a
+private network renders a site with broken images and social cards. Both host
+names must answer over HTTPS from the public internet.
 
-1. Build with production values. `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID`
-   are inlined at `astro build` (see [Public web env is baked in at build
-   time](#public-web-env-is-baked-in-at-build-time)). Set them to the production
-   hostnames before the build, not at `start`.
-2. Set the CMS origin on both sides. The CMS service must run with
-   `SERVER_URL=https://<cms-host>`, which Payload uses as its own public origin
-   for admin csrf and absolute urls. The web build's `CMS_URL` must point at the
-   same host. A mismatch breaks the admin session or sends the site's media and
-   API at the wrong origin.
-3. Point DNS at each host. The web app and the CMS each need their hostname
-   resolving to the right host. On Railway a custom domain also needs the
-   `_railway-verify.<domain>` TXT record shown in the service's domain settings,
-   in addition to the CNAME. The domain stays unverified and unserved until that
-   TXT resolves, and a CNAME alone is the common reason a fresh domain returns
+1. Deploy both services on the generated host names (Railway's
+   `*.up.railway.app`, Fly's `*.fly.dev`). `CMS_URL`, `WEBSITE_URL`, and
+   `UMAMI_WEBSITE_ID` are inlined at `astro build` (see [Public web env is
+   baked in at build time](#public-web-env-is-baked-in-at-build-time)), so set
+   them before the build, not at `start`. The CMS service runs with
+   `SERVER_URL` set to its own generated origin, which Payload uses for admin
+   CSRF checks and absolute URLs, and with `WEBSITE_URL` set to the web origin.
+   The web build's `CMS_URL` must equal the CMS `SERVER_URL`. A mismatch breaks
+   the admin session or points the site's media and API requests at the wrong
+   origin.
+2. Guard the build cache. A publish-driven redeploy runs on the same git commit
+   as the last one, so a host that caches build output by commit can replay
+   stale HTML. Set `CONTENT_BUILD_ID` per deploy (see [Same-commit redeploys
+   and the content build id](#same-commit-redeploys-and-the-content-build-id)).
+3. Check the site end to end on the generated host names. In the shell, set
+   `PAGE` to a content page, for example
+   `PAGE='https://web-production.up.railway.app/en'`. The multi-locale root
+   answers with a 302 that has no body, so it carries no `content-build-id` tag
+   and no `Content-Encoding`. Drop `/en` on a single-locale site that serves
+   pages without a locale prefix.
+   - Load the web origin over HTTPS and confirm an image renders. An image
+     that renders shows that `CMS_URL` is public and built in correctly.
+   - Publish a content change and confirm the site updates and the
+     `content-build-id` meta tag changes (`curl -s "$PAGE" | grep content-build-id`).
+     A new tag value shows that the redeploy ran a fresh build.
+   - Check response compression. The web app compresses its own responses
+     (`web/server.mjs`). Confirm it with a GET against `$PAGE`, because the
+     compression filter skips HEAD requests:
+     `curl -sS -H 'Accept-Encoding: gzip' -D - -o /dev/null "$PAGE" | grep -i content-encoding`.
+     If nothing comes back, either a proxy in the chain strips
+     `Accept-Encoding` or the deployment does not start through `server.mjs`.
+   - Open a page in the admin live preview. If the frame shows an error or
+     stays empty, check that
+     `curl -sI "$PAGE" | grep -i content-security-policy` shows
+     `frame-ancestors` with the CMS origin (see
+     [`security.md`](./security.md#cross-origin-posture)).
+   - When `UMAMI_WEBSITE_ID` is set, confirm in a browser exactly one POST to
+     the first-party `/api/send` per page view. A request to the Umami host
+     (`gateway.umami.is` or `cloud.umami.is` on Cloud) instead means the tag's
+     `data-host-url` did not apply. Confirm the realtime dashboard shows the
+     visitor's correct country and that no cookies are set. Every visitor
+     reporting the server's country means the host exposes the client IP
+     under a header other than `x-real-ip` (see `web/src/pages/api/send.ts`).
+   - Run `rg -n 'Astro\.url|request\.url|context\.url|clientAddress' web/src`.
+     Skip this check if every hit reads only `.pathname` or `.searchParams`.
+     Otherwise, load a page that runs each remaining hit and confirm it
+     shows the deployed origin with `https://` and your IP. A `localhost`
+     host means the request host is not in `security.allowedDomains` (see
+     [`deployment.md`](./deployment.md#in-front-of-the-containers)). An
+     `http://` origin means the proxy sends no `x-forwarded-proto`.
+   - Enter the URL in `PAGE` in
+     [PageSpeed Insights](https://pagespeed.web.dev/) and check the mobile and
+     desktop results. Fix each lab metric that it marks red before you
+     continue. The generated host name has no field data. The Core Web Vitals
+     assessment appears once the custom domain has enough real visitors in a
+     28-day period.
+4. Point each custom domain at its service. On Railway a custom domain also
+   needs the `_railway-verify.<domain>` TXT record shown in the service's
+   domain settings, in addition to the CNAME. The domain stays unverified and
+   unserved until that TXT resolves. A domain with only the CNAME returns
    nothing.
-4. Guard the build cache. A publish-driven redeploy runs on the same git commit
-   as the last one, so a host that caches build output by commit can replay stale
-   HTML. Set `CONTENT_BUILD_ID` per deploy (see [Same-commit redeploys and the
-   content build id](#same-commit-redeploys-and-the-content-build-id)).
-5. Verify the result. Load the public web origin over HTTPS. Confirm an image
-   renders, which proves `CMS_URL` is publicly reachable and built in correctly.
-   Publish a content change and confirm the live site updates and the
-   `content-build-id` meta tag changes
-   (`curl -s https://your-site/ | grep content-build-id`), which proves the
-   redeploy rebuilt rather than served a cached build.
-6. Check response compression. The web app compresses its own responses
-   (`web/server.mjs`). Confirm it end to end with a GET against a page,
-   because the compression filter skips HEAD requests and the multi-locale
-   root answers with a bodyless 302 that carries no `Content-Encoding`:
-   `curl -sS -H 'Accept-Encoding: gzip' -D - -o /dev/null https://your-site/en | grep -i content-encoding`.
-   If nothing comes back, either a proxy in the chain strips
-   `Accept-Encoding` or the deployment does not start through `server.mjs`.
-7. Verify analytics, when `UMAMI_WEBSITE_ID` is set. In a browser, confirm
-   exactly one POST to the first-party `/api/send` per page view. A request to
-   the Umami host (`gateway.umami.is` or `cloud.umami.is` on Cloud) instead
-   means the tag's `data-host-url` did not take. Confirm the realtime dashboard shows the
-   visitor's correct country and that no cookies are set. Every visitor
-   reporting the server's country means the host exposes the client IP under a
-   header other than `x-real-ip` (see `web/src/pages/api/send.ts`).
+5. Move to the custom domains in one rebuild. Set `CMS_URL` and `WEBSITE_URL`
+   in the web service, and `SERVER_URL` and `WEBSITE_URL` in the CMS service,
+   to the custom domains at the same time. Then restart the CMS and rebuild
+   the web app once. Changing only some of these values leaves one service
+   pointing at the other's old host name, which breaks the admin session,
+   CORS or the live preview.
+6. Repeat the checks of step 3 on the custom domains, with `PAGE` on the
+   custom web domain.
+7. Remove the generated host names from both services. Where the platform
+   keeps the web app's generated host name, set `ALIAS_REDIRECT_HOSTS` to it and
+   `ALIAS_REDIRECT_ORIGIN` to the canonical origin (see
+   [`deployment.md`](./deployment.md#in-front-of-the-containers)). Where it
+   keeps the CMS's generated host name, redirect it at the platform or a
+   proxy, because the CMS has no such setting.
 
 ## Lexical internal links do not switch to the preview URL
 
@@ -359,8 +444,8 @@ In preview mode the same internal link still renders `/en/about`, not
 preview pages and rewrites it to the matching `/preview` route with the
 secret attached, so following the link stays inside preview. Only the
 rendered href is the published path, which matters if a link is copied out
-of the page rather than clicked. To make the markup itself preview-aware,
-pass a resolver to the renderer that prepends `/preview` when the page is
+of the page rather than clicked. To make the rendered href point at the
+preview route, pass a resolver to the renderer that prepends `/preview` when the page is
 rendered in preview mode.
 
 ## Lexical blocks supported in this starter
@@ -371,16 +456,16 @@ block. Other block types added to the Lexical editor throw at render time with
 block types it handles: adding a type to that map's union without a renderer
 fails the build, but a block added only on the CMS side is invisible to the
 compiler and still throws at runtime. Add the editor block, the union entry,
-and the renderer in the same change. See the block-to-renderer coupling note
-in [`conventions.md`](./conventions.md).
+and the renderer in the same change. See "A Lexical block and its renderer
+are added together" in [`conventions.md`](./conventions.md).
 
 ## Divergent locale slugs in seed content
 
 The seed deliberately uses different slugs per locale (`ueber-uns` vs
 `about`, `kontakt` vs `contact`, `hallo-welt` vs `hello-world`). The
 divergence exercises the per-locale `path` field from the pages plugin
-and the language switcher's path-mapping. A sitewide string-replace
-would not work for translating URLs. The plugin emits the right path per
+and the language switcher's path mapping. A sitewide string replacement
+cannot translate these URLs. The plugin emits the right path per
 locale and the switcher reads it from `Astro.props.paths`. Keep the
 divergence when editing the seed, and when replacing the starter's markup
 with a prototype's, keep `LanguageSwitcher.astro` and its `paths` wiring
@@ -400,9 +485,9 @@ the frontend fails with a 401.
 
 When you drop the database and re-run the seed, the keys stay stable
 only if both env vars are pinned in the CMS env. If they are absent,
-every reseed mints fresh values. The safe default is to set
-`PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` in `cms/.env` after the
-first seed, mirror them in `web/.env`, and leave them there.
+every reseed generates fresh values. After the first seed, set
+`PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY` in `cms/.env`, copy them to
+`web/.env`, and leave them there.
 
 ## Astro dev does not re-fetch prerendered routes on every request
 
@@ -412,7 +497,7 @@ edits do not propagate to dev pages until the dev server is restarted,
 unless the route renders on demand in dev.
 
 The `prerenderOverrides` integration in `astro.config.mjs` therefore
-flips every route to on-demand while the dev server runs. Note that a
+renders every route on demand while the dev server runs. A
 conditional prerender export (`!import.meta.env.DEV` and the like)
 does not do this: Astro's route scanner only honors a bare literal and
 silently ignores anything else, so the override has to happen in the
@@ -449,7 +534,7 @@ or a one-off script, the same way the seed writes content.
 
 ### Staying on Postgres
 
-Postgres is still a first-class option. To switch back:
+Postgres is still supported. To switch back:
 
 1. In `cms/package.json`, replace `@payloadcms/db-mongodb` with
    `@payloadcms/db-postgres` at the same Payload version, then `pnpm install`.
@@ -509,6 +594,5 @@ release is three steps, in order.
      --notes-file <notes>
    ```
 
-The changelog entry is the canonical record. The GitHub release body is
-a reader-facing summary of the same change, not a second source of
-truth.
+The changelog entry is the canonical record. The GitHub release body
+summarizes the same change for readers.

@@ -7,17 +7,16 @@ field renderer that submits to the CMS over HTTP.
 
 `web/src/components/blocks/FormBlock.astro` renders the form fields the
 plugin emits. Supported field types are text, email, number, textarea,
-select, checkbox, and message. The plugin is configured to drop the
-field types that are not curated in the starter (country, state,
-payment, date, upload, radio). If you want any of those, add a case to
-the renderer and remove the plugin scoping.
+select, checkbox, and message. The plugin's `fields` option turns off
+the types the renderer does not handle (country, state, payment, date,
+upload, radio). To use one of those, add a case to the renderer and
+remove its `false` entry from the plugin config.
 
 Each field has an explicit `<label for>` and matching input `id` of the
 form `form-${formId}-${instance}-${fieldName}`, where `instance` is a
 per-render token that keeps ids unique when the same form appears twice
-on a page. There is no automatic mapping of
-field names to `autocomplete` tokens in the renderer. If you want
-browser autofill on common fields, add the attribute explicitly in the
+on a page. The renderer does not map field names to `autocomplete`
+tokens. For browser autofill on common fields, add the attribute in the
 renderer or extend the field config.
 
 ## How submissions flow
@@ -38,17 +37,22 @@ The bundled `<script>` builds a JSON payload of the shape
   the page locale.
 - Guards against double-submits with an in-flight flag.
 
-The success and error states are shown by toggling Tailwind's `hidden`
-class on the form, the confirmation block, and the error paragraph. A
-project that replaces Tailwind with its own CSS must define `.hidden`
-(`display: none`) itself, or the confirmation and error blocks render
-permanently below the form.
+The success and error states are shown by toggling the `hidden` attribute
+on the form, the confirmation block, and the error paragraph. A component
+rule that sets `display` would show a hidden element, so
+`web/src/styles/styles.css` keeps `[hidden] { display: none }` in the
+`utilities` layer, above the `components` layer.
+
+The admin stores each field width as a percentage. `FormBlock.astro`
+clamps it to 1 to 100, uses 100 when it is empty, and writes
+`flex: 1 1 calc(<width>% - 1rem); min-width: 12rem` in the field's
+`style` attribute.
 
 The form element has a native `action` and `method` pointing at the
 same endpoint, but the Payload endpoint expects the JSON shape above,
 not the form-encoded body a plain HTML POST would send. Submitting
 without JavaScript does not work in the template as shipped. If you need
-a no-JS path, add a thin Astro server route on the public site that
+a no-JS path, add an Astro server route on the public site that
 wraps the form-encoded body into the JSON shape and forwards it.
 
 ## Cross-origin POST
@@ -67,19 +71,21 @@ allow-list explicitly.
 ## Spam protection
 
 The form builder plugin has no built-in spam protection. Astroload
-includes a few baseline checks against commodity contact-form spam:
+includes three checks against automated contact-form spam:
 
 - A honeypot field named `fax`, hidden by `.form-extra { display: none }`
-  in the global stylesheet. The rule is in an external sheet rather
-  than inline, so bots that only parse the raw HTML do not see it. The
+  in `web/src/styles/styles.css`. `build.inlineStylesheets: 'never'` in
+  `web/astro.config.mjs` keeps the rule in an external sheet, so bots that
+  parse only the raw HTML do not see it. The
   field has no `aria-hidden`, `tabindex`, or `autocomplete` attribute,
   because each of those is a fingerprint a bot can match on. The name
   `fax` was picked because browsers do not autofill it.
 - A client-stamped `_rendered_at` timestamp for a minimum-submit-time
   check.
 - A `beforeChange` hook (`cms/src/hooks/spamGuard.ts`) on
-  `form-submissions` that rejects honeypot-filled, sub-1.5s, and
-  oversized submissions and strips both internal fields before save.
+  `form-submissions`. It rejects submissions that fill the honeypot, arrive
+  less than 1.5 s after render, or are oversized, and it strips both
+  internal fields before save.
 
 The names `fax` and `_rendered_at` are reserved for these checks. The
 Forms collection rejects a form that names a field after either (and any
@@ -87,18 +93,18 @@ duplicate field name) at save time, through the `validateFormFields`
 hook wired into `formOverrides`.
 
 The timestamp is client-controlled. A bot can post any timestamp older
-than the threshold and pass the check. The check catches lazy bots, not
-motivated ones. If your project needs stronger guarantees, replace the
-client stamp with a server-stamped signed token (HMAC, short TTL) or
-gate the endpoint behind a CDN rule.
+than the threshold and pass the check, so the check stops only simple
+bots. If your project needs more, replace the client stamp with a
+server-stamped signed token (HMAC, short TTL) or put a CDN rule in front
+of the endpoint.
 
 There is no per-IP or per-form rate limit on `/api/form-submissions`,
 so a motivated attacker can post until the table fills. See
-[`security.md`](./security.md) for the recommended posture.
+[`security.md`](./security.md) for recommended mitigations.
 
 ## Accessibility
 
-The renderer implements a few baseline patterns:
+The renderer implements these patterns:
 
 - Explicit `<label for>` and `<input id>` pairs across textarea, select,
   checkbox, and input branches.
@@ -131,8 +137,8 @@ fork if your project needs it.
   database.
 
 There is no upper bound on `_rendered_at`. A stale prefetched form
-posted hours later still passes the time check as long as the elapsed
-delta is at least 1.5 seconds.
+posted hours later still passes the time check, because at least 1.5
+seconds have passed.
 
 A second `beforeChange` hook, `validateSubmission`
 (`cms/src/hooks/validateSubmission.ts`), runs after `spamGuard`. It
@@ -152,18 +158,24 @@ update the hooks to match.
 The same overrides set the submission access rules. Submissions hold
 visitor PII, so anyone may create one, only panel users (admins and
 editors) may read them, nobody may update one, and only admins may
-delete. Without the explicit rules, read would be open to any
-authenticated requester, including the web app's read-only api key.
+delete. The plugin's own default limits read to users of the admin
+auth collection and blocks update, but sets no delete rule, so without
+the explicit rules any authenticated requester, including the web
+app's API keys, could delete.
 
 The Forms collection itself restricts writes the same way as the content
 collections (`isAdminOrEditor`): the plugin sets no write rules, so
 writes would otherwise fall back to any authenticated requester,
-including the api keys. Form reads stay anonymous (the plugin's
+including the API keys. Form reads stay anonymous (the plugin's
 default), which [`security.md`](./security.md) lists with the other
 public-read surfaces. Form saves and deletions fire the deploy webhook,
 since the rendered fields, labels, and confirmation are baked into the
 prerendered pages that embed the form.
 
-The starter has no integration test for this path. When you set up a
-CMS-side test runner, cover it with forged POSTs asserting the rejects
-above.
+`web/e2e/forms.e2e.ts` tests this path. It posts one accepted submission
+and checks the access rules around it, and it submits the contact page
+once in a browser. It sends a forged POST for each reject above except a
+missing `submissionData`, a missing `_rendered_at`, and an unknown form id.
+It also checks the CORS preflight, that the `emails` recipients stay hidden
+from anonymous and API key reads, and that a field named `fax` is refused.
+Add a case there when you change a check.
