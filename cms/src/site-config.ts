@@ -1,44 +1,52 @@
 import type { Locale } from './shared'
 
-// The locale list used by both apps.
-// Kept as readonly Locale[] (not `as const`) so MULTIPLE_LOCALES below derives a
-// plain boolean and neither the single- nor multi-locale branch is typed as
-// dead code.
+// Used by both apps. Typed readonly Locale[] instead of `as const` so
+// MULTIPLE_LOCALES below is a plain boolean and TypeScript does not treat
+// the single-locale or the multi-locale branch as dead code.
 export const LOCALES: readonly Locale[] = ['de', 'en']
 
 export const DEFAULT_LOCALE: Locale = 'en'
 
-// Admin labels keyed by locale code. A code with no entry falls back to the
-// code itself. Typed by string, not Locale, so it can keep labels for locales
-// a single-locale project no longer ships without tripping the type checker.
+// Admin labels by locale code. A code without an entry shows the code itself.
+// Keyed by string so a project can keep labels for locales it dropped.
 export const LOCALE_LABELS: Record<string, string> = {
   de: 'Deutsch',
   en: 'English',
 }
 
-// og:locale values keyed by locale code, same string typing as LOCALE_LABELS.
-// A locale missing here omits the og:locale tag: the territory half cannot be
-// derived from the language (en maps to en_US, not en_EN), so a new locale
-// needs an entry.
+// og:locale values by locale code, keyed by string like LOCALE_LABELS. A new
+// locale needs an entry, because the territory does not follow from the
+// language (en is en_US) and a missing entry omits the og:locale tag.
 export const OG_LOCALE: Record<string, string> = {
   de: 'de_DE',
   en: 'en_US',
 }
 
+// BCP 47 locale for dates and numbers, keyed by locale code. Use the same
+// region as OG_LOCALE. A missing entry uses the code itself.
+export const INTL_LOCALE: Record<string, string> = {
+  de: 'de-DE',
+  en: 'en-US',
+}
+
+// Time zone for rendered dates, independent of the build host's zone. A site
+// whose readers share one zone sets it here, for example 'Europe/Vienna' with
+// 'de-AT' in INTL_LOCALE and 'de_AT' in OG_LOCALE.
+export const TIME_ZONE = 'UTC'
+
 // Build-time site display name, used for admin chrome such as the panel title.
 // The public site renders the editable siteSettings.siteName instead.
 export const SITE_NAME = 'Astroload'
 
-// Drives the multilingual UI (language switcher, hreflang alternates). Kept
-// separate from URL prefixing so a single-locale project can force the prefix
-// without also turning the switcher on.
+// Drives the language switcher and hreflang alternates. It is separate from
+// URL prefixing so a single-locale project can keep the prefix without the
+// switcher.
 export const MULTIPLE_LOCALES: boolean = LOCALES.length > 1
 
-// Set to true to keep the /{locale} prefix on a project that ships one locale
-// today but may add more later, so its URLs survive that change with no
-// redirects. When left null, prefixing follows MULTIPLE_LOCALES. Forcing it
-// false while several locales ship is rejected below, since their un-prefixed
-// URLs would collide.
+// Set to true to keep the /{locale} prefix on a single-locale project that may
+// add locales later, so its URLs do not change. null follows MULTIPLE_LOCALES.
+// false with several locales throws below, because their un-prefixed URLs
+// would collide.
 const FORCE_URL_PREFIX: boolean | null = null
 
 export const LOCALE_URL_PREFIX: boolean = FORCE_URL_PREFIX ?? MULTIPLE_LOCALES
@@ -49,9 +57,10 @@ if (!LOCALE_URL_PREFIX && MULTIPLE_LOCALES) {
   )
 }
 
-// DEFAULT_LOCALE must be one of LOCALES. Payload's defaultLocale, the URL-prefix
-// stripping, and the public page lookup all anchor on it, so a value outside the
-// shipped set would silently produce wrong paths. Throw during import instead.
+// Payload's defaultLocale, the prefix stripping, and the public page lookup all
+// use DEFAULT_LOCALE, so a value outside LOCALES would produce wrong paths.
 if (!LOCALES.includes(DEFAULT_LOCALE)) {
-  throw new Error(`DEFAULT_LOCALE "${DEFAULT_LOCALE}" must be one of LOCALES [${LOCALES.join(', ')}]`)
+  throw new Error(
+    `DEFAULT_LOCALE "${DEFAULT_LOCALE}" must be one of LOCALES [${LOCALES.join(', ')}]`,
+  )
 }

@@ -2,6 +2,7 @@
 import type { Post, PostsListBlock as PostsListBlockType } from '@astroload/cms/src/payload-types'
 
 import { isPopulated, type Locale } from '../../cms/types'
+import { formatDate } from '../../lib/format'
 import Img from '../Img.astro'
 
 type Props = Omit<PostsListBlockType, 'blockType'> & { lang: Locale; emptyLabel: string }
@@ -10,38 +11,96 @@ const { posts, lang, emptyLabel } = Astro.props
 const items = (posts ?? []).filter((p): p is Post => isPopulated(p))
 ---
 
-{
-  items.length === 0 ? (
-    <p class="my-6 text-gray-500">{emptyLabel}</p>
-  ) : (
-    <ul class="my-6 flex flex-col gap-6">
-      {items.map((post) => {
-        const image = isPopulated(post.image) ? post.image : null
-        const published = post.publishedAt
-          ? new Date(post.publishedAt).toLocaleDateString(lang)
-          : null
-        return (
-          <li>
-            <a href={post.path} class="flex gap-4 group">
-              {image && (
-                <div class="w-32 shrink-0 sm:w-40">
-                  <Img
-                    image={image}
-                    size="sm"
-                    class="aspect-[4/3] w-full rounded object-cover"
-                    sizes="(min-width: 640px) 160px, 128px"
-                  />
-                </div>
-              )}
-              <div class="flex-1">
-                <h3 class="font-semibold group-hover:underline">{post.title}</h3>
-                {published && <p class="mt-1 text-sm text-gray-500">{published}</p>}
-                <p class="mt-2 text-gray-700">{post.excerpt}</p>
+{items.length === 0 ? (
+  <p class="empty">{emptyLabel}</p>
+) : (
+  <ul class="list">
+    {items.map((post) => {
+      const image = isPopulated(post.image) ? post.image : null
+      const published = post.publishedAt ? formatDate(post.publishedAt, lang) : null
+      return (
+        <li>
+          <a href={post.path} class="item">
+            {image && (
+              <div class="thumb">
+                <Img
+                  image={image}
+                  size="sm"
+                  class="image"
+                  sizes="(min-width: 640px) 160px, 128px"
+                />
               </div>
-            </a>
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
+            )}
+            <div class="text">
+              <h3 class="title">{post.title}</h3>
+              {published && <p class="date">{published}</p>}
+              <p class="excerpt">{post.excerpt}</p>
+            </div>
+          </a>
+        </li>
+      )
+    })}
+  </ul>
+)}
+
+<style>
+  @layer components {
+    .empty {
+      margin-block: 1.5rem;
+      color: var(--color-text-subtle);
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-block: 1.5rem;
+    }
+
+    .item {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .thumb {
+      flex-shrink: 0;
+      inline-size: 8rem;
+    }
+
+    @media (width >= 40rem) {
+      .thumb {
+        inline-size: 10rem;
+      }
+    }
+
+    .image {
+      inline-size: 100%;
+      aspect-ratio: 4 / 3;
+      border-radius: var(--radius);
+      object-fit: cover;
+    }
+
+    .text {
+      flex: 1;
+    }
+
+    .title {
+      font-weight: 600;
+    }
+
+    .item:hover .title {
+      text-decoration: underline;
+    }
+
+    .date {
+      margin-top: 0.25rem;
+      font-size: var(--text-sm);
+      color: var(--color-text-subtle);
+    }
+
+    .excerpt {
+      margin-top: 0.5rem;
+      color: var(--color-text-muted);
+    }
+  }
+</style>

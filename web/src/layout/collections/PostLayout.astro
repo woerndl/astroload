@@ -6,6 +6,7 @@ import { resolveSeo } from '../../cms/resolveSeo'
 import { isPopulated, type Locale, type LocalePaths, type PreviewContext } from '../../cms/types'
 import Img from '../../components/Img.astro'
 import LexicalContent from '../../components/lexical/LexicalContent.astro'
+import { formatDate } from '../../lib/format'
 import { CONTENT_COLUMN_SIZES } from '../contentColumn'
 import Layout from '../Layout.astro'
 
@@ -21,9 +22,7 @@ const { data } = result
 
 const cover = isPopulated(data.image) ? data.image : null
 const authors = (data.authors ?? []).filter((a): a is Author => isPopulated(a))
-const publishedAt = data.publishedAt
-  ? new Date(data.publishedAt).toLocaleDateString(lang)
-  : null
+const publishedAt = data.publishedAt ? formatDate(data.publishedAt, lang) : null
 const seo = resolveSeo(data)
 ---
 
@@ -37,26 +36,41 @@ const seo = resolveSeo(data)
   preview={preview}
 >
   <article>
-    <header class="mb-8">
-      <h1 class="text-3xl font-semibold">{data.title}</h1>
-      <p class="mt-3 text-gray-600">{data.excerpt}</p>
+    <header class="header">
+      <h1>{data.title}</h1>
+      <p class="excerpt">{data.excerpt}</p>
       {(authors.length > 0 || publishedAt) && (
-        <p class="mt-2 text-gray-600">
+        <p class="meta">
           {authors.map((a) => a.name).join(', ')}
           {authors.length > 0 && publishedAt && ' · '}
           {publishedAt}
         </p>
       )}
     </header>
-    {cover && (
-      <Img
-        image={cover}
-        size="lg"
-        class="mb-8 w-full"
-        loading="eager"
-        sizes={CONTENT_COLUMN_SIZES}
-      />
-    )}
+    {cover && <Img image={cover} size="lg" class="cover" priority sizes={CONTENT_COLUMN_SIZES} />}
     <LexicalContent content={data.content} />
   </article>
 </Layout>
+
+<style>
+  @layer components {
+    .header {
+      margin-bottom: 2rem;
+    }
+
+    .excerpt {
+      margin-top: 0.75rem;
+      color: var(--color-text-muted);
+    }
+
+    .meta {
+      margin-top: 0.5rem;
+      color: var(--color-text-muted);
+    }
+
+    .cover {
+      inline-size: 100%;
+      margin-bottom: 2rem;
+    }
+  }
+</style>
