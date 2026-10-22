@@ -1,0 +1,11 @@
+---
+import { shellLabels } from '../layout/shellLabels'
+
+interface Props {
+  lang: string
+}
+---
+
+<a class="skip-link" href="#main">
+  {shellLabels(Astro.props.lang).skipToContent}
+</a>

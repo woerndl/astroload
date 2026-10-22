@@ -1,0 +1,8 @@
+---
+// rest carries the data-astro-cid-* attribute that the caller's scoped styles match.
+const { class: className, ...rest } = Astro.props
+---
+
+<main id="main" tabindex="-1" class={className} {...rest}>
+  <slot />
+</main>
