@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 32" width="168" height="32">
+  <rect width="32" height="32" rx="8" fill="#4b5563"/>
+  <path d="M8 23 16 8l8 15z" fill="none" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="16" cy="18.5" r="2.5" fill="#fff"/>
+  <text x="42" y="22.5" fill="#6b7280" font-family="system-ui, sans-serif" font-size="18" font-weight="600">Astroload</text>
+</svg>

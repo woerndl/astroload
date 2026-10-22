@@ -36,21 +36,24 @@ import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { Labels } from './globals/Labels'
 import { SiteSettings } from './globals/SiteSettings'
-import { CollectionGroups, pageCollectionsSlugs } from './shared'
+import { CollectionGroups, DATE_FORMAT, pageCollectionsSlugs } from './shared'
 import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES, SITE_NAME } from './site-config'
 import { stripLocalePath } from './stripLocalePath'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-// An integration turns on only when its whole env group is set. Warn on a
-// half-set group so a typo'd var name does not silently leave S3 or email off.
+// An integration turns on only when all its env vars are set. A partly set
+// group logs a warning, so a mistyped var name does not leave S3 or email off
+// unnoticed.
 function isConfigured(label: string, vars: Record<string, string | undefined>): boolean {
   const set = Object.values(vars).filter(Boolean).length
   const names = Object.keys(vars)
   if (set > 0 && set < names.length) {
     const missing = names.filter((name) => !vars[name])
-    console.warn(`[astroload] ${label} is partially configured. It stays off until you set: ${missing.join(', ')}`)
+    console.warn(
+      `[astroload] ${label} is partially configured. It stays off until you set: ${missing.join(', ')}`,
+    )
   }
   return set === names.length
 }
@@ -69,7 +72,17 @@ export default buildConfig({
   serverURL: env.SERVER_URL,
   admin: {
     user: Users.slug,
-    meta: { titleSuffix: ` — ${SITE_NAME}` },
+    dateFormat: DATE_FORMAT,
+    components: {
+      graphics: {
+        Logo: './admin/Logo#Logo',
+        Icon: './admin/Logo#Icon',
+      },
+    },
+    // Payload's /api/og route fails with a custom graphics.Icon, because it
+    // reads req.payload.importMap, which is not set when a REST route handles
+    // the request. The admin needs no generated share image.
+    meta: { titleSuffix: ` — ${SITE_NAME}`, defaultOGImageType: 'off' },
     importMap: {
       baseDir: path.resolve(dirname),
     },
@@ -90,9 +103,8 @@ export default buildConfig({
     fallback: true,
   },
   editor: lexicalEditorWithSafeLinks(),
-  // Nothing consumes GraphQL: the web app and the seed go through REST and
-  // the Local API. The Next route handlers under api/graphql* are deleted
-  // with it. This flag skips schema generation at init.
+  // The web app and the seed use REST and the Local API, and the app has no
+  // api/graphql* route handlers. This flag skips schema generation at init.
   graphQL: { disable: true },
   secret: env.PAYLOAD_SECRET,
   typescript: {
@@ -100,9 +112,8 @@ export default buildConfig({
   },
   db: mongooseAdapter({
     url: env.DATABASE_URI,
-    // Transactions require a replica set. Turning them off lets a single
-    // standalone mongod work, and also sidesteps the WriteConflict retries
-    // a replica set would otherwise need. See docs/astroload/maintenance.md.
+    // Transactions need a replica set. Without them a standalone mongod works
+    // and there are no WriteConflict retries. See docs/astroload/maintenance.md.
     transactionOptions: false,
   }),
   ...(resendConfigured
@@ -119,8 +130,8 @@ export default buildConfig({
     payloadPagesPlugin({
       generatePageURL: ({ path: pagePath, preview }) => {
         if (!pagePath) return null
-        // Preview keeps the stored /{locale} prefix so the prefixed preview route
-        // resolves. The public link drops it to match the served single-locale URL.
+        // Preview keeps the stored /{locale} prefix for the preview route. The
+        // public link matches the served URL.
         const linkPath = preview ? pagePath : stripLocalePath(pagePath)
         const url = new URL(`${preview ? '/preview' : ''}${linkPath}`, env.WEBSITE_URL)
         if (preview) url.searchParams.set('previewSecret', env.PREVIEW_SECRET)
@@ -152,11 +163,10 @@ export default buildConfig({
         upload: false,
       },
       formOverrides: {
-        // The plugin sets no write rules, so writes fall back to any
-        // authenticated requester, including the web app's api keys: a leaked
-        // read-only key could rewrite a form's emails, confirmation, and
-        // redirect, or delete the form. API keys carry no roles, so the role
-        // access check rejects them.
+        // The plugin sets no write rules, so any authenticated requester could
+        // write, including the web app's API keys. A leaked read-only key could
+        // then rewrite a form's emails, confirmation, and redirect, or delete
+        // the form. API keys have no roles, so isAdminOrEditor rejects them.
         access: {
           create: isAdminOrEditor,
           update: isAdminOrEditor,
@@ -172,9 +182,9 @@ export default buildConfig({
         },
       },
       formSubmissionOverrides: {
-        // Submissions hold visitor PII. Without this, read is open to any
-        // authenticated requester (including the web app's api keys) and
-        // delete falls back to the same, because the plugin sets no rule.
+        // Submissions hold visitor PII. The plugin default limits read to the
+        // admin auth collection but sets no delete rule, so delete would fall
+        // back to any authenticated requester, including the api keys.
         access: {
           create: () => true,
           read: isPanelUser,
@@ -187,10 +197,10 @@ export default buildConfig({
         },
       },
     }),
-    // Always in the plugin list, gated by `enabled`: the plugin registers its
-    // admin component unconditionally, so a conditional spread makes local
-    // `generate:importmap` (no S3 env) drop an entry every S3-configured
-    // deployment needs and the admin renders blank.
+    // Kept in the list and switched with `enabled`. The plugin registers its
+    // admin component either way, so leaving it out without S3 env would make
+    // a local `generate:importmap` drop an entry that S3 deployments need, and
+    // their admin would render blank.
     s3Storage({
       enabled: s3Configured,
       collections: { media: true },
