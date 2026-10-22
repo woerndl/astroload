@@ -1,57 +1,79 @@
 ---
 import { UMAMI_WEBSITE_ID } from 'astro:env/client'
 
-// Umami tag, loaded through the first-party proxies at /u.js and /api/send so
-// a content blocker keyed on the Umami hosts strips neither half.
-// data-host-url="/" points collect at the proxy: without it the tracker posts
-// to gateway.umami.is directly and skips /api/send. Auto-track is off because
-// <ClientRouter /> turns navigations into in-place swaps the tracker cannot
-// see. The script below fires one pageview per navigation instead.
+// The tracker and its events go through the first-party proxies at /u.js and
+// /api/send, so content blockers that match the Umami hosts block neither.
+// Without data-host-url="/" the tracker posts to gateway.umami.is directly.
+// data-auto-pageview="false" stops only the tracker's own pageview, which
+// would fire while a Chromium-based browser prerenders the page through
+// speculation rules, before the visitor opens it. The script below sends the
+// pageview instead. data-auto-track="false" would also stop data-umami-event
+// attributes from recording clicks.
 ---
 
-{
-  UMAMI_WEBSITE_ID && (
-    <script
-      is:inline
-      defer
-      src="/u.js"
-      data-website-id={UMAMI_WEBSITE_ID}
-      data-host-url="/"
-      data-auto-track="false"
-    />
-  )
-}
+{UMAMI_WEBSITE_ID && (
+  <script
+    is:inline
+    defer
+    src="/u.js"
+    data-website-id={UMAMI_WEBSITE_ID}
+    data-host-url="/"
+    data-auto-pageview="false"
+  />
+)}
 
 <script>
   import { UMAMI_WEBSITE_ID } from 'astro:env/client'
 
-  // One pageview per navigation, sent on astro:page-load (which also fires on
-  // the initial load). With auto-track off the tracker never patches history,
-  // so its internal url stays frozen at the entry page. track() therefore gets
-  // the live path passed in through its function form. The per-url guard
-  // absorbs double fires, and the load-event retry covers the deferred tracker
-  // not having loaded by the first page-load.
-  type TrackFn = (transform: (payload: Record<string, unknown>) => Record<string, unknown>) => void
+  import { whenActive } from '../scripts/site.js'
 
-  let lastTrackedUrl: string | null = null
+  type Payload = Record<string, unknown>
+  type Umami = { track: (transform: (payload: Payload) => Payload) => void }
+  const umami = () => (window as { umami?: Umami }).umami
 
-  function sendPageview() {
-    const url = location.pathname + location.search
-    const track = (window as { umami?: { track: TrackFn } }).umami?.track
-    if (lastTrackedUrl === url || typeof track !== 'function') return
-    track((payload) => ({ ...payload, url }))
-    lastTrackedUrl = url
+  // The preview secret can reach a public page in its query. On a server that
+  // sends no Referrer-Policy, it can also reach the page in its referrer after
+  // an error page under /preview/. The pageview deletes it from both. The
+  // tracker passes a same-origin referrer as a bare path. new URL() needs a
+  // base for a bare path, and with a base it reads a path that starts with //
+  // as another host, so this function edits only the text after the first
+  // question mark.
+  const withoutSecret = (value: string) => {
+    const queryStart = value.indexOf('?')
+    if (queryStart === -1) return value
+    const params = new URLSearchParams(value.slice(queryStart + 1))
+    if (!params.has('previewSecret')) return value
+    params.delete('previewSecret')
+    const query = params.toString()
+    return value.slice(0, queryStart) + (query ? `?${query}` : '')
   }
 
-  function trackPageview() {
-    sendPageview()
-    if (lastTrackedUrl === location.pathname + location.search) return
-    document
-      .querySelector('script[data-website-id]')
-      ?.addEventListener('load', sendPageview, { once: true })
+  // A project that adds <ClientRouter /> calls this function from an
+  // astro:page-load listener after each swap. After a swap to a page without
+  // the tracker tag, such as a preview page, it sends nothing. The callback
+  // passes the current path and query as the payload url, because the tracker
+  // reads a new URL only from pushState and replaceState calls, and on Back
+  // and Forward the browser changes the URL without either call.
+  function sendPageview() {
+    const tag = document.querySelector('script[data-website-id]')
+    if (!tag) return
+    const track = () =>
+      umami()?.track((payload) => ({
+        ...payload,
+        url: withoutSecret(location.pathname + location.search),
+        ...(typeof payload.referrer === 'string' && {
+          referrer: withoutSecret(payload.referrer),
+        }),
+      }))
+    if (umami()) return track()
+    tag.addEventListener('load', track, { once: true })
   }
 
   if (UMAMI_WEBSITE_ID) {
-    document.addEventListener('astro:page-load', trackPageview)
+    whenActive().then(sendPageview)
+    // A page restored from the back/forward cache runs no script again.
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) sendPageview()
+    })
   }
 </script>

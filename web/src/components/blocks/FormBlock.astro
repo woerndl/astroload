@@ -25,13 +25,17 @@ const instance = crypto.randomUUID().slice(0, 8)
 const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${name}`
 ---
 
-<section class="my-8">
-  {introContent && <LexicalContent content={introContent} class="mb-6 max-w-prose" />}
+<section class="form-block">
+  {introContent && (
+    <div class="intro">
+      <LexicalContent content={introContent} />
+    </div>
+  )}
 
   {populatedForm && (
     <div data-form-root={populatedForm.id}>
       <form
-        class="flex flex-wrap gap-4"
+        class="form"
         action={submitURL}
         method="post"
         data-form-id={populatedForm.id}
@@ -44,7 +48,7 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
         {fields.map((field) => {
           if (field.blockType === 'message') {
             return field.message ? (
-              <div class="basis-full">
+              <div class="full">
                 <LexicalContent content={field.message} />
               </div>
             ) : null
@@ -56,13 +60,16 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
           if (field.blockType === 'textarea') {
             return (
               <div style={fieldBasis(field.width)}>
-                <label class="block text-sm font-medium" for={id}>{label}{labelMark}</label>
+                <label class="label" for={id}>
+                  {label}
+                  {labelMark}
+                </label>
                 <textarea
                   id={id}
                   name={field.name}
                   required={required}
                   rows={5}
-                  class="mt-1 block w-full rounded border border-neutral-300 p-2 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                  class="control"
                 >{field.defaultValue ?? ''}</textarea>
               </div>
             )
@@ -72,16 +79,16 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
             const defaultValue = field.defaultValue ?? ''
             return (
               <div style={fieldBasis(field.width)}>
-                <label class="block text-sm font-medium" for={id}>{label}{labelMark}</label>
-                <select
-                  id={id}
-                  name={field.name}
-                  required={required}
-                  class="mt-1 block w-full rounded border border-neutral-300 p-2 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
-                >
+                <label class="label" for={id}>
+                  {label}
+                  {labelMark}
+                </label>
+                <select id={id} name={field.name} required={required} class="control">
                   {field.placeholder && <option value="">{field.placeholder}</option>}
                   {options.map((opt) => (
-                    <option value={opt.value} selected={opt.value === defaultValue}>{opt.label}</option>
+                    <option value={opt.value} selected={opt.value === defaultValue}>
+                      {opt.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -90,16 +97,18 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
           if (field.blockType === 'checkbox') {
             return (
               <div style={fieldBasis(field.width)}>
-                <div class="inline-flex items-center gap-2">
+                <div class="check">
                   <input
                     id={id}
                     type="checkbox"
                     name={field.name}
                     required={required}
                     checked={field.defaultValue ?? false}
-                    class="focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
                   />
-                  <label class="flex min-h-6 items-center text-sm" for={id}>{label}{labelMark}</label>
+                  <label class="check-label" for={id}>
+                    {label}
+                    {labelMark}
+                  </label>
                 </div>
               </div>
             )
@@ -114,14 +123,17 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
           }
           return (
             <div style={fieldBasis(field.width)}>
-              <label class="block text-sm font-medium" for={id}>{label}{labelMark}</label>
+              <label class="label" for={id}>
+                {label}
+                {labelMark}
+              </label>
               <input
                 id={id}
                 type={inputType}
                 name={field.name}
                 required={required}
                 value={defaultValue}
-                class="mt-1 block w-full rounded border border-neutral-300 p-2 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+                class="control"
               />
             </div>
           )
@@ -132,17 +144,16 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
           <input id={fieldId('fax')} type="text" name="fax" />
         </div>
 
-        <div class="basis-full">
-          <button
-            type="submit"
-            class="rounded bg-neutral-900 px-4 py-2 text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:opacity-60"
-          >{submitLabel}</button>
-          <p data-error class="mt-2 hidden text-sm text-red-600" role="alert"></p>
+        <div class="full">
+          <button type="submit" class="submit">
+            {submitLabel}
+          </button>
+          <p data-error role="alert" hidden class="error"></p>
         </div>
       </form>
 
       {populatedForm.confirmationMessage && (
-        <div data-confirmation class="hidden">
+        <div data-confirmation hidden>
           <LexicalContent content={populatedForm.confirmationMessage} />
         </div>
       )}
@@ -150,10 +161,83 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
   )}
 </section>
 
+<style>
+  @layer components {
+    .form-block {
+      margin-block: 2rem;
+    }
+
+    .intro {
+      max-inline-size: 65ch;
+      margin-bottom: 1.5rem;
+    }
+
+    .form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .full {
+      flex-basis: 100%;
+    }
+
+    .label {
+      display: block;
+      font-size: var(--text-sm);
+      font-weight: 500;
+    }
+
+    .control {
+      display: block;
+      inline-size: 100%;
+      margin-top: 0.25rem;
+      padding: 0.5rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+    }
+
+    .check {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .check-label {
+      display: flex;
+      align-items: center;
+      min-block-size: 1.5rem;
+      font-size: var(--text-sm);
+    }
+
+    .submit {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      background: var(--color-accent);
+      color: var(--color-on-accent);
+      cursor: pointer;
+    }
+
+    .submit:hover {
+      background: var(--color-accent-hover);
+    }
+
+    .submit:disabled {
+      opacity: 0.6;
+    }
+
+    .error {
+      margin-top: 0.5rem;
+      font-size: var(--text-sm);
+      color: var(--color-error);
+    }
+  }
+</style>
+
 <script>
   function attach(form: HTMLFormElement) {
-    // getAttribute, not form.action: the property resolves relative URLs and
-    // is shadowed by any form field named "action".
+    // form.action resolves relative URLs and is shadowed by a field named
+    // "action".
     const action = form.getAttribute('action')
     const formId = form.dataset.formId
     if (!action || !formId) return
@@ -163,7 +247,7 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
     const button = form.querySelector<HTMLButtonElement>('button[type=submit]')
     const confirmation = root?.querySelector<HTMLElement>('[data-confirmation]') ?? null
 
-    // Last-resort defaults, unreachable because the frontmatter always sets these data-* attrs from the locale strings.
+    // The frontmatter always sets these attributes, so the defaults only satisfy the types.
     const submitLabel = form.dataset.submitLabel ?? 'Submit'
     const sendingLabel = form.dataset.sendingLabel ?? 'Sending'
     const errorMessage = form.dataset.errorMessage ?? 'Submission failed.'
@@ -176,7 +260,7 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
       if (inFlight) return
       inFlight = true
       if (errorEl) {
-        errorEl.classList.add('hidden')
+        errorEl.hidden = true
         errorEl.textContent = ''
       }
       if (button) {
@@ -197,20 +281,20 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ form: formId, submissionData }),
         })
-        // Server error bodies are not surfaced: hook rejections and Payload
-        // validation messages are English regardless of the page locale, so
-        // the visitor gets the localized generic label instead.
+        // Hook rejections and Payload validation messages are in English
+        // whatever the page locale, so the visitor sees the localized generic
+        // error instead of the server's message.
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         if (form.dataset.confirmationType === 'redirect' && form.dataset.redirectUrl) {
           window.location.href = form.dataset.redirectUrl
           return
         }
-        form.classList.add('hidden')
-        confirmation?.classList.remove('hidden')
+        form.hidden = true
+        if (confirmation) confirmation.hidden = false
       } catch {
         if (errorEl) {
           errorEl.textContent = errorMessage
-          errorEl.classList.remove('hidden')
+          errorEl.hidden = false
         }
       } finally {
         inFlight = false
@@ -231,5 +315,4 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
   }
 
   attachAll()
-  document.addEventListener('astro:after-swap', attachAll)
 </script>

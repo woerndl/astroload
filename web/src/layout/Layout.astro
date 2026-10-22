@@ -2,7 +2,6 @@
 import type { Media } from '@astroload/cms/src/payload-types'
 import { Font } from 'astro:assets'
 import { CONTENT_BUILD_ID } from 'astro:env/server'
-import { ClientRouter } from 'astro:transitions'
 
 import { getGlobalData } from '../cms/getGlobalData'
 import type { PageByPathResult } from '../cms/getPageByPath'
@@ -10,12 +9,16 @@ import type { Locale, LocalePaths, PreviewContext } from '../cms/types'
 import Footer from '../components/Footer.astro'
 import Header from '../components/Header.astro'
 import JsonLd from '../components/JsonLd.astro'
+import LayerOrder from '../components/LayerOrder.astro'
 import LivePreviewListener from '../components/LivePreviewListener.astro'
+import MainContent from '../components/MainContent.astro'
 import PreviewNav from '../components/PreviewNav.astro'
 import PreviewToolbar from '../components/PreviewToolbar.astro'
 import SEOMetadata from '../components/SEOMetadata.astro'
+import SkipLink from '../components/SkipLink.astro'
 import Umami from '../components/Umami.astro'
-import '../styles/app.css'
+import '../styles/styles.css'
+import { shellLabels } from './shellLabels'
 
 interface Props {
   title: string
@@ -39,13 +42,15 @@ const { header, footer, labels, siteSettings } = await getGlobalData({
 <html lang={lang}>
   <head>
     <meta charset="utf-8" />
+    <LayerOrder />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    {/* Preload the latin uprights only. A late-arriving body font swaps after
-        first paint and reflows the nav and headlines, italic and latin-ext
-        can load lazily. */}
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    {/* Preload only the latin upright face, because a late body font reflows
+        the nav and headlines after first paint. Italic and other subsets can
+        load later. */}
     <Font cssVariable="--font-inter" preload={[{ subset: 'latin', style: 'normal' }]} />
     {CONTENT_BUILD_ID && <meta name="content-build-id" content={CONTENT_BUILD_ID} />}
     <SEOMetadata
@@ -67,18 +72,38 @@ const { header, footer, labels, siteSettings } = await getGlobalData({
         siteSettings={siteSettings}
       />
     )}
-    {/* Preview is editor traffic, keep it out of the stats. */}
-    {!preview && <Umami />}
-    <ClientRouter />
+    {/* Preview is editor traffic, so it stays out of the stats. A 404 or 500
+        render of a preview URL gets no preview prop, so the path check covers
+        it. */}
+    {!preview && !Astro.url.pathname.startsWith('/preview/') && <Umami />}
   </head>
-  <body class="bg-white text-gray-900 antialiased">
-    {preview && <PreviewToolbar collection={preview.collection} id={preview.id} labels={labels.preview} />}
-    <Header header={header} lang={lang} paths={paths} labels={labels.global} />
-    <main class="mx-auto max-w-3xl px-4 py-12">
+  <body>
+    <SkipLink lang={lang} />
+    {preview && (
+      <PreviewToolbar collection={preview.collection} id={preview.id} labels={labels.preview} />
+    )}
+    <Header
+      header={header}
+      lang={lang}
+      paths={paths}
+      labels={labels.global}
+      navLabel={shellLabels(lang).primaryNavigation}
+    />
+    <MainContent class="main">
       <slot />
-    </main>
+    </MainContent>
     <Footer footer={footer} />
     {preview && <PreviewNav />}
     {preview && <LivePreviewListener />}
   </body>
 </html>
+
+<style>
+  @layer components {
+    .main {
+      max-width: var(--content-width);
+      margin-inline: auto;
+      padding: 3rem 1rem;
+    }
+  }
+</style>
