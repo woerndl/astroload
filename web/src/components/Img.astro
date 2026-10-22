@@ -13,13 +13,25 @@ interface Props {
   sizes: string
   class?: string
   loading?: 'lazy' | 'eager'
+  // Set only on the page's largest contentful paint image.
+  priority?: boolean
 }
 
-// Width-ascending variants for the responsive srcset. og is a fixed social crop
-// with a different aspect ratio, so it is left out.
+// The og variant is a social crop with a different aspect ratio, so the srcset
+// leaves it out.
 const SRCSET_KEYS: SizeKey[] = ['xs', 'sm', 'md', 'lg']
 
-const { image, size = 'md', sizes, class: className, loading = 'lazy' } = Astro.props
+// The rest carries the caller's data-astro-cid-* scope attribute, so the
+// caller's scoped styles reach this <img>.
+const {
+  image,
+  size = 'md',
+  sizes,
+  class: className,
+  loading = 'lazy',
+  priority = false,
+  ...rest
+} = Astro.props
 
 const variant = image.sizes?.[size]
 const url = variant?.url ?? image.url
@@ -44,6 +56,9 @@ const src = versionedMediaURL(url, image.updatedAt)
   alt={image.alt ?? ''}
   width={width}
   height={height}
-  loading={loading}
+  loading={priority ? 'eager' : loading}
+  fetchpriority={priority ? 'high' : undefined}
+  decoding={priority ? 'sync' : 'async'}
   class={className}
+  {...rest}
 />
