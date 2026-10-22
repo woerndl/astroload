@@ -3,12 +3,9 @@ import { BlocksFeature } from '@payloadcms/richtext-lexical'
 
 import { contentAccess } from '../access/contentAccess'
 import { ImageBlock } from '../blocks/ImageBlock'
-import {
-  triggerDeployAfterChange,
-  triggerDeployAfterDelete,
-} from '../hooks/triggerDeploy'
+import { triggerDeployAfterChange, triggerDeployAfterDelete } from '../hooks/triggerDeploy'
 import { lexicalEditorWithSafeLinks } from '../lexical/editor'
-import { draftVersions, livePreviewBreakpoints } from '../shared'
+import { dateTimeField, draftVersions, livePreviewBreakpoints } from '../shared'
 
 export const Posts: PageCollectionConfig = {
   slug: 'posts',
@@ -30,8 +27,7 @@ export const Posts: PageCollectionConfig = {
       sharedDocument: true,
     },
   },
-  // authors: true stays bio-free because Authors' own defaultPopulate omits
-  // bio, so a post list does not pull a localized rich-text body per author.
+  // authors: true uses the Authors defaultPopulate, which leaves out bio.
   defaultPopulate: {
     title: true,
     path: true,
@@ -58,7 +54,7 @@ export const Posts: PageCollectionConfig = {
       index: true,
       admin: {
         position: 'sidebar',
-        date: { pickerAppearance: 'dayAndTime' },
+        date: dateTimeField,
       },
       hooks: {
         beforeChange: [
