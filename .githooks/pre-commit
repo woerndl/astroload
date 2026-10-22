@@ -1,0 +1,23 @@
+#!/bin/sh
+# Runs Prettier, ESLint and Stylelint on the staged files, then
+# scripts/gates.sh source over all of web/src. The tools read the working tree
+# copy of each file.
+set -eu
+IFS='
+'
+set -f
+staged=$(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACMR)
+
+if [ -n "$staged" ]; then
+  pnpm exec prettier --check --ignore-unknown $staged
+
+  for dir in cms web; do
+    files=$(printf '%s\n' "$staged" | grep -E "^$dir/.*\.(js|mjs|cjs|ts|tsx|astro)\$" | sed "s|^$dir/||" || true)
+    [ -z "$files" ] || (cd "$dir" && pnpm exec eslint --no-warn-ignored $files)
+  done
+
+  css=$(printf '%s\n' "$staged" | grep -E '^web/src/.*\.(css|astro)$' || true)
+  [ -z "$css" ] || pnpm exec stylelint $css
+fi
+
+sh scripts/gates.sh source
