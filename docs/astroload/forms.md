@@ -172,10 +172,11 @@ public-read surfaces. Form saves and deletions fire the deploy webhook,
 since the rendered fields, labels, and confirmation are baked into the
 prerendered pages that embed the form.
 
-`web/e2e/forms.e2e.ts` tests this path. It posts one accepted submission
-and checks the access rules around it, and it submits the contact page
-once in a browser. It sends a forged POST for each reject above except a
-missing `submissionData`, a missing `_rendered_at`, and an unknown form id.
+`web/e2e/forms.e2e.ts` tests this path. It submits the contact page once
+in a browser and checks the stored fields and the access rules around that
+submission. It sends a forged POST for each reject above except a missing
+`submissionData` and an unknown form id, and for a required field that
+holds only spaces or an unchecked required checkbox.
 It also checks the CORS preflight, that the `emails` recipients stay hidden
 from anonymous and API key reads, and that a field named `fax` is refused.
 Add a case there when you change a check.

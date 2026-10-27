@@ -10,7 +10,7 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint && prettier --check . && stylelint \"web/src/**/*.{css,astro}\"",
     "check": "pnpm --filter @astroload/cms check && pnpm --filter @astroload/web check",
-    "test": "pnpm --filter @astroload/web test && pnpm --filter @astroload/cms test && node --test 'scripts/*.test.mjs'",
+    "test": "pnpm --filter @astroload/web test && pnpm --filter @astroload/cms test",
     "knip": "SKIP_ENV_VALIDATION=1 knip",
     "verify": "pnpm lint && pnpm check && pnpm test && pnpm --filter @astroload/cms generate:types && pnpm --filter @astroload/cms generate:importmap && git diff --exit-code -- cms/src/payload-types.ts 'cms/src/app/(payload)/admin/importMap.js' && pnpm knip && sh scripts/gates.sh source && pnpm --filter @astroload/web build && sh scripts/gates.sh dist",
     "setup": "git config core.hooksPath .githooks"

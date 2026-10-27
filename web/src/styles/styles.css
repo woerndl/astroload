@@ -1,6 +1,6 @@
-/* Astro puts its image styles in astro.images. LayerOrder.astro and
-   web/e2e/styles.e2e.ts repeat this statement, and the security.csp block
-   in astro.config.mjs lists its hash, so change all four together. */
+/* Astro puts its image styles in astro.images. LayerOrder.astro repeats this
+   statement, and the security.csp block in astro.config.mjs lists its hash,
+   so change all three together. */
 @layer astro.images, tokens, base, components, utilities;
 
 @import url('./tokens.css');

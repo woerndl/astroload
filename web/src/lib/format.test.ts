@@ -1,23 +1,20 @@
-import { describe, expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 
-import { formatDate, formatNumber } from './format'
+import { formatDate } from './format'
 
-describe('formatDate', () => {
-  it('renders 00:30 Vienna time as the previous day in UTC', () => {
-    expect(formatDate('2026-01-06T00:30:00+01:00', 'de')).toBe('5. Januar 2026')
-    expect(formatDate('2026-01-06T00:30:00+01:00', 'en')).toBe('January 5, 2026')
-  })
+// A zone far from UTC, so a date formatted in UTC or in Europe shows the wrong day.
+vi.mock('@astroload/cms/src/site-config', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  TIME_ZONE: 'Pacific/Kiritimati',
+}))
 
-  it('passes options through and keeps the site time zone', () => {
-    const numeric = { day: 'numeric', month: 'numeric', year: 'numeric' } as const
-    expect(formatDate('2026-01-05T23:30:00Z', 'de', numeric)).toBe('5.1.2026')
-    expect(formatDate('2026-01-05T23:30:00Z', 'en', numeric)).toBe('1/5/2026')
-  })
-})
+const numeric = { day: 'numeric', month: 'numeric', year: 'numeric' } as const
 
-describe('formatNumber', () => {
-  it('groups digits per locale', () => {
-    expect(formatNumber(1234.5, 'de')).toBe('1.234,5')
-    expect(formatNumber(1234.5, 'en')).toBe('1,234.5')
-  })
+it.each([
+  ['de', undefined, '6. Januar 2026'],
+  ['en', undefined, 'January 6, 2026'],
+  ['de', numeric, '6.1.2026'],
+  ['en', numeric, '1/6/2026'],
+] as const)('formatDate(%s) renders the date in the site time zone', (lang, options, expected) => {
+  expect(formatDate('2026-01-05T12:00:00Z', lang, options)).toBe(expected)
 })

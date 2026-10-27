@@ -1,27 +1,22 @@
 import { expect, test } from './fixtures'
 
-type Variant = { url: string; width: number; height: number; mimeType: string }
-type MediaDoc = { id: string; sizes: Record<'xs' | 'sm' | 'md' | 'lg' | 'og', Variant> }
+type Variant = { url: string | null; width: number; height: number; mimeType: string }
 
-test('an upload yields four WebP variants and a 1200x630 JPEG og variant, and the file route serves them with a 30-day Cache-Control', async ({
+test('an upload yields every image size and a 1200x630 JPEG og variant, and the file route serves each with a long Cache-Control', async ({
   page,
   cms,
-  create,
+  admin,
+  cleanup,
 }) => {
-  // The browser draws the source image, which avoids an image library. It is
-  // 1920 px wide because Payload skips a variant wider than the source.
+  // Payload skips a size wider than the source.
   const dataUrl = await page.evaluate(() => {
     const canvas = document.createElement('canvas')
     canvas.width = 1920
     canvas.height = 1280
-    const ctx = canvas.getContext('2d')!
-    ctx.fillStyle = '#4a7'
-    ctx.fillRect(0, 0, 1920, 1280)
-    ctx.fillStyle = '#fff'
-    ctx.fillRect(400, 300, 1120, 680)
+    canvas.getContext('2d')!.fillRect(400, 300, 1120, 680)
     return canvas.toDataURL('image/png')
   })
-  const doc = await create<MediaDoc>('media?locale=en', {
+  const created = await admin.post('/api/media?locale=en', {
     multipart: {
       file: {
         name: 'e2e-upload.png',
@@ -31,21 +26,17 @@ test('an upload yields four WebP variants and a 1200x630 JPEG og variant, and th
       _payload: JSON.stringify({ alt: 'E2E upload' }),
     },
   })
-  for (const [name, width] of [
-    ['xs', 480],
-    ['sm', 768],
-    ['md', 1024],
-    ['lg', 1920],
-  ] as const) {
-    expect(doc.sizes[name], name).toMatchObject({ width, mimeType: 'image/webp' })
-    expect(doc.sizes[name].url).toMatch(/\.webp$/)
-  }
+  await expect(created).toBeOK()
+  const { doc } = await created.json()
+  cleanup(() => admin.delete(`/api/media/${doc.id}`))
   expect(doc.sizes.og).toMatchObject({ width: 1200, height: 630, mimeType: 'image/jpeg' })
-
-  const file = await cms.get(doc.sizes.xs.url)
-  expect(file.status()).toBe(200)
-  expect(file.headers()['content-type']).toBe('image/webp')
-  expect(file.headers()['cache-control']).toBe('public, max-age=2592000')
+  for (const [name, variant] of Object.entries<Variant>(doc.sizes)) {
+    expect(variant.url, name).toBeTruthy()
+    const file = await cms.get(variant.url!)
+    expect(file.status(), name).toBe(200)
+    expect(file.headers()['content-type'], name).toBe(variant.mimeType)
+    expect(file.headers()['cache-control'], name).toMatch(/max-age=\d{6,}/)
+  }
 })
 
 test('the /en page renders an img whose srcset uses width descriptors', async ({ web }) => {

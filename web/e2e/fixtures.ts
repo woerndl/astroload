@@ -23,7 +23,6 @@ export const env = {
   umamiHostUrl: webEnv.UMAMI_HOST_URL ?? '',
   contentBuildId: webEnv.CONTENT_BUILD_ID ?? '',
   deployHookUrl: cmsEnv.DEPLOY_HOOK_URL ?? '',
-  cmsPreviewSecret: cmsEnv.PREVIEW_SECRET ?? '',
 }
 
 // The admin the auth seed creates. The demo values apply when the seed ran
@@ -36,21 +35,13 @@ export const ADMIN = {
 export const readKey = { Authorization: `api-keys API-Key ${env.readKey}` }
 export const previewKey = { Authorization: `api-keys API-Key ${env.previewKey}` }
 
-export async function json<T>(
-  res: Pick<APIResponse, 'status' | 'url' | 'text' | 'json'>,
-  status = 200,
-): Promise<T> {
-  expect(res.status(), `${res.url()} answered ${await res.text()}`).toBe(status)
-  return (await res.json()) as T
-}
-
 // Logs in through a throwaway context, because a login response sets a session
 // cookie that would authenticate every later request on a shared context.
 export async function login(email: string, password: string) {
   const ctx = await request.newContext({ baseURL: env.cmsUrl })
-  const { token } = await json<{ token: string }>(
-    await ctx.post('/api/users/login', { data: { email, password } }),
-  )
+  const res = await ctx.post('/api/users/login', { data: { email, password } })
+  await expect(res).toBeOK()
+  const { token } = await res.json()
   await ctx.dispose()
   return { Authorization: `JWT ${token}` }
 }
@@ -58,49 +49,32 @@ export async function login(email: string, password: string) {
 // Runs when the Playwright config loads, so a missing key or secret, or a
 // PREVIEW_SECRET mismatch, stops the run before the web build.
 export function preflight() {
-  const required = {
-    PAYLOAD_READ_KEY: env.readKey,
-    PAYLOAD_PREVIEW_KEY: env.previewKey,
-    PREVIEW_SECRET: env.previewSecret,
-  }
-  const missing = Object.entries(required)
-    .filter(([, value]) => !value)
-    .map(([name]) => name)
+  const missing = ['PAYLOAD_READ_KEY', 'PAYLOAD_PREVIEW_KEY', 'PREVIEW_SECRET'].filter(
+    (name) => !webEnv[name],
+  )
   if (missing.length) {
     throw new Error(
       `web/.env is missing ${missing.join(', ')}. Copy the API key values the auth seed logs, and PREVIEW_SECRET from cms/.env.`,
     )
   }
-  if (env.previewSecret !== env.cmsPreviewSecret)
+  if (env.previewSecret !== cmsEnv.PREVIEW_SECRET)
     throw new Error('PREVIEW_SECRET differs between web/.env and cms/.env')
 }
 
 type Received = { method: string; url: string; headers: http.IncomingHttpHeaders; body: string }
-export type Receiver = { requests: Received[]; url: URL }
-
-type CreateInit = {
-  data?: unknown
-  multipart?: Record<string, string | { name: string; mimeType: string; buffer: Buffer }>
-}
 
 type Fixtures = {
   web: APIRequestContext
+  // Runs each function after the test, the last one first, and fails the test
+  // when one throws or returns a response with an error status.
   cleanup: (fn: () => Promise<unknown>) => void
-  // Creates a document as admin and deletes it after the test. The path holds
-  // the collection and any query, for example 'pages?locale=en'.
-  create: <T extends { id: string }>(path: string, init: CreateInit) => Promise<T>
   // Starts a server on a loopback URL and records every request it gets. Tests
   // point the deploy webhook and the analytics relay at it. It answers 200
   // "ok", which the relay passes through.
-  receiver: (url: string) => Promise<Receiver>
+  receiver: (url: string) => Promise<{ requests: Received[]; url: URL }>
 }
 
-type WorkerFixtures = {
-  cms: APIRequestContext
-  admin: APIRequestContext
-}
-
-export const test = base.extend<Fixtures, WorkerFixtures>({
+export const test = base.extend<Fixtures, { cms: APIRequestContext; admin: APIRequestContext }>({
   cms: [
     async ({ playwright }, use) => {
       const ctx = await playwright.request.newContext({ baseURL: env.cmsUrl })
@@ -132,20 +106,12 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     const failures: unknown[] = []
     for (const fn of fns.reverse()) {
       const result = await fn().catch((err) => failures.push(err))
-      // Playwright resolves error statuses, so a failed delete has to be checked here.
-      if (result && typeof result === 'object' && 'ok' in result && !(result as APIResponse).ok()) {
+      if (result instanceof Object && 'ok' in result && !(result as APIResponse).ok()) {
         const res = result as APIResponse
         failures.push(new Error(`cleanup ${res.url()} answered ${res.status()}`))
       }
     }
     if (failures.length) throw failures[0]
-  },
-  create: async ({ admin, cleanup }, use) => {
-    await use(async <T extends { id: string }>(path: string, init: CreateInit) => {
-      const { doc } = await json<{ doc: T }>(await admin.post(`/api/${path}`, init), 201)
-      cleanup(() => admin.delete(`/api/${path.split('?')[0]}/${doc.id}`))
-      return doc
-    })
   },
   receiver: async ({ cleanup }, use) => {
     await use(async (value) => {

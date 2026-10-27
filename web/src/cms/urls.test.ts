@@ -1,7 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { expect, it, vi } from 'vitest'
 
-// urls.ts reads CMS_URL from the astro:env virtual module, which only exists in
-// the Astro build. Stub it so the helper can be exercised in isolation.
+// astro:env exists only in the Astro build.
 vi.mock('astro:env/client', () => ({
   CMS_URL: 'https://cms.example.com',
   WEBSITE_URL: 'https://site.example.com',
@@ -9,23 +8,14 @@ vi.mock('astro:env/client', () => ({
 
 const { versionedMediaURL } = await import('./urls')
 
-describe('versionedMediaURL', () => {
-  it('appends ?v with the updatedAt timestamp', () => {
-    expect(versionedMediaURL('/media/a.webp', '2026-06-29T10:00:00.000Z')).toBe(
-      `https://cms.example.com/media/a.webp?v=${Date.parse('2026-06-29T10:00:00.000Z')}`,
-    )
-  })
+const updatedAt = '2026-06-29T10:00:00.000Z'
+const v = Date.parse(updatedAt)
 
-  it('omits the marker when updatedAt is missing or unparseable', () => {
-    expect(versionedMediaURL('/media/a.webp')).toBe('https://cms.example.com/media/a.webp')
-    expect(versionedMediaURL('/media/a.webp', 'not-a-date')).toBe(
-      'https://cms.example.com/media/a.webp',
-    )
-  })
-
-  it('keeps an existing query string instead of corrupting it', () => {
-    expect(versionedMediaURL('/media/a.webp?w=480', '2026-06-29T10:00:00.000Z')).toBe(
-      `https://cms.example.com/media/a.webp?w=480&v=${Date.parse('2026-06-29T10:00:00.000Z')}`,
-    )
-  })
+it.each([
+  ['/media/a.webp', updatedAt, `https://cms.example.com/media/a.webp?v=${v}`],
+  ['/media/a.webp?w=480', updatedAt, `https://cms.example.com/media/a.webp?w=480&v=${v}`],
+  ['/media/a.webp', undefined, 'https://cms.example.com/media/a.webp'],
+  ['/media/a.webp', 'not-a-date', 'https://cms.example.com/media/a.webp'],
+])('versionedMediaURL(%s, %s) is %s', (path, date, expected) => {
+  expect(versionedMediaURL(path, date)).toBe(expected)
 })

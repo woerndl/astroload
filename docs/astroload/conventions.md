@@ -13,6 +13,12 @@ rule there. Stable upstream URLs and committed top-level files are fine to
 cite. Comments outlive the docs they reference, so "see internal note X"
 breaks when that note is renamed or moved.
 
+A comment says what the code cannot show: a constraint, a mechanism or a
+fact that is hard to find. Delete banners and group headers, labels over
+self-describing lines, values repeated from the code, narration of a
+change, and tails that justify the code. Section headers in `.gitignore`
+files stay.
+
 ## No AI slop in committed text
 
 Applies to code comments, commit messages, README, error messages, and any
@@ -158,11 +164,11 @@ stylesheet can open with a component's `@layer components` block, so
 Every `<head>` renders `<LayerOrder />` right after `<meta charset>`:
 `Layout.astro`, `styleguide.astro` and the fallback heads of `404.astro`
 and `500.astro`. A new page with its own `<html>` adds it too.
-`web/e2e/styles.e2e.ts` checks that the statement comes before any style
-or stylesheet on a built page. Change the statement in `styles.css`,
-`LayerOrder.astro` and `web/e2e/styles.e2e.ts` together, and update its
-hash in the commented-out `security.csp` block of `web/astro.config.mjs`.
-`web/src/components/layerOrder.test.ts` checks the hash.
+The browser test in `web/e2e/forms.e2e.ts` checks that the form, whose
+component rule sets `display`, hides after a submission. Change the statement in `styles.css` and
+`LayerOrder.astro` together, and update its hash in the commented-out
+`security.csp` block of `web/astro.config.mjs`. Print the hash with
+`printf '%s' '<statement>' | openssl dgst -sha256 -binary | openssl base64`.
 
 ## The styleguide page shows type, the form block and an image
 
@@ -234,10 +240,6 @@ const showFooter = hasFooter ?? Astro.slots.has('footer')
 
 A parent whose slot content depends on a condition passes the same
 condition as `hasFooter`: `<Card hasFooter={show}>`.
-`web/test/slotFallback.test.ts` renders the three examples and the prop
-through the Astro container API, with its fixtures in
-`web/test/fixtures/`. If an Astro upgrade changes what `has()` returns,
-the test that expects a footer when the condition is false fails.
 
 ## Static art is imported, public/ is for fixed pathnames
 
@@ -707,21 +709,43 @@ config (`web/eslint.config.js`) runs the recommended rules of ESLint and
 `astro check` reports type errors.
 
 The test runner is Vitest in both workspaces. The root `pnpm test` runs
-the web tests, the CMS tests and then the Node-based tests in
-`scripts/*.test.mjs`. The web tests cover pure units such as URL
-building and the stale-on-error wrapper. `web/vitest.config.ts` builds
-its config with `getViteConfig()` from `astro/config`, so a web test can
-render an `.astro` component with the container API. With
-`{ configFile: false }`, the tests skip `astro.config.mjs`, render with
-Astro's defaults and do not fetch redirects from the CMS. The CMS tests
-cover `triggerDeployAfterChange` (the draft check, publish and unpublish)
-and the templated page guards and access rules in Pages.
+the web tests and then the CMS tests. The web tests cover pure units such
+as URL building, the link sanitizer and the structured data builders that
+the starter's pages call.
+`web/vitest.config.ts` builds its config with `getViteConfig()` from
+`astro/config`, so a web test can render an `.astro` component with the
+container API. With `{ configFile: false }`, the tests skip
+`astro.config.mjs`, render with Astro's defaults and do not fetch
+redirects from the CMS. The CMS tests cover `triggerDeployAfterChange`
+(the draft check, unpublish and the Railway upsert) and the templated
+page guards and access rules in Pages.
 `cms/src/env.ts` reads the environment once at import, so a CMS test
 stubs `process.env` with `vi.stubEnv` and then imports the module under
-test after `vi.resetModules()`. The end-to-end suite below covers draft
-leakage for top-level fields and the form submission path. Draft leakage
-through populated relationships has no test yet. See
+test after `vi.resetModules()`. The end-to-end suite below checks that the
+built pages and the sitemaps leave out an unpublished translation, and covers the
+form submission path. Draft leakage through populated relationships has no
+test yet. See
 [`security.md`](./security.md).
+
+## A test earns its place
+
+Every test is code to maintain and seconds on every run. Keep a test only
+if a plausible wrong change to the code makes it fail and no other check
+catches that change. A legitimate change must not force an edit of the
+test. A test that reads configuration back (a field type, a list of field
+names, a `localized` flag), compares a whole mapped object, or pins a CSS
+value or a tag name fails this rule.
+
+- Prefer one end-to-end test that crosses the layers (seed data, CMS,
+  template, browser) over a unit test per layer.
+- Write unit tests for pure logic with branches: validators and their
+  messages, access and draft rules, slug, URL and locale rules, date
+  formatting, sanitizers.
+- Test a shared helper once, where it is defined.
+- Extend an existing test before you add a file.
+- Keep each test short and plain: one behavior per test, a table of cases
+  instead of copied blocks, inline data instead of fixture files, and no
+  helper layers a reader has to open.
 
 ## End-to-end tests
 
@@ -741,7 +765,11 @@ following:
   (`pnpm --filter @astroload/cms seed`). The suite logs in as the seeded
   admin: `PAYLOAD_ADMIN_EMAIL` and `PAYLOAD_ADMIN_PASSWORD` from `cms/.env`,
   or `admin@example.com` / `admin1234` when they are unset. It uses the demo
-  pages and the Contact form. Every test deletes the documents it creates.
+  pages and the Contact form. `drafts.e2e.ts` and `routing.e2e.ts` use the
+  demo seed's `/<default locale>/untranslated` page with its unpublished edit
+  and translation. They skip in a project with one locale and fail when the
+  page is missing. A project that replaces the demo seed
+  adapts those two tests. Every test deletes the documents it creates.
   The live preview test turns on the admin's live preview for Pages and
   restores the previous setting afterwards.
 - `web/.env` holds `PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY` and
@@ -772,13 +800,9 @@ that the web build bakes in:
   suite did not start.
 - Analytics relay: `UMAMI_WEBSITE_ID=<any value>` and
   `UMAMI_HOST_URL=http://127.0.0.1:4322` in `web/.env`. With the id set,
-  the suite runs the relay test, a pageview test and a preview secret
-  test. The pageview test serves a stand-in tracker and checks for one
-  pageview per document load, none while a page is prerendered, and one
-  more on a `pageshow` event with `persisted` set. The preview secret test
-  checks that the secret reaches neither a pageview payload nor a
-  referrer. Without the id, the suite checks
-  that `POST /api/send` answers 204 instead.
+  the suite runs the relay test and a test that the preview secret
+  reaches neither the pageview url nor its referrer. Without the id, it
+  checks that `POST /api/send` answers 204 instead.
 - Redirects: at least one Redirects document before the build. The demo
   seed creates one. The test reads the Redirects documents from the CMS and
   expects the built web app to answer each one. Rebuild after you add or
@@ -789,8 +813,10 @@ expects the tag when `CONTENT_BUILD_ID` was set in `web/.env` before the
 build, and no tag otherwise. Rebuild after changing it.
 
 Spec files end in `.e2e.ts`, so vitest does not collect them. They run one
-at a time in name order because they share one CMS. The `00-` prefix runs
-`00-deploy-hook.e2e.ts` before any other test publishes. Before any server
+at a time in name order because they share one CMS. The `deploy-hook`
+project in `playwright.config.ts` runs `deploy-hook.e2e.ts` first, and the
+`e2e` project, which depends on it, runs the other files after it, so the
+webhook test runs before any other test publishes. Before any server
 starts, a check stops the run with one message when a key is missing or
 `PREVIEW_SECRET` differs between the two env files. A failed test leaves a
 trace under `web/.playwright/results/`. Every run writes an HTML report to

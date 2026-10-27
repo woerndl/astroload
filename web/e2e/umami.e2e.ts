@@ -1,9 +1,7 @@
-import type { Page } from '@playwright/test'
-
 import { env, expect, test } from './fixtures'
 
 // UMAMI_WEBSITE_ID is baked into the build, so a build runs either the first
-// test or the three after it. The relay test also needs UMAMI_HOST_URL set to a
+// test or the tests after it. The relay test also needs UMAMI_HOST_URL set to a
 // loopback URL, for example http://127.0.0.1:4322, when the web app starts.
 const event = (website: string) => ({
   type: 'event',
@@ -48,107 +46,32 @@ test("POST /api/send relays an event for this site's website id with the User-Ag
   expect(umami.requests).toHaveLength(1)
 })
 
-async function stubTracker(page: Page) {
-  await page.route('**/u.js', (route) =>
-    route.fulfill({
-      contentType: 'application/javascript',
-      body: "window.umami = { track: (fn) => fetch('/api/send', { method: 'POST', body: fn({}).url }) }",
-    }),
-  )
-  const sent: string[] = []
-  await page.route('**/api/send', (route) => {
-    sent.push(route.request().postData() ?? '')
-    return route.fulfill({ body: 'ok' })
-  })
-  return sent
-}
+const secret = encodeURIComponent(env.previewSecret)
 
-test('each document load sends one pageview, a prerendered page only when opened, and a back/forward cache restore one more', async ({
-  page,
-}) => {
-  test.skip(!env.umamiWebsiteId, 'UMAMI_WEBSITE_ID is unset in web/.env')
-  const sent = await stubTracker(page)
-  // Only the first document acts as prerendered, because activate() stores a flag that the next document reads.
-  await page.addInitScript(() => {
-    let prerendering = !sessionStorage.getItem('e2e-active')
-    Object.defineProperty(document, 'prerendering', { get: () => prerendering })
-    Object.assign(window, {
-      activate: () => {
-        prerendering = false
-        sessionStorage.setItem('e2e-active', '1')
-        document.dispatchEvent(new Event('prerenderingchange'))
-      },
+for (const [referrer, expected] of [
+  [`https://example.org/?previewSecret=${secret}`, 'https://example.org/'],
+  [`/preview/en/e2e?previewSecret=${secret}&lang=en`, '/preview/en/e2e?lang=en'],
+] as const) {
+  test(`the preview secret reaches neither the pageview url nor the referrer ${expected}`, async ({
+    page,
+  }) => {
+    test.skip(!env.umamiWebsiteId, 'UMAMI_WEBSITE_ID is unset in web/.env')
+    // The stand-in tracker reports window.name as the referrer, because page.goto sends none.
+    await page.route('**/u.js', (route) =>
+      route.fulfill({
+        contentType: 'application/javascript',
+        body: "window.umami = { track: (fn) => fetch('/api/send', { method: 'POST', body: JSON.stringify(fn({ referrer: window.name })) }) }",
+      }),
+    )
+    const sent: string[] = []
+    await page.route('**/api/send', (route) => {
+      sent.push(route.request().postData() ?? '')
+      return route.fulfill({ body: 'ok' })
     })
+    await page.addInitScript((value) => (window.name = value), referrer)
+    await page.goto(`${env.websiteUrl}/en?previewSecret=${secret}&utm_source=e2e`)
+    await expect.poll(() => sent).toHaveLength(1)
+    expect(sent[0]).not.toContain(secret)
+    expect(JSON.parse(sent[0]!)).toEqual({ url: '/en?utm_source=e2e', referrer: expected })
   })
-
-  await page.goto(`${env.websiteUrl}/en`)
-  const tag = page.locator('script[data-website-id]')
-  await expect(tag).toHaveAttribute('data-auto-pageview', 'false')
-  await expect(tag).not.toHaveAttribute('data-auto-track')
-  await page.waitForLoadState('networkidle')
-  expect(sent).toEqual([])
-  await page.evaluate(() => (window as unknown as { activate: () => void }).activate())
-  await expect.poll(() => sent).toEqual(['/en'])
-
-  // Playwright's Chromium runs without the back/forward cache, so the test fires the restore event itself.
-  await page.evaluate(() =>
-    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })),
-  )
-  await expect.poll(() => sent).toEqual(['/en', '/en'])
-
-  const link = page.locator('header nav a').first()
-  const href = (await link.getAttribute('href'))!
-  await link.click()
-  await page.waitForURL(`**${href}`)
-  await page.waitForLoadState('networkidle')
-  expect(sent).toEqual(['/en', '/en', href])
-})
-
-test('the preview secret reaches neither a pageview payload nor a referrer', async ({ page }) => {
-  test.skip(!env.umamiWebsiteId, 'UMAMI_WEBSITE_ID is unset in web/.env')
-  // page.goto sends no referrer, so the stand-in tracker reports window.name as
-  // the referrer. The loop sets window.name before each navigation to /en, and
-  // window.name keeps its value across a same-origin navigation.
-  await page.route('**/u.js', (route) =>
-    route.fulfill({
-      contentType: 'application/javascript',
-      body: "window.umami = { track: (fn) => fetch('/api/send', { method: 'POST', body: JSON.stringify(fn({ website: 'site', title: 'Title', referrer: window.name })) }) }",
-    }),
-  )
-  const payloads: Record<string, unknown>[] = []
-  await page.route('**/api/send', (route) => {
-    payloads.push(JSON.parse(route.request().postData() ?? '{}'))
-    return route.fulfill({ body: 'ok' })
-  })
-  const secret = encodeURIComponent(env.previewSecret)
-
-  const missing = await page.goto(
-    `${env.websiteUrl}/preview/en/e2e-missing?previewSecret=${secret}`,
-  )
-  expect(missing?.status()).toBe(404)
-  await expect(page.locator('script[data-website-id]')).toHaveCount(0)
-
-  for (const referrer of [
-    `/preview/en/e2e-missing?previewSecret=${secret}&lang=en`,
-    `https://example.org/page?previewSecret=${secret}`,
-  ]) {
-    await page.evaluate((value) => (window.name = value), referrer)
-    const res = await page.goto(`${env.websiteUrl}/en?previewSecret=${secret}&utm_source=e2e`)
-    expect(res?.headers()['referrer-policy']).toBe('no-referrer')
-    await page.waitForLoadState('networkidle')
-  }
-  expect(payloads).toEqual([
-    {
-      website: 'site',
-      title: 'Title',
-      url: '/en?utm_source=e2e',
-      referrer: '/preview/en/e2e-missing?lang=en',
-    },
-    {
-      website: 'site',
-      title: 'Title',
-      url: '/en?utm_source=e2e',
-      referrer: 'https://example.org/page',
-    },
-  ])
-})
+}

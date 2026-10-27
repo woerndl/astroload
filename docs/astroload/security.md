@@ -119,7 +119,9 @@ If you add a custom endpoint that reads draftable content, pass
 [`cms/src/endpoints/canPreview.ts`](../../cms/src/endpoints/canPreview.ts)
 does, because the Local API skips access control by default. A
 regression here is hard to spot through manual testing.
-`web/e2e/drafts.e2e.ts` checks which version of a page each key reads.
+`web/e2e/drafts.e2e.ts` checks that the built pages and the sitemaps leave
+out the unpublished translation the demo seed saves, and which version
+each key reads.
 The read-only key can still read draft text through a child page: when an
 editor publishes a child page before its parent page was ever published,
 the pages plugin copies the parent's draft title and slug into the child's

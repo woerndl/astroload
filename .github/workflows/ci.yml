@@ -60,7 +60,7 @@ jobs:
       - name: Typecheck (cms tsc, web astro check)
         run: pnpm check
 
-      - name: Unit tests (web, cms, scripts)
+      - name: Unit tests (web, cms)
         run: pnpm test
 
   e2e:

@@ -1,4 +1,8 @@
+import { DEFAULT_LOCALE, LOCALES } from '@astroload/cms/src/site-config.ts'
+
 import { env, expect, test } from './fixtures'
+
+const other = LOCALES.find((code) => code !== DEFAULT_LOCALE)
 
 test('the root redirects to the negotiated locale without caching', async ({ web }) => {
   for (const [acceptLanguage, location] of [
@@ -12,13 +16,30 @@ test('the root redirects to the negotiated locale without caching', async ({ web
   }
 })
 
-test('the home page carries hreflang alternates and x-default', async ({ web }) => {
-  const res = await web.get('/en')
-  expect(res.status()).toBe(200)
-  const html = await res.text()
-  expect(html).toContain(`<link rel="alternate" hreflang="en" href="${env.websiteUrl}/en">`)
-  expect(html).toContain(`<link rel="alternate" hreflang="de" href="${env.websiteUrl}/de">`)
-  expect(html).toContain(`<link rel="alternate" hreflang="x-default" href="${env.websiteUrl}/en">`)
+// The seed gives About both locales and publishes /<default locale>/untranslated
+// in that locale only.
+test('a page lists its translations as alternates and in the language switcher, and leaves out a missing one', async ({
+  page,
+  web,
+  admin,
+}) => {
+  test.skip(!other, 'the project has one locale')
+  const found = await admin.get('/api/pages?where[slug][equals]=untranslated')
+  expect(
+    (await found.json()).totalDocs,
+    'no page has the slug untranslated. Reseed with SEED_FORCE=1',
+  ).toBe(1)
+  await page.goto(`${env.websiteUrl}/en/about`)
+  const alternate = (code: string) => page.locator(`link[rel="alternate"][hreflang="${code}"]`)
+  await expect(alternate('de')).toHaveAttribute('href', `${env.websiteUrl}/de/ueber-uns`)
+  await expect(alternate('x-default')).toHaveAttribute('href', `${env.websiteUrl}/en/about`)
+  await expect(page.locator('a[hreflang="de"]')).toHaveAttribute('href', '/de/ueber-uns')
+
+  await page.goto(`${env.websiteUrl}/${DEFAULT_LOCALE}/untranslated`)
+  await expect(alternate(other!)).toHaveCount(0)
+  await expect(page.locator(`a[hreflang="${other}"]`)).toHaveAttribute('href', `/${other}`)
+  expect((await web.get(`/${other}/untranslated`)).status()).toBe(404)
+  expect(await (await web.get(`/${other}/sitemap.xml`)).text()).not.toContain('/untranslated<')
 })
 
 test('the /en page has a content-build-id meta tag with CONTENT_BUILD_ID when set and none when unset', async ({

@@ -12,7 +12,11 @@
       }
     },
     "web": {
-      "entry": ["e2e/*.e2e.ts"]
+      "entry": ["e2e/*.e2e.ts", "*.test.mjs", "src/**/*.test.ts"],
+      "ignoreIssues": {
+        "src/cms/structuredData.ts": ["exports"],
+        "src/lib/format.ts": ["exports"]
+      }
     }
   }
 }

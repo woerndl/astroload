@@ -1,4 +1,4 @@
-import { expect, json, readKey, test } from './fixtures'
+import { expect, readKey, test } from './fixtures'
 
 type Redirect = { sourcePath: string; destinationPath: string; type: 'permanent' | 'temporary' }
 
@@ -8,9 +8,9 @@ test("the built web app redirects each Redirects document's source path with its
   cms,
   web,
 }) => {
-  const { docs } = await json<{ docs: Redirect[] }>(
-    await cms.get('/api/redirects?pagination=false', { headers: readKey }),
-  )
+  const res = await cms.get('/api/redirects?pagination=false', { headers: readKey })
+  await expect(res).toBeOK()
+  const { docs }: { docs: Redirect[] } = await res.json()
   test.skip(
     docs.length === 0,
     'no Redirects document exists. Create one in the admin and rebuild the web app',

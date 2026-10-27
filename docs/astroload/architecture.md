@@ -146,8 +146,8 @@ returns the English `slug` and `title` but no `path`, and the
 `locale: 'all'` path map lists only the locales where the document has its
 own slug. So no `de` URL serves the page. The `de` sitemap leaves the page
 out, the `hreflang` alternates omit `de`, and the language switcher links
-to the `de` home. After upgrading either package, read such a page with
-`locale: 'de'` and confirm that `path` is still absent.
+to the `de` home. `web/e2e/routing.e2e.ts` checks this behavior with the
+page the demo seed publishes in the default locale only.
 
 ## Page identity stays on the document when the layout is implemented in code
 

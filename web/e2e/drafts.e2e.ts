@@ -1,65 +1,63 @@
-import { expect, json, previewKey, readKey, test } from './fixtures'
+import { DEFAULT_LOCALE, LOCALES } from '@astroload/cms/src/site-config.ts'
 
-const PUBLISHED = 'E2E published title'
-const DRAFT = 'E2E draft title'
+import { expect, previewKey, readKey, test } from './fixtures'
 
-let pageId: string | undefined
+// The seed publishes /<default locale>/untranslated, saves an unpublished edit
+// titled "Unpublished edit" and an unpublished translation with this title and
+// the slug unpublished-translation in the next locale.
+const other = LOCALES.find((code) => code !== DEFAULT_LOCALE)
+const DRAFT = 'Unpublished translation'
+
+let id: string
+
+test.skip(!other, 'the project has one locale')
 
 test.beforeAll(async ({ admin }) => {
-  const created = await admin.post('/api/pages?locale=en', {
-    data: { title: PUBLISHED, slug: 'e2e-drafts', _status: 'published' },
-  })
-  pageId = (await json<{ doc: { id: string } }>(created, 201)).doc.id
-  await json(
-    await admin.patch(`/api/pages/${pageId}?locale=en&draft=true`, {
-      data: { title: DRAFT, _status: 'draft' },
-    }),
-  )
+  const res = await admin.get('/api/pages?where[slug][equals]=untranslated')
+  await expect(res).toBeOK()
+  id = (await res.json()).docs[0]?.id
+  expect(id, 'no page has the slug untranslated. Reseed with SEED_FORCE=1').toBeTruthy()
 })
 
-test.afterAll(async ({ admin }) => {
-  if (pageId) await admin.delete(`/api/pages/${pageId}`)
+test('the built site and its sitemaps leave out an unpublished edit and translation', async ({
+  web,
+}) => {
+  const page = await web.get(`/${DEFAULT_LOCALE}/untranslated`)
+  await expect(page).toBeOK()
+  const html = await page.text()
+  expect(html).not.toContain('Unpublished edit')
+  expect(html).not.toContain('unpublished-translation')
+  expect((await web.get(`/${other}/unpublished-translation`)).status()).toBe(404)
+  const own = await web.get(`/${DEFAULT_LOCALE}/sitemap.xml`)
+  await expect(own).toBeOK()
+  expect(await own.text()).toContain(`/${DEFAULT_LOCALE}/untranslated</loc>`)
+  const translated = await web.get(`/${other}/sitemap.xml`)
+  await expect(translated).toBeOK()
+  expect((await own.text()) + (await translated.text())).not.toContain('unpublished-translation')
 })
 
-test('the read-only key gets the published version and not the draft', async ({ cms }) => {
-  const doc = await json<{ title: string }>(
-    await cms.get(`/api/pages/${pageId}?locale=en`, { headers: readKey }),
-  )
-  expect(doc.title).toBe(PUBLISHED)
-  // Payload answers 404 when the access filter excludes the latest draft.
-  expect(
-    (await cms.get(`/api/pages/${pageId}?locale=en&draft=true`, { headers: readKey })).status(),
-  ).toBe(404)
-  const byPath = await json<{ data: { title: string } }>(
-    await cms.get('/api/page-by-path?path=/en/e2e-drafts', { headers: readKey }),
-  )
-  expect(byPath.data.title).toBe(PUBLISHED)
-})
-
-test('the preview key gets the draft', async ({ cms }) => {
-  const doc = await json<{ title: string }>(
-    await cms.get(`/api/pages/${pageId}?locale=en&draft=true`, { headers: previewKey }),
-  )
-  expect(doc.title).toBe(DRAFT)
-  const byPath = await json<{ data: { title: string } }>(
-    await cms.get('/api/page-by-path?path=/en/e2e-drafts&preview=true', { headers: previewKey }),
-  )
-  expect(byPath.data.title).toBe(DRAFT)
-})
-
-test('the read-only key is refused preview reads, and only panel users read version history', async ({
+test('only the preview key reads the unpublished translation, and only panel users read version history', async ({
   cms,
   admin,
 }) => {
-  expect(
-    (
-      await cms.get('/api/page-by-path?path=/en/e2e-drafts&preview=true', { headers: readKey })
-    ).status(),
-  ).toBe(403)
-  const versions = `/api/pages/versions?where[parent][equals]=${pageId}`
+  // Payload answers 404 when the access filter excludes the latest draft.
+  const draft = await cms.get(`/api/pages/${id}?locale=${other}&draft=true`, { headers: readKey })
+  expect(draft.status()).toBe(404)
+  const path = `/api/page-by-path?path=/${other}/unpublished-translation&preview=true`
+  expect((await cms.get(path, { headers: readKey })).status()).toBe(403)
+  const preview = await cms.get(path, { headers: previewKey })
+  await expect(preview).toBeOK()
+  expect((await preview.json()).data.title).toBe(DRAFT)
+
+  const versions = `/api/pages/versions?where[parent][equals]=${id}`
   for (const headers of [readKey, previewKey])
     expect((await cms.get(versions, { headers })).status()).toBe(403)
-  expect((await json<{ totalDocs: number }>(await admin.get(versions))).totalDocs).toBeGreaterThan(
-    0,
-  )
+  const history = await admin.get(versions)
+  await expect(history).toBeOK()
+  expect((await history.json()).totalDocs).toBeGreaterThan(0)
+})
+
+test('page-by-path matches the full path, not only the slug', async ({ cms }) => {
+  const path = `/api/page-by-path?path=/${DEFAULT_LOCALE}/untranslated/untranslated`
+  expect((await cms.get(path, { headers: readKey })).status()).toBe(404)
 })

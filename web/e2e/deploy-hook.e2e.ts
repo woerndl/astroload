@@ -5,24 +5,26 @@ import { env, expect, test } from './fixtures'
 // in the last five minutes.
 test('a draft save sends no deploy webhook POST and a publish sends one', async ({
   admin,
-  create,
+  cleanup,
   receiver,
 }) => {
   test.skip(!env.deployHookUrl, 'DEPLOY_HOOK_URL is unset in cms/.env')
   const hook = await receiver(env.deployHookUrl)
-  const page = await create<{ id: string }>('pages?locale=en&draft=true', {
+  const created = await admin.post('/api/pages?locale=en&draft=true', {
     data: { title: 'E2E deploy webhook', slug: 'e2e-deploy-webhook', _status: 'draft' },
   })
+  await expect(created).toBeOK()
+  const { doc } = await created.json()
+  cleanup(() => admin.delete(`/api/pages/${doc.id}`))
 
   // The CMS sends the POST without waiting for it, so give a wrong one time to arrive.
   await new Promise((resolve) => setTimeout(resolve, 1_000))
   expect(hook.requests, 'the draft save sent a deploy webhook POST').toHaveLength(0)
 
-  expect(
-    (
-      await admin.patch(`/api/pages/${page.id}?locale=en`, { data: { _status: 'published' } })
-    ).status(),
-  ).toBe(200)
+  const published = await admin.patch(`/api/pages/${doc.id}?locale=en`, {
+    data: { _status: 'published' },
+  })
+  await expect(published).toBeOK()
   await expect
     .poll(() => hook.requests.length, {
       timeout: 10_000,

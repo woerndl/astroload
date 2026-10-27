@@ -5,9 +5,9 @@ import { env, preflight, webEnv } from './fixtures'
 // Runs against a seeded Mongo, the CMS and the built web app. The setup is
 // documented in docs/astroload/conventions.md.
 //
-// Files run one at a time in name order because they share one CMS. The 00-
-// prefix runs the deploy webhook test before any other test publishes: after
-// a deploy webhook POST, the CMS sends no further POST for five minutes.
+// Files run one at a time in name order because they share one CMS. The
+// deploy-hook project runs before any other test publishes: after a deploy
+// webhook POST, the CMS sends no further POST for five minutes.
 preflight()
 
 export default defineConfig({
@@ -18,6 +18,10 @@ export default defineConfig({
   outputDir: '../.playwright/results',
   reporter: [['list'], ['html', { open: 'never', outputFolder: '../.playwright/report' }]],
   use: { trace: 'retain-on-failure' },
+  projects: [
+    { name: 'deploy-hook', testMatch: 'deploy-hook.e2e.ts' },
+    { name: 'e2e', testIgnore: 'deploy-hook.e2e.ts', dependencies: ['deploy-hook'] },
+  ],
   // Playwright starts each server after the previous one answers, so the web build can read from the CMS.
   webServer: [
     {

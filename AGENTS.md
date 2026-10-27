@@ -21,7 +21,7 @@ header comment is fine.
 Read the matching doc in `docs/astroload/` before working on its topics:
 
 - architecture.md: service boundaries, decoupling, locales, preview gate, rich text
-- conventions.md: prerender shapes, new routes, SDK layer, server-only keys, collection changes, generated types, localized values, static assets
+- conventions.md: prerender shapes, new routes, SDK layer, server-only keys, collection changes, generated types, localized values, static assets, tests
 - forms.md: field renderer, cross-origin POST, spam guard, JS-required submission, accessibility
 - content-workflow.md: changing content, scratch scripts, MCP and REST paths, local-vs-deployed targets
 - deployment.md: Docker images, standalone output, media volume, production compose, baked build env

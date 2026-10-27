@@ -1,4 +1,4 @@
-import { ADMIN, env, expect, json, test } from './fixtures'
+import { ADMIN, env, expect, test } from './fixtures'
 
 const TITLE = 'E2E live preview'
 const EDITED = 'E2E live preview edited'
@@ -10,6 +10,7 @@ test('the preview route answers 403 without the right secret, and every response
   const cases = [
     ['/preview/en', 403],
     ['/preview/en?previewSecret=wrong', 403],
+    [`/preview/en?previewSecret=${'x'.repeat(Buffer.byteLength(env.previewSecret))}`, 403],
     [`/preview/en?${secret}`, 200],
     [`/preview/xx?${secret}`, 404],
     [`/preview/en/e2e-does-not-exist?${secret}`, 404],
@@ -28,12 +29,14 @@ test('the preview route answers 403 without the right secret, and every response
 test('live preview loads the preview route in the admin iframe and shows the edited title after an autosave', async ({
   page,
   admin,
-  create,
   cleanup,
 }) => {
-  const doc = await create<{ id: string }>('pages?locale=en&draft=true', {
+  const created = await admin.post('/api/pages?locale=en&draft=true', {
     data: { title: TITLE, slug: 'e2e-live-preview', _status: 'draft' },
   })
+  await expect(created).toBeOK()
+  const { doc } = await created.json()
+  cleanup(() => admin.delete(`/api/pages/${doc.id}`))
 
   // Payload stores the live preview toggle per user in payload-preferences, so
   // setting it here opens the edit view with the preview iframe.
@@ -47,11 +50,10 @@ test('live preview loads the preview route in the admin iframe and shows the edi
       ? admin.post(prefPath, { data: { value: previousValue } })
       : admin.delete(prefPath),
   )
-  await json(
-    await admin.post(prefPath, {
-      data: { value: { ...previousValue, editViewType: 'live-preview' } },
-    }),
-  )
+  const saved = await admin.post(prefPath, {
+    data: { value: { ...previousValue, editViewType: 'live-preview' } },
+  })
+  await expect(saved).toBeOK()
 
   await page.goto(`${env.cmsUrl}/admin/login`)
   await page.locator('#field-email').fill(ADMIN.email)

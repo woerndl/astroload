@@ -1,191 +1,87 @@
 import type { AccessArgs, CollectionBeforeValidateHook } from 'payload'
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { expect, it, vi } from 'vitest'
 
-import { pageTemplates } from '../shared'
+vi.mock('../shared', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../shared')>()),
+  pageTemplates: ['landing'],
+}))
+vi.stubEnv('SKIP_ENV_VALIDATION', '1')
+const { Pages } = await import('./Pages')
 
-// The starter ships no template, so the tests use 'home' as an example value.
-// The guards compare against 'default' only. The delete rule reads pageTemplates.
-async function loadPages() {
-  vi.resetModules()
-  vi.stubEnv('SKIP_ENV_VALIDATION', '1')
-  const { Pages } = await import('./Pages')
-  return Pages
-}
-
-const editor = { collection: 'users', roles: ['editor'] }
-
-async function validate(args: {
+type Args = {
   data: Record<string, unknown>
   originalDoc?: Record<string, unknown>
-  existing?: unknown[]
+  existing?: Record<string, unknown>[]
   context?: Record<string, unknown>
   operation?: string
   locale?: string
-}) {
-  const Pages = await loadPages()
-  const hook = Pages.hooks!.beforeValidate![0]!
-  const find = vi.fn().mockResolvedValue({ docs: args.existing ?? [] })
-  return hook({
+}
+
+const validate = (args: Args) =>
+  Pages.hooks!.beforeValidate![0]!({
     data: args.data,
     // Payload passes an empty originalDoc on create.
     originalDoc: args.originalDoc ?? {},
     context: args.context ?? {},
     operation: args.operation ?? (args.originalDoc ? 'update' : 'create'),
-    req: { payload: { find }, locale: args.locale ?? 'en' },
+    req: {
+      payload: {
+        find: async ({ where }: { where: { template: { equals: string } } }) => ({
+          docs: (args.existing ?? []).filter((doc) => doc.template === where.template.equals),
+        }),
+      },
+      locale: args.locale ?? 'en',
+    },
   } as unknown as Parameters<CollectionBeforeValidateHook>[0])
-}
 
-const homeDoc = { id: 'p1', template: 'home', slug: '', parent: null, isRootPage: true }
-const childDoc = { id: 'p2', template: 'home', slug: 'contact', parent: 'p1', isRootPage: false }
+const home = { id: 'p1', template: 'landing', slug: '', parent: null, isRootPage: true }
+const child = { id: 'p2', template: 'landing', slug: 'contact', parent: 'p1', isRootPage: false }
+const slugs = { ...child, slug: { en: 'contact', de: 'kontakt' } }
+const defaultChild = { ...child, template: 'default' }
+const restore = { isRestoringVersion: true }
 
-afterEach(() => {
-  vi.unstubAllEnvs()
+// prettier-ignore
+it.each<[string, Args, string]>([
+  ['a second document for a template', { data: { template: 'landing' }, existing: [home] }, 'Only one page'],
+  ['a template change', { data: { template: 'default' }, originalDoc: home }, 'keeps the template'],
+  ['a change to a template', { data: { template: 'landing' }, originalDoc: { ...home, template: 'default' } }, 'keeps the template'],
+  ['a slug change', { data: { slug: 'kontakt' }, originalDoc: child }, 'fixed in code'],
+  ['a slug change in one locale of an all-locale write', { data: { slug: { en: 'contact', de: 'neu' } }, originalDoc: slugs, locale: 'all' }, 'fixed in code'],
+  ['an unknown locale key', { data: { slug: { en: 'contact', xx: 'neu' } }, originalDoc: slugs, locale: 'all' }, 'fixed in code'],
+  ['an object slug on a one-locale write', { data: { slug: { _id: 'renamed' } }, originalDoc: child }, 'fixed in code'],
+  ['a parent change', { data: { parent: 'p9' }, originalDoc: child }, 'fixed in code'],
+  ['a root state change', { data: { isRootPage: false }, originalDoc: home }, 'fixed in code'],
+  ["a string root state such as '0'", { data: { isRootPage: '0' }, originalDoc: home }, 'fixed in code'],
+  ['a version restore', { data: { slug: 'contact' }, originalDoc: child, context: restore }, 'cannot be restored'],
+])('rejects %s on a templated page', async (_, args, message) => {
+  await expect(validate(args)).rejects.toThrow(message)
 })
 
-describe('templated page guards', () => {
-  it('rejects a second document for a template', async () => {
-    await expect(validate({ data: { template: 'home' }, existing: [homeDoc] })).rejects.toThrow(
-      'Only one page',
-    )
-  })
-
-  it('accepts the first document for a template and any default page', async () => {
-    await expect(validate({ data: { template: 'home' } })).resolves.toEqual({ template: 'home' })
-    await expect(validate({ data: { template: 'default' } })).resolves.toEqual({
-      template: 'default',
-    })
-  })
-
-  it('rejects a template change in both directions', async () => {
-    await expect(validate({ data: { template: 'default' }, originalDoc: homeDoc })).rejects.toThrow(
-      'keeps the template',
-    )
-    await expect(
-      validate({ data: { template: 'home' }, originalDoc: { ...homeDoc, template: 'default' } }),
-    ).rejects.toThrow('keeps the template')
-  })
-
-  it('rejects a slug change and an unknown locale key', async () => {
-    await expect(validate({ data: { slug: 'kontakt' }, originalDoc: childDoc })).rejects.toThrow(
-      'fixed in code',
-    )
-    const allSlugs = { ...childDoc, slug: { en: 'contact', de: 'kontakt' } }
-    await expect(
-      validate({
-        data: { slug: { en: 'contact', de: 'kontakt-neu' } },
-        originalDoc: allSlugs,
-        locale: 'all',
-      }),
-    ).rejects.toThrow('fixed in code')
-    await expect(
-      validate({
-        data: { slug: { en: 'contact', xx: 'neu' } },
-        originalDoc: allSlugs,
-        locale: 'all',
-      }),
-    ).rejects.toThrow('fixed in code')
-  })
-
-  it('accepts an unchanged slug on a write to all locales', async () => {
-    const data = { slug: { en: 'contact', de: 'kontakt' } }
-    const originalDoc = { ...childDoc, slug: { en: 'contact', de: 'kontakt' } }
-    await expect(validate({ data, originalDoc, locale: 'all' })).resolves.toEqual(data)
-  })
-
-  it('rejects an object slug on a write to one locale', async () => {
-    await expect(
-      validate({ data: { slug: { _id: 'renamed' } }, originalDoc: childDoc }),
-    ).rejects.toThrow('fixed in code')
-  })
-
-  it('accepts the first slug of a locale that has none', async () => {
-    const data = { slug: 'contact' }
-    await expect(validate({ data, originalDoc: { ...childDoc, slug: null } })).resolves.toEqual(
-      data,
-    )
-  })
-
-  it('rejects a parent change and a root state change', async () => {
-    await expect(validate({ data: { parent: 'p9' }, originalDoc: childDoc })).rejects.toThrow(
-      'fixed in code',
-    )
-    await expect(validate({ data: { isRootPage: false }, originalDoc: homeDoc })).rejects.toThrow(
-      'fixed in code',
-    )
-  })
-
-  it("rejects a string root state such as '0'", async () => {
-    await expect(validate({ data: { isRootPage: '0' }, originalDoc: homeDoc })).rejects.toThrow(
-      'fixed in code',
-    )
-  })
-
-  it('accepts null as the root state of a page that is not the root', async () => {
-    const data = { isRootPage: null }
-    await expect(validate({ data, originalDoc: childDoc })).resolves.toEqual(data)
-  })
-
-  it('accepts an unchanged save with a populated parent', async () => {
-    const data = {
-      template: 'home',
-      slug: 'contact',
-      parent: { id: 'p1' },
-      isRootPage: false,
-      title: 'New',
-    }
-    await expect(validate({ data, originalDoc: childDoc })).resolves.toEqual(data)
-  })
-
-  it('ignores an operation other than create and update', async () => {
-    const data = { template: 'default', slug: 'renamed' }
-    await expect(validate({ data, originalDoc: childDoc, operation: 'validate' })).resolves.toEqual(
-      data,
-    )
-  })
-
-  it('rejects a version restore on a templated page only', async () => {
-    const context = { isRestoringVersion: true }
-    await expect(
-      validate({ data: { slug: 'contact' }, originalDoc: childDoc, context }),
-    ).rejects.toThrow('cannot be restored')
-    const data = { slug: 'old' }
-    await expect(
-      validate({ data, originalDoc: { ...childDoc, template: 'default' }, context }),
-    ).resolves.toEqual(data)
-  })
-
-  it('lets any structural change through on a default page and in a seed', async () => {
-    const data = { slug: 'renamed', parent: 'p9' }
-    await expect(
-      validate({ data, originalDoc: { ...childDoc, template: 'default' } }),
-    ).resolves.toEqual(data)
-    await expect(
-      validate({ data, originalDoc: childDoc, context: { seed: true } }),
-    ).resolves.toEqual(data)
-  })
+// prettier-ignore
+it.each<[string, Args]>([
+  ['the first document for a template', { data: { template: 'landing' }, existing: [defaultChild] }],
+  ['a default page', { data: { template: 'default' } }],
+  ['unchanged slugs on an all-locale write', { data: { slug: { en: 'contact', de: 'kontakt' } }, originalDoc: slugs, locale: 'all' }],
+  ['the first slug of a locale that has none', { data: { slug: 'contact' }, originalDoc: { ...child, slug: null } }],
+  ['null as the root state of a page that is not the root', { data: { isRootPage: null }, originalDoc: child }],
+  ['an unchanged save with a populated parent', { data: { ...child, parent: { id: 'p1' }, title: 'New' }, originalDoc: child }],
+  ['an operation other than create and update', { data: { slug: 'renamed' }, originalDoc: child, operation: 'validate' }],
+  ['a structural change on a default page', { data: { slug: 'renamed', parent: 'p9' }, originalDoc: defaultChild }],
+  ['a version restore on a default page', { data: { slug: 'old' }, originalDoc: defaultChild, context: restore }],
+  ['a structural change in a seed', { data: { slug: 'renamed', parent: 'p9' }, originalDoc: child, context: { seed: true } }],
+])('accepts %s', async (_, args) => {
+  await expect(validate(args)).resolves.toEqual(args.data)
 })
 
-describe('templated page access', () => {
+it('lets editors create default pages only and delete a default page but not a template page', () => {
   const access = (data?: Record<string, unknown>) =>
-    ({ req: { user: editor }, data }) as unknown as AccessArgs
-
-  it('allows create for default pages only', async () => {
-    const Pages = await loadPages()
-    expect(Pages.access!.create!(access({ template: 'default' }))).toBe(true)
-    expect(Pages.access!.create!(access({}))).toBe(true)
-    expect(Pages.access!.create!(access({ template: 'home' }))).toBe(false)
-  })
-
-  it('limits delete to pages outside the template list', async () => {
-    const Pages = await loadPages()
-    expect(Pages.access!.delete!(access())).toEqual({
-      template: { not_in: [...pageTemplates] },
-    })
-  })
-
-  it('disables duplicate', async () => {
-    const Pages = await loadPages()
-    expect(Pages.disableDuplicate).toBe(true)
-  })
+    ({ req: { user: { collection: 'users', roles: ['editor'] } }, data }) as unknown as AccessArgs
+  expect(
+    [{}, { template: 'default' }, { template: 'landing' }].map((d) =>
+      Pages.access!.create!(access(d)),
+    ),
+  ).toEqual([true, true, false])
+  const { template } = Pages.access!.delete!(access()) as { template: { not_in: string[] } }
+  expect(['landing', 'default'].map((t) => template.not_in.includes(t))).toEqual([true, false])
 })
