@@ -233,9 +233,7 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
 </style>
 
 <script>
-  // A form control shadows the form element's property of the same name, so the
-  // script reads its settings from the root element, listens there, and hides
-  // the form through Element.prototype.
+  // A form control shadows the form element's property or method of the same name.
   function attach(root: HTMLElement) {
     const { formRoot: formId, action, confirmationType, redirectUrl } = root.dataset
     const form = root.querySelector('form')

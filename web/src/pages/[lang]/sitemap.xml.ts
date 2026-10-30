@@ -4,9 +4,7 @@ import { getStaticPathItems } from '../../cms/getStaticPaths'
 import { escapedSiteURL, sitemapHeaders, urlEntry, urlsetDocument } from '../../cms/sitemap'
 import { DEFAULT_LOCALE, isLocale, LOCALE_URL_PREFIX, MULTIPLE_LOCALES } from '../../cms/types'
 
-// Rendered on demand in every build, so the locale guard below returns the 404
-// for an unknown locale such as /fr/sitemap.xml, and the sitemaps reflect
-// publishes without a redeploy.
+// Rendered on demand so the sitemaps reflect publishes without a redeploy.
 export const prerender = false
 
 export const GET: APIRoute = async ({ params }) => {

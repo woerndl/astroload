@@ -30,8 +30,8 @@ export const validateFormFields: CollectionBeforeValidateHook = ({ data }) => {
     throw new APIError('The form fields must be a list.', 400, undefined, true)
   }
   const seen = new Set<string>()
-  for (const field of fields as { name?: unknown }[]) {
-    if (typeof field.name !== 'string') continue
+  for (const field of fields as ({ name?: unknown } | null)[]) {
+    if (typeof field?.name !== 'string') continue
     if (RESERVED_FIELD_NAMES.includes(field.name)) {
       throw new APIError(
         `The field name "${field.name}" is reserved for the spam guard. Pick another name.`,

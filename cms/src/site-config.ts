@@ -7,7 +7,6 @@ export const LOCALES: readonly Locale[] = ['de', 'en']
 
 export const DEFAULT_LOCALE: Locale = 'en'
 
-// Admin labels by locale code.
 // Keyed by string so a project can keep labels for locales it dropped.
 export const LOCALE_LABELS: Record<string, string> = {
   de: 'Deutsch',

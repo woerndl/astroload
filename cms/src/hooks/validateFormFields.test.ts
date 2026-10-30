@@ -9,3 +9,7 @@ it('rejects a fields value that is not a list with status 400', async () => {
     ).rejects.toMatchObject({ status: 400 })
   }
 })
+
+it('skips a null field entry', () => {
+  expect(() => validateFormFields({ data: { title: 'x', fields: [null] } } as never)).not.toThrow()
+})

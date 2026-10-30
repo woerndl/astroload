@@ -10,9 +10,8 @@ import { stripLocalePath } from './types'
 // is not available. dotenv/config loads .env into process.env for a plain
 // `pnpm dev` or `pnpm build`.
 //
-// The build script sets REDIRECTS_STRICT=1. astro check sets
-// NODE_ENV=production, so NODE_ENV as the switch would abort a type check on a
-// CMS outage. docs/astroload/maintenance.md has the retry and fallback rules.
+// astro check sets NODE_ENV=production, so NODE_ENV as the switch would abort
+// a type check on a CMS outage. docs/astroload/maintenance.md has the retry and fallback rules.
 const STRICT_MAX_ATTEMPTS = 6
 const fallback = fallbackRedirects as Record<string, RedirectConfig>
 

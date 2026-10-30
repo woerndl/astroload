@@ -23,18 +23,13 @@ export async function loadCatchAllPage({
 
   const { id, collection, paths, template } = props
   if (!id || !collection) {
-    // Dev renders these routes on demand (see prerenderOverrides in
-    // astro.config.mjs) and gets no getStaticPaths props, so every dev request
-    // resolves by path here, against the live CMS.
     const found = await getPageByPath(fullPath)
     if (!found) return null
     await globalData
     return { result: found, paths: found.paths }
   }
 
-  // This branch runs only while prerendering, where Astro skips a page without
-  // a body instead of failing the build, so a listed document that vanished,
-  // moved or changed its template throws.
+  // While prerendering, Astro skips a page without a body instead of failing the build.
   const data = await getPageData(collection, id, locale)
   if (!data) {
     throw new Error(`page ${collection}/${id} was enumerated but is no longer published`)

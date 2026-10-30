@@ -66,8 +66,7 @@ export const Media: CollectionConfig = {
         withoutEnlargement: true,
       },
     ],
-    // Payload's file route. The web app versions media URLs with ?v=updatedAt.
-    // docs/astroload/maintenance.md has the cache rules and the direct S3 mode.
+    // The web app adds ?v=updatedAt to media URLs, so an edited file gets a new URL.
     modifyResponseHeaders: ({ headers }) => {
       headers.set('Cache-Control', 'public, max-age=2592000')
     },

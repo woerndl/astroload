@@ -106,9 +106,9 @@ build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body
 request headers such as `Authorization` or replaces the default
 `Content-Type: application/json`.
 
-The window is `WINDOW_MS` in `triggerDeploy.ts`, 300000 ms (five minutes). The default suits hosts
-that bill per build minute. Shorten it for faster publishing. Lengthen it
-to group more saves into one build. A window shorter than the build time can overlap builds.
+`WINDOW_MS` in `cms/src/hooks/triggerDeploy.ts` sets the window. Shorten it
+for faster publishing, or lengthen it to group more saves into one build. A
+window shorter than the build time can overlap builds.
 
 Rebuild now: to skip the wait, trigger the host's redeploy (its dashboard
 button, or `curl -X POST "$DEPLOY_HOOK_URL"` for a hook without
@@ -223,10 +223,8 @@ deploy as above.
 
 ## Media is served as WebP and cached with a version marker
 
-The Media collection converts uploads to WebP (`xs` through `lg` and the main
-file) and keeps the `og` crop as JPEG. `Img.astro` emits a responsive `srcset` from the
-generated widths, so pass a `sizes` that matches the rendered box (the call
-sites already do).
+Pass `Img.astro` a `sizes` that matches the rendered box, so the browser
+picks a fitting width from its `srcset`.
 
 The media file route sends `Cache-Control: public, max-age=2592000`, so a CDN
 or browser may cache a media URL for 30 days. That is only safe because every

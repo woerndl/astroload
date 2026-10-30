@@ -5,7 +5,7 @@ import { formBuilderPlugin } from '@payloadcms/plugin-form-builder'
 import { seoPlugin } from '@payloadcms/plugin-seo'
 import { s3Storage } from '@payloadcms/storage-s3'
 import path from 'path'
-import { buildConfig } from 'payload'
+import { APIError, buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -174,6 +174,15 @@ export default buildConfig({
         access: { delete: isAdmin },
         admin: { group: CollectionGroups.System },
         hooks: {
+          // Payload parses JSON and multipart bodies only, so a form-encoded POST arrives without data.
+          beforeOperation: [
+            ({ args, operation }) => {
+              if (operation === 'create' && !args.data) {
+                throw new APIError('Submission rejected.', 400, undefined, true)
+              }
+              return args
+            },
+          ],
           beforeChange: [spamGuard, validateSubmission],
         },
       },

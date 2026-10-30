@@ -34,8 +34,6 @@ const prerenderOverrides = {
   hooks: {
     'astro:config:setup': async ({ command, updateConfig }) => {
       devServer = command === 'dev'
-      // The on-demand root redirect reads this list, so it needs no CMS
-      // request.
       if (command === 'build' && LOCALE_URL_PREFIX) {
         homeLocales = await getBuiltHomeLocales()
         if (homeLocales.length === 0) throw new Error('the CMS lists no published home page')
@@ -58,12 +56,6 @@ const prerenderOverrides = {
         route.prerender = false
         return
       }
-      // In a single-locale project the [lang] routes have no static paths.
-      // Rendering them on demand lets each route's locale guard answer 404. The
-      // [lang] sitemap endpoint sets prerender = false for the same reason.
-      if (!LOCALE_URL_PREFIX && route.component.includes('/pages/[lang]/')) {
-        route.prerender = false
-      }
       // The multi-locale root needs the request to negotiate Accept-Language.
       if (LOCALE_URL_PREFIX && route.component.endsWith('/pages/index.astro')) {
         route.prerender = false
@@ -77,8 +69,7 @@ export default defineConfig({
   adapter: node({ mode: 'standalone', bodySizeLimit: 8 * 1024 }),
   integrations: [prerenderOverrides],
   prerenderConflictBehavior: 'error',
-  // Astro 7 defaults compressHTML to 'jsx', which collapses whitespace between
-  // elements.
+  // Astro's default 'jsx' mode removes the whitespace between elements.
   compressHTML: true,
   trailingSlash: 'never',
   // Astro inlines a stylesheet under 4 kB by default. The honeypot rule in
@@ -89,7 +80,6 @@ export default defineConfig({
   // unstorage from the server bundle.
   session: false,
   security: {
-    // Hosts Astro.url may take from the request. See docs/astroload/deployment.md.
     allowedDomains: process.env.WEBSITE_URL
       ? [{ hostname: new URL(process.env.WEBSITE_URL).hostname }]
       : [],
@@ -106,10 +96,7 @@ export default defineConfig({
   },
   redirects: await getRedirects(),
   image: { responsiveStyles: true, layout: 'constrained' },
-  // Fetched at build time and served first-party under /_astro/fonts/, so no
-  // visitor traffic goes to Google. Set the subsets to cover the project's
-  // locales. See
-  // docs/astroload/conventions.md.
+  // The subsets must cover the scripts of every locale.
   fonts: [
     {
       provider: fontProviders.google(),
@@ -155,8 +142,6 @@ export default defineConfig({
         access: 'secret',
         default: 'https://cloud.umami.is',
       }),
-      // Rendered as <meta name="content-build-id"> on every page of the shared
-      // layout. See docs/astroload/maintenance.md.
       CONTENT_BUILD_ID: envField.string({
         context: 'server',
         access: 'public',

@@ -21,8 +21,7 @@ template uses one of two literal shapes:
 Every conditional case lives in the `prerenderOverrides` integration in
 `astro.config.mjs`, Astro's supported way to override render modes per
 route. It renders everything on demand in dev (so admin edits show up
-without a restart), the `[lang]` routes on demand in a single-locale
-build, and the root on demand in a multi-locale build (the redirect to
+without a restart) and the root on demand in a multi-locale build (the redirect to
 a locale with a published home reads Accept-Language). If a new route needs a
 conditional render mode, extend that integration rather than computing
 the export.
@@ -583,8 +582,7 @@ config (`web/eslint.config.js`) runs the recommended rules of ESLint and
 `eslint-plugin-astro`. It runs no rules that need type information.
 `astro check` reports type errors.
 
-The test runner is Vitest in both workspaces. The root `pnpm test` runs
-the web tests and then the CMS tests. `cms/src/env.ts` reads the environment once at
+The test runner is Vitest in both workspaces. `cms/src/env.ts` reads the environment once at
 import, so a CMS test stubs `process.env` with `vi.stubEnv` and then
 imports the module under test after `vi.resetModules()`.
 
@@ -668,11 +666,6 @@ that the web build bakes in:
   seed creates one. The test reads the Redirects documents from the CMS and
   expects the built web app to answer each one. Rebuild after you add or
   change one. Without any Redirects document the test skips.
-
-The routing test checks the `content-build-id` meta tag on the
-default-locale home page. It expects the tag when `CONTENT_BUILD_ID` was
-set in `web/.env` before the build, and no tag otherwise. Rebuild after
-changing it.
 
 Spec files end in `.e2e.ts`, so vitest does not collect them. Before any
 server starts, a check stops the run with one message when a key is missing or

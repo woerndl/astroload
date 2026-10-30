@@ -171,6 +171,11 @@ test('the spam guard and the submission validator reject forged POSTs with 400',
     expect(res.status(), name).toBe(400)
     expect(await res.text(), name).toContain('Submission rejected.')
   }
+  const formEncoded = await cms.post('/api/form-submissions', {
+    headers: fromSite,
+    form: { form: formId, name: 'x' },
+  })
+  expect(formEncoded.status(), 'form-encoded body').toBe(400)
 })
 
 test('the CORS preflight allows the web app origin and no other origin', async ({ cms }) => {
