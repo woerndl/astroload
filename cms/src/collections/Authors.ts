@@ -1,7 +1,11 @@
 import type { PageCollectionConfig } from '@jhb.software/payload-pages-plugin'
 
 import { contentAccess } from '../access/contentAccess'
-import { triggerDeployAfterChange, triggerDeployAfterDelete } from '../hooks/triggerDeploy'
+import {
+  rememberDraftSave,
+  triggerDeployAfterChange,
+  triggerDeployAfterDelete,
+} from '../hooks/triggerDeploy'
 import { draftVersions, livePreviewBreakpoints } from '../shared'
 
 export const Authors: PageCollectionConfig = {
@@ -13,6 +17,7 @@ export const Authors: PageCollectionConfig = {
   },
   versions: draftVersions,
   hooks: {
+    beforeOperation: [rememberDraftSave],
     afterChange: [triggerDeployAfterChange],
     afterDelete: [triggerDeployAfterDelete],
   },

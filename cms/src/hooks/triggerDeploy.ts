@@ -1,6 +1,7 @@
 import type {
   CollectionAfterChangeHook,
   CollectionAfterDeleteHook,
+  CollectionBeforeOperationHook,
   GlobalAfterChangeHook,
   PayloadRequest,
 } from 'payload'
@@ -132,26 +133,24 @@ function stable(value: unknown): string {
   return JSON.stringify(rest)
 }
 
-export const triggerDeployAfterChange: CollectionAfterChangeHook = ({ doc, previousDoc, req }) => {
-  // A draft save that stays a draft does not change the published document,
-  // so it must not use up the leading deploy. This covers autosave (every
-  // 1.5 s while an editor types) and Save Draft, including the first draft
-  // over a published doc, where previousDoc still reads 'published'.
-  // Unpublish has the same status pair but sends no ?draft=true, so it falls
-  // through. The REST endpoint turns the flag into a boolean before the hook
-  // runs, and the string check covers paths that skip that step.
-  const isDraftSave = req.query?.draft === true || req.query?.draft === 'true'
-  if (isDraftSave && doc?._status === 'draft') return doc
+// Only beforeOperation sees the draft argument that tells a draft save or a
+// restore as draft from an unpublish.
+export const rememberDraftSave: CollectionBeforeOperationHook = ({ args, context, operation }) => {
+  if (operation === 'create' || operation === 'update' || operation === 'restoreVersion') {
+    context.draftSave = (args as { draft?: unknown }).draft === true
+  }
+}
 
-  // Schedule a deploy for a first publish, a changed published document, or
-  // an unpublish.
-  const affectsPublished = doc?._status === 'published' || previousDoc?._status === 'published'
-  if (!affectsPublished) return doc
-
-  // A publish with no edits writes the same document back. previousDoc is the
-  // latest version, drafts included, so publishing a draft differs at least
-  // in _status.
-  if (unchanged(doc, previousDoc)) return doc
+export const triggerDeployAfterChange: CollectionAfterChangeHook = ({
+  doc,
+  previousDoc,
+  req,
+  context,
+}) => {
+  // previousDoc is the latest version, drafts included, so an unpublish after
+  // a draft save matches it.
+  if (context.draftSave && doc?._status === 'draft') return doc
+  if (doc?._status === 'published' && unchanged(doc, previousDoc)) return doc
 
   scheduleDeploy(req.payload.logger)
   return doc

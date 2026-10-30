@@ -1,5 +1,10 @@
 import type { PageCollectionConfig } from '@jhb.software/payload-pages-plugin'
-import { APIError, type CollectionBeforeValidateHook } from 'payload'
+import {
+  APIError,
+  type CollectionBeforeValidateHook,
+  type PayloadRequest,
+  ValidationError,
+} from 'payload'
 
 import { contentAccess } from '../access/contentAccess'
 import { AuthorsListBlock } from '../blocks/AuthorsListBlock'
@@ -7,14 +12,25 @@ import { FormBlock } from '../blocks/FormBlock'
 import { ImageBlock } from '../blocks/ImageBlock'
 import { PostsListBlock } from '../blocks/PostsListBlock'
 import { RichTextBlock } from '../blocks/RichTextBlock'
-import { triggerDeployAfterChange, triggerDeployAfterDelete } from '../hooks/triggerDeploy'
+import { guardDraftReads } from '../endpoints/canPreview'
+import {
+  rememberDraftSave,
+  triggerDeployAfterChange,
+  triggerDeployAfterDelete,
+} from '../hooks/triggerDeploy'
 import {
   draftVersions,
   isLocale,
   livePreviewBreakpoints,
+  pageCollectionsSlugs,
   pageTemplateLabels,
   pageTemplates,
 } from '../shared'
+
+// A save without _status keeps the status of the latest version, which is
+// 'draft' after a draft save, so such a save also unpublishes.
+const unpublishes = ({ data, originalDoc, context }: Parameters<CollectionBeforeValidateHook>[0]) =>
+  !context?.draftSave && (data?._status ?? originalDoc?._status) === 'draft'
 
 const relationId = (value: unknown) =>
   value && typeof value === 'object' ? String((value as { id: unknown }).id) : String(value ?? '')
@@ -92,6 +108,48 @@ const guardTemplatedPage: CollectionBeforeValidateHook = async ({
   return data
 }
 
+async function requirePublishedParent(parent: string, req: PayloadRequest) {
+  const { totalDocs } = await req.payload.count({
+    collection: 'pages',
+    where: { id: { equals: parent }, _status: { equals: 'published' } },
+    req,
+  })
+  if (totalDocs > 0) return
+  throw new ValidationError({
+    collection: 'pages',
+    errors: [{ path: 'parent', message: 'Publish the parent page first.' }],
+    req,
+  })
+}
+
+async function refusePublishedChildren(id: string, req: PayloadRequest) {
+  const where = { parent: { equals: id }, _status: { equals: 'published' } }
+  const counts = await Promise.all(
+    pageCollectionsSlugs.map((collection) => req.payload.count({ collection, where, req })),
+  )
+  if (counts.every(({ totalDocs }) => totalDocs === 0)) return
+  throw new APIError(
+    'This page has published children. Unpublish them or move them to another parent first.',
+    400,
+  )
+}
+
+// The pages plugin copies a child's breadcrumbs from the parent's main
+// document, which only a publish or an unpublish changes.
+export const guardPublishedParent: CollectionBeforeValidateHook = async (args) => {
+  const { data, originalDoc, operation, context, req } = args
+  if (context?.seed || (context?.isRestoringVersion && context.draftSave)) return data
+  if (operation === 'update' && originalDoc && unpublishes(args)) {
+    await refusePublishedChildren(String(originalDoc.id), req)
+    return data
+  }
+  const status = context?.draftSave ? data?._status : (data?._status ?? originalDoc?._status)
+  if (status !== 'published') return data
+  const parent = relationId(data?.parent !== undefined ? data.parent : originalDoc?.parent)
+  if (parent) await requirePublishedParent(parent, req)
+  return data
+}
+
 export const Pages: PageCollectionConfig = {
   slug: 'pages',
   admin: {
@@ -104,7 +162,8 @@ export const Pages: PageCollectionConfig = {
   disableDuplicate: true,
   versions: draftVersions,
   hooks: {
-    beforeValidate: [guardTemplatedPage],
+    beforeOperation: [rememberDraftSave, guardDraftReads],
+    beforeValidate: [guardTemplatedPage, guardPublishedParent],
     afterChange: [triggerDeployAfterChange],
     afterDelete: [triggerDeployAfterDelete],
   },

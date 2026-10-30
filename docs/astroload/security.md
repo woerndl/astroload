@@ -122,14 +122,22 @@ regression here is hard to spot through manual testing.
 `web/e2e/drafts.e2e.ts` checks that the built pages and the sitemaps leave
 out the unpublished translation the demo seed saves, and which version
 each key reads.
-The read-only key can still read draft text through a child page: when an
-editor publishes a child page before its parent page was ever published,
-the pages plugin copies the parent's draft title and slug into the child's
-`breadcrumbs` and `path`. Publish the parent first. To check, publish a
-child under a parent that was never published, then read the child with
-`PAYLOAD_READ_KEY`, and look for the parent's draft title in its
-`breadcrumbs`. Draft leakage through other relationships has no test
-yet.
+The pages plugin copies the parent's title and slug into a child's
+`breadcrumbs` and `path`, and reads the parent with `overrideAccess`. A
+public read takes them from the parent's main document. So the CMS refuses
+to publish a page or post under an unpublished parent, and refuses to
+unpublish a page while a published document in any page collection names
+it as parent, also when a save omits `_status` after a draft save. A draft
+save over a published parent stays allowed, because it leaves the main
+document alone. The pages plugin refuses to delete a page that still has
+children. A read with `draft=true` from a caller without draft access runs
+as a published read, and the plugin's parent cache keeps draft and
+published lookups apart
+([`cms/src/endpoints/canPreview.ts`](../../cms/src/endpoints/canPreview.ts)).
+The checks run without a transaction or a lock, so a child publish and a
+parent unpublish at the same moment can both pass. `web/e2e/drafts.e2e.ts`
+checks the unpublish and delete refusals. Draft leakage through other
+relationships has no test yet.
 
 ## The preview route and the preview API key
 
@@ -196,8 +204,9 @@ the hashes of the scripts and styles that Astro bundles, `<Font>` styles
 included. Astro does not hash `is:inline` scripts and styles or
 `set:html` bodies. Two elements in the starter have such an inline body.
 The block lists the hash of the layer statement in `LayerOrder.astro`.
-`JsonLd.astro` passes the JSON-LD to `astro-seo-schema`, which writes it
-with `set:html` into a `<script type="application/ld+json">`. The browser
+`JsonLd.astro` writes the JSON-LD with `set:html` into a
+`<script type="application/ld+json">`, with every `<` escaped as `\u003c`,
+so a `</script>` inside a string does not end the element. The browser
 treats a script of that type as a data block and does not run it
 ([HTML standard](https://html.spec.whatwg.org/multipage/scripting.html#data-block)).
 The browser checks the policy only for a script that it runs, so this
@@ -206,6 +215,8 @@ because the Lexical renderer writes `style` attributes on paragraphs and
 text, and `FormBlock.astro` writes one on each field. Astro does not
 support `security.csp` together with `<ClientRouter />`
 ([configuration reference](https://docs.astro.build/en/reference/configuration-reference/#securitycsp)).
+With `security.csp` on, `astro dev` blocks the `<Font>` styles on routes
+rendered on demand. Check fonts on a build.
 
 With the policy on, a client script follows these rules:
 

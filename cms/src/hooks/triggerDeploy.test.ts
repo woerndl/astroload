@@ -1,4 +1,4 @@
-import type { CollectionAfterChangeHook } from 'payload'
+import type { CollectionAfterChangeHook, CollectionBeforeOperationHook } from 'payload'
 
 import { afterEach, expect, it, vi } from 'vitest'
 
@@ -22,13 +22,29 @@ async function loadHook(extraEnv: Record<string, string> = {}) {
     url === RAILWAY_API ? Response.json({ data: { variableUpsert: true } }) : new Response('ok'),
   )
   vi.stubGlobal('fetch', fetchMock)
-  const { triggerDeployAfterChange } = await import('./triggerDeploy')
-  const change = (query: Record<string, unknown>, status = 'published', previous = 'draft') => {
+  const { rememberDraftSave, triggerDeployAfterChange } = await import('./triggerDeploy')
+  // Runs the save the way Payload does: beforeOperation with the operation's
+  // draft argument, then afterChange with the same context.
+  const change = (
+    draft: boolean,
+    status = 'published',
+    previous = 'draft',
+    operation = 'update',
+  ) => {
     const logger = { info: vi.fn(), error: vi.fn() }
+    const context = {}
+    const req = { context, payload: { logger } }
+    rememberDraftSave({
+      args: { draft },
+      context,
+      operation,
+      req,
+    } as unknown as Parameters<CollectionBeforeOperationHook>[0])
     triggerDeployAfterChange({
       doc: { id: 'doc1', _status: status },
       previousDoc: { id: 'doc1', _status: previous },
-      req: { query, payload: { logger } },
+      context,
+      req,
     } as unknown as Parameters<CollectionAfterChangeHook>[0])
     return logger
   }
@@ -43,19 +59,27 @@ afterEach(() => {
 })
 
 it.each([
-  ['skips a draft save over a published document', { draft: true }, 0],
-  ['deploys on an unpublish, which sends no draft flag', {}, 1],
-])('%s', async (_, query, calls) => {
+  ['skips a draft save over a published document', true, 'draft', 'published', 0],
+  ['deploys a draft save that publishes', true, 'published', 'draft', 1],
+  [
+    'deploys an unpublish after a draft save, which sends no draft flag',
+    false,
+    'draft',
+    'draft',
+    1,
+  ],
+  ['skips a restore as draft', true, 'draft', 'published', 0, 'restoreVersion'],
+] as const)('%s', async (_, draft, status, previous, calls, operation?: string) => {
   const { change, fetchMock } = await loadHook()
-  change(query, 'draft', 'published')
+  change(draft, status, previous, operation)
   expect(fetchMock).toHaveBeenCalledTimes(calls)
 })
 
 it('upserts a new CONTENT_BUILD_ID at once and once more at the end of the window, instead of the webhook POST, when the Railway env is set', async () => {
   vi.useFakeTimers()
   const { change, fetchMock, body } = await loadHook(RAILWAY_ENV)
-  change({})
-  change({})
+  change(false)
+  change(false)
   expect(fetchMock).toHaveBeenCalledOnce()
   await vi.advanceTimersByTimeAsync(299_999)
   expect(fetchMock).toHaveBeenCalledOnce()
@@ -81,7 +105,7 @@ it.each([
 ])('logs a failed upsert when the Railway API answers 200 with %s', async (_, answer) => {
   const { change, fetchMock } = await loadHook(RAILWAY_ENV)
   fetchMock.mockResolvedValueOnce(answer)
-  const logger = change({})
+  const logger = change(false)
   await vi.waitFor(() => expect(logger.error).toHaveBeenCalledOnce())
   expect(logger.error.mock.calls[0]![0]).toMatch(/^CONTENT_BUILD_ID upsert failed/)
   expect(logger.info).not.toHaveBeenCalled()

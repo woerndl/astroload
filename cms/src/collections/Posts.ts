@@ -3,9 +3,15 @@ import { BlocksFeature } from '@payloadcms/richtext-lexical'
 
 import { contentAccess } from '../access/contentAccess'
 import { ImageBlock } from '../blocks/ImageBlock'
-import { triggerDeployAfterChange, triggerDeployAfterDelete } from '../hooks/triggerDeploy'
+import { guardDraftReads } from '../endpoints/canPreview'
+import {
+  rememberDraftSave,
+  triggerDeployAfterChange,
+  triggerDeployAfterDelete,
+} from '../hooks/triggerDeploy'
 import { lexicalEditorWithSafeLinks } from '../lexical/editor'
 import { dateTimeField, draftVersions, livePreviewBreakpoints } from '../shared'
+import { guardPublishedParent } from './Pages'
 
 export const Posts: PageCollectionConfig = {
   slug: 'posts',
@@ -16,6 +22,8 @@ export const Posts: PageCollectionConfig = {
   },
   versions: draftVersions,
   hooks: {
+    beforeOperation: [rememberDraftSave, guardDraftReads],
+    beforeValidate: [guardPublishedParent],
     afterChange: [triggerDeployAfterChange],
     afterDelete: [triggerDeployAfterDelete],
   },

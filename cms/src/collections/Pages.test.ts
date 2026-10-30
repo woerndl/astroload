@@ -74,7 +74,7 @@ it.each<[string, Args]>([
   await expect(validate(args)).resolves.toEqual(args.data)
 })
 
-it('lets editors create default pages only and delete a default page but not a template page', () => {
+it('lets editors create default pages only', () => {
   const access = (data?: Record<string, unknown>) =>
     ({ req: { user: { collection: 'users', roles: ['editor'] } }, data }) as unknown as AccessArgs
   expect(
@@ -82,6 +82,4 @@ it('lets editors create default pages only and delete a default page but not a t
       Pages.access!.create!(access(d)),
     ),
   ).toEqual([true, true, false])
-  const { template } = Pages.access!.delete!(access()) as { template: { not_in: string[] } }
-  expect(['landing', 'default'].map((t) => template.not_in.includes(t))).toEqual([true, false])
 })
