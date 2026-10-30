@@ -42,7 +42,6 @@ const AUTOSAVE_INTERVAL = 1500
 // to dateTimeField or spreads it into its own admin.date.
 export const DATE_FORMAT = 'dd.MM.yyyy HH:mm'
 
-// timeFormat sets the picker's time list, which defaults to 'h:mm aa'.
 export const dateTimeField = {
   pickerAppearance: 'dayAndTime',
   displayFormat: DATE_FORMAT,

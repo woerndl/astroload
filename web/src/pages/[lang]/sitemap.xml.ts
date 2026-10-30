@@ -6,8 +6,7 @@ import { DEFAULT_LOCALE, isLocale, LOCALE_URL_PREFIX, MULTIPLE_LOCALES } from '.
 
 // Rendered on demand in every build, so the locale guard below returns the 404
 // for an unknown locale such as /fr/sitemap.xml, and the sitemaps reflect
-// publishes without a redeploy. Before @astrojs/node 11.1.2 a prerendered
-// dynamic endpoint answered it with a 500.
+// publishes without a redeploy.
 export const prerender = false
 
 export const GET: APIRoute = async ({ params }) => {
