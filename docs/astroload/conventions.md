@@ -549,7 +549,7 @@ project passes more inputs to a builder, it shows that data on the page:
 
 | Builder | Show first |
 |---|---|
-| `organizationLd`: `legalName`, `vatID`, `foundingDate`, `address`, `contactPoint`, `sameAs`, `subOrganization` | the values, for example in the footer or on the imprint page, from new site settings fields |
+| `organizationLd`: properties beyond `name`, `url` and `logo`, such as `address` or `sameAs`. The project adds the inputs to the builder | the values, for example in the footer or on the imprint page, from new site settings fields |
 | `articleLd`: `dateModified` | nothing. It is the one exception: Google's [Article structured data](https://developers.google.com/search/docs/appearance/structured-data/article) recommends `dateModified`, and the post page does not need to show it |
 | `articleLd`: more images | Google asks for 16:9, 4:3 and 1:1 crops of at least 50,000 pixels each. Media makes one 1200 by 630 `og` crop. Add `imageSizes` entries in `cms/src/collections/Media.ts`. Existing uploads get the new crops only when their file is uploaded again, or cropped, resized or given a new focal point in the admin image editor |
 

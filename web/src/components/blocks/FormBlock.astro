@@ -33,18 +33,16 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
   )}
 
   {populatedForm && (
-    <div data-form-root={populatedForm.id}>
-      <form
-        class="form"
-        action={submitURL}
-        method="post"
-        data-form-id={populatedForm.id}
-        data-confirmation-type={populatedForm.confirmationType ?? 'message'}
-        data-redirect-url={populatedForm.redirect?.url ?? ''}
-        data-submit-label={submitLabel}
-        data-sending-label={labels.sending}
-        data-error-message={labels.error}
-      >
+    <div
+      data-form-root={populatedForm.id}
+      data-action={submitURL}
+      data-confirmation-type={populatedForm.confirmationType ?? 'message'}
+      data-redirect-url={populatedForm.redirect?.url ?? ''}
+      data-submit-label={submitLabel}
+      data-sending-label={labels.sending}
+      data-error-message={labels.error}
+    >
+      <form class="form" action={submitURL} method="post" data-form-id={populatedForm.id}>
         {fields.map((field) => {
           if (field.blockType === 'message') {
             return field.message ? (
@@ -235,27 +233,26 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
 </style>
 
 <script>
-  function attach(form: HTMLFormElement) {
-    // form.action resolves relative URLs and is shadowed by a field named
-    // "action".
-    const action = form.getAttribute('action')
-    const formId = form.dataset.formId
-    if (!action || !formId) return
+  // A form control shadows the form element's property of the same name, so the
+  // script reads its settings from the root element, listens there, and hides
+  // the form through Element.prototype.
+  function attach(root: HTMLElement) {
+    const { formRoot: formId, action, confirmationType, redirectUrl } = root.dataset
+    const form = root.querySelector('form')
+    if (!form || !action || !formId) return
 
-    const root = form.closest<HTMLElement>('[data-form-root]')
-    const errorEl = form.querySelector<HTMLElement>('[data-error]')
-    const button = form.querySelector<HTMLButtonElement>('button[type=submit]')
-    const confirmation = root?.querySelector<HTMLElement>('[data-confirmation]') ?? null
+    const errorEl = root.querySelector<HTMLElement>('[data-error]')
+    const button = root.querySelector<HTMLButtonElement>('button[type=submit]')
+    const confirmation = root.querySelector<HTMLElement>('[data-confirmation]')
 
-    // The frontmatter always sets these attributes, so the defaults only satisfy the types.
-    const submitLabel = form.dataset.submitLabel ?? 'Submit'
-    const sendingLabel = form.dataset.sendingLabel ?? 'Sending'
-    const errorMessage = form.dataset.errorMessage ?? 'Submission failed.'
+    const submitLabel = root.dataset.submitLabel ?? 'Submit'
+    const sendingLabel = root.dataset.sendingLabel ?? 'Sending'
+    const errorMessage = root.dataset.errorMessage ?? 'Submission failed.'
     const attachedAt = Date.now()
 
     let inFlight = false
 
-    form.addEventListener('submit', async (event) => {
+    root.addEventListener('submit', async (event) => {
       event.preventDefault()
       if (inFlight) return
       inFlight = true
@@ -281,15 +278,15 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ form: formId, submissionData }),
         })
-        // Hook rejections and Payload validation messages are in English
-        // whatever the page locale, so the visitor sees the localized generic
-        // error instead of the server's message.
+        // Hook rejections are English and Payload's validation messages follow the
+        // Accept-Language header, so the visitor sees the localized generic error
+        // instead of the server's message.
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        if (form.dataset.confirmationType === 'redirect' && form.dataset.redirectUrl) {
-          window.location.href = form.dataset.redirectUrl
+        if (confirmationType === 'redirect' && redirectUrl) {
+          window.location.href = redirectUrl
           return
         }
-        form.hidden = true
+        Element.prototype.setAttribute.call(form, 'hidden', '')
         if (confirmation) confirmation.hidden = false
       } catch {
         if (errorEl) {
@@ -307,10 +304,10 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
   }
 
   function attachAll() {
-    document.querySelectorAll<HTMLFormElement>('form[data-form-id]').forEach((form) => {
-      if (form.dataset.formInitialized === 'true') return
-      form.dataset.formInitialized = 'true'
-      attach(form)
+    document.querySelectorAll<HTMLElement>('[data-form-root]').forEach((root) => {
+      if (root.dataset.formInitialized === 'true') return
+      root.dataset.formInitialized = 'true'
+      attach(root)
     })
   }
 

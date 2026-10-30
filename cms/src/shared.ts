@@ -37,14 +37,10 @@ export type LocalePaths = Partial<Record<Locale, string>>
 
 const AUTOSAVE_INTERVAL = 1500
 
-// date-fns patterns for the admin. admin.dateFormat in payload.config.ts
-// formats list columns of date fields without their own displayFormat, such
-// as createdAt and updatedAt. The date picker reads only its field's
-// displayFormat, so set admin.date on every date field to dateTimeField or
-// dateOnlyField, or spread one into the field's own admin.date. For another
-// format, change these two constants and timeFormat below.
+// date-fns patterns. The date picker ignores admin.dateFormat (payload.config.ts)
+// and reads only its field's displayFormat, so every date field sets admin.date
+// to dateTimeField or spreads it into its own admin.date.
 export const DATE_FORMAT = 'dd.MM.yyyy HH:mm'
-export const DATE_ONLY_FORMAT = 'dd.MM.yyyy'
 
 // timeFormat sets the picker's time list, which defaults to 'h:mm aa'.
 export const dateTimeField = {
@@ -53,14 +49,6 @@ export const dateTimeField = {
   timeFormat: 'HH:mm',
 } as const
 
-/** @public */
-export const dateOnlyField = {
-  pickerAppearance: 'dayOnly',
-  displayFormat: DATE_ONLY_FORMAT,
-} as const
-
-// Payload keeps at most 100 versions per document by default (maxPerDoc), which
-// caps the history that autosave grows.
 export const draftVersions = {
   drafts: {
     autosave: { interval: AUTOSAVE_INTERVAL },

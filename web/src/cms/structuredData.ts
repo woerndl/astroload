@@ -1,34 +1,12 @@
-import type {
-  Article,
-  ContactPoint,
-  ImageObject,
-  Organization,
-  Person,
-  PostalAddress,
-} from 'schema-dts'
+import type { Article, ImageObject, Organization, Person } from 'schema-dts'
 
 type Leaf<T, K extends string> = Extract<T, { '@type': K }>
-
-export interface AddressInput {
-  streetAddress?: string
-  postalCode?: string
-  addressLocality?: string
-  addressRegion?: string
-  addressCountry?: string
-}
 
 export interface OrganizationInput {
   name: string
   url?: string
   // Google requires at least 112 by 112 pixels.
   logo?: string
-  sameAs?: string[]
-  legalName?: string
-  vatID?: string
-  foundingDate?: string
-  address?: AddressInput
-  contactPoint?: { telephone?: string; email?: string; contactType?: string }
-  subOrganization?: OrganizationInput[]
 }
 
 export interface ArticleInput {
@@ -48,47 +26,11 @@ export interface ArticleInput {
 const filled = (value: string | undefined): value is string =>
   typeof value === 'string' && value.trim() !== ''
 
-function postalAddress(input: AddressInput | undefined): PostalAddress | undefined {
-  if (!input) return undefined
-  const address: Leaf<PostalAddress, 'PostalAddress'> = { '@type': 'PostalAddress' }
-  for (const key of [
-    'streetAddress',
-    'postalCode',
-    'addressLocality',
-    'addressRegion',
-    'addressCountry',
-  ] as const) {
-    const value = input[key]
-    if (filled(value)) address[key] = value
-  }
-  return Object.keys(address).length > 1 ? address : undefined
-}
-
-function organizationFields(input: OrganizationInput, node: Leaf<Organization, 'Organization'>) {
+export function organizationLd(input: OrganizationInput): Organization {
+  const node: Leaf<Organization, 'Organization'> = { '@type': 'Organization', name: input.name }
   if (filled(input.url)) node.url = input.url
   if (filled(input.logo)) node.logo = input.logo
-  const sameAs = (input.sameAs ?? []).filter(filled)
-  if (sameAs.length > 0) node.sameAs = sameAs
-  if (filled(input.legalName)) node.legalName = input.legalName
-  if (filled(input.vatID)) node.vatID = input.vatID
-  if (filled(input.foundingDate)) node.foundingDate = input.foundingDate
-  const address = postalAddress(input.address)
-  if (address) node.address = address
-  const contact = input.contactPoint
-  if (contact && (filled(contact.telephone) || filled(contact.email))) {
-    const point: Leaf<ContactPoint, 'ContactPoint'> = { '@type': 'ContactPoint' }
-    if (filled(contact.telephone)) point.telephone = contact.telephone
-    if (filled(contact.email)) point.email = contact.email
-    if (filled(contact.contactType)) point.contactType = contact.contactType
-    node.contactPoint = point
-  }
-  const subs = input.subOrganization ?? []
-  if (subs.length > 0) node.subOrganization = subs.map((sub) => organizationLd(sub))
   return node
-}
-
-export function organizationLd(input: OrganizationInput): Organization {
-  return organizationFields(input, { '@type': 'Organization', name: input.name })
 }
 
 export function articleLd(input: ArticleInput): Article {

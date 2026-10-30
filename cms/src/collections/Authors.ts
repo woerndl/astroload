@@ -13,6 +13,7 @@ export const Authors: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'updatedAt', '_status'],
+    enableRichTextLink: false,
   },
   versions: draftVersions,
   hooks: {

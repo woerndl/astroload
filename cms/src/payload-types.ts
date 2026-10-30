@@ -238,7 +238,6 @@ export interface ImageBlock {
 export interface Media {
   id: string;
   alt: string;
-  caption?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -836,7 +835,6 @@ export interface AuthorsSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
-  caption?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

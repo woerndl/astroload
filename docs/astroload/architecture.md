@@ -93,9 +93,7 @@ console-logging outgoing email. Both checks are in
 
 ## Localization runs through the URL
 
-Content is localized in Payload. Slugs, titles, excerpts, media alt and
-caption, form intro content, and rich text bodies
-all carry per-locale values where the relevant collection defines them.
+Content is localized in Payload through fields with `localized: true`.
 The Astro routes are shaped as
 `[lang]/<path>` with `lang` constrained to the configured locales.
 Content pages emit `hreflang` for the locales where a translation

@@ -25,9 +25,12 @@ export const validateFormFields: CollectionBeforeValidateHook = ({ data }) => {
       true,
     )
   }
-  const fields = (data?.fields ?? []) as { name?: unknown }[]
+  const fields: unknown = data?.fields ?? []
+  if (!Array.isArray(fields)) {
+    throw new APIError('The form fields must be a list.', 400, undefined, true)
+  }
   const seen = new Set<string>()
-  for (const field of fields) {
+  for (const field of fields as { name?: unknown }[]) {
     if (typeof field.name !== 'string') continue
     if (RESERVED_FIELD_NAMES.includes(field.name)) {
       throw new APIError(
