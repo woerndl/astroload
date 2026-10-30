@@ -1,10 +1,12 @@
 // @ts-check
 import 'dotenv/config'
+import { existsSync } from 'node:fs'
+
 import node from '@astrojs/node'
 import { defineConfig, envField, fontProviders } from 'astro/config'
 
 import { getRedirects } from './src/cms/getRedirects'
-import { LOCALE_URL_PREFIX } from './src/cms/types'
+import { LOCALE_URL_PREFIX, LOCALES } from './src/cms/types'
 
 // Astro reads a route's render mode with a regex over the file source
 // (PRERENDER_REGEX in astro/dist/core/routing/prerender.js), so only a
@@ -12,13 +14,44 @@ import { LOCALE_URL_PREFIX } from './src/cms/types'
 // export is silently ignored. Route files keep literal exports, and the
 // conditional cases are decided here in the `astro:route:setup` hook.
 let devServer = false
+/** @type {import('./src/cms/types').Locale[]} */
+let homeLocales = []
+
+// getRedirects already fails a strict build without CMS_URL or PAYLOAD_READ_KEY.
+async function getBuiltHomeLocales() {
+  const response = await fetch(new URL('/api/static-paths', process.env.CMS_URL), {
+    headers: { Authorization: `api-keys API-Key ${process.env.PAYLOAD_READ_KEY}` },
+    signal: AbortSignal.timeout(15_000),
+  })
+  if (!response.ok) throw new Error(`static-paths answered ${response.status}`)
+  /** @type {import('./src/cms/getStaticPaths').StaticPathItem[]} */
+  const items = await response.json()
+  return LOCALES.filter((locale) => items.some((item) => item.paths[locale] === `/${locale}`))
+}
 
 /** @type {import('astro').AstroIntegration} */
 const prerenderOverrides = {
   name: 'prerender-overrides',
   hooks: {
-    'astro:config:setup': ({ command }) => {
+    'astro:config:setup': async ({ command, updateConfig }) => {
       devServer = command === 'dev'
+      // The on-demand root redirect reads this list, so it needs no CMS
+      // request. The prerender reads static-paths again later, and
+      // astro:build:done fails the build when a listed home was not built.
+      if (command === 'build' && LOCALE_URL_PREFIX) {
+        homeLocales = await getBuiltHomeLocales()
+        if (homeLocales.length === 0) throw new Error('the CMS lists no published home page')
+        const define = { 'import.meta.env.HOME_LOCALES': JSON.stringify(homeLocales) }
+        updateConfig({ vite: { define } })
+      }
+    },
+    'astro:build:done': ({ dir }) => {
+      const missing = homeLocales.filter(
+        (locale) => !existsSync(new URL(`${locale}/index.html`, dir)),
+      )
+      if (missing.length > 0) {
+        throw new Error(`the root redirect lists homes the build did not prerender: ${missing}`)
+      }
     },
     'astro:route:setup': ({ route }) => {
       // Dev renders every route on demand, so content edits in the admin show

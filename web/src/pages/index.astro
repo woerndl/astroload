@@ -1,11 +1,11 @@
 ---
 import { getGlobalData } from '../cms/getGlobalData'
 import { getPageByPath, type PageByPathResult } from '../cms/getPageByPath'
-import { getStaticPathItems } from '../cms/getStaticPaths'
+import { getHomeLocales, getStaticPathItems } from '../cms/getStaticPaths'
 import { loadPageResult } from '../cms/loadPage'
 import { pickLocale } from '../cms/pickLocale'
 import { isTemplatedPage } from '../cms/templatedPages'
-import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type LocalePaths } from '../cms/types'
+import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type Locale, type LocalePaths } from '../cms/types'
 import CollectionLayout from '../layout/collections/CollectionLayout.astro'
 import TemplatedBody from '../layout/routes/TemplatedBody.astro'
 
@@ -14,10 +14,15 @@ import TemplatedBody from '../layout/routes/TemplatedBody.astro'
 // in astro.config.mjs flips this route to on-demand in that mode.
 export const prerender = true
 
-const localeRedirect = LOCALE_URL_PREFIX
-  ? `/${pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))}`
-  : null
-if (localeRedirect) {
+if (LOCALE_URL_PREFIX) {
+  const homes: Locale[] = import.meta.env.DEV
+    ? await getHomeLocales(Astro.locals)
+    : import.meta.env.HOME_LOCALES
+  if (homes.length === 0) {
+    return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-store' } })
+  }
+  const wanted = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
+  const locale = homes.includes(wanted) ? wanted : homes[0]
   // The target depends on Accept-Language, so shared caches must not reuse it
   // across visitors, and a 301 would let caches keep one visitor's language.
   // Astro.redirect does not set headers, so the Response is built by hand.
@@ -25,7 +30,7 @@ if (localeRedirect) {
     status: 302,
     headers: {
       'Cache-Control': 'no-store',
-      Location: localeRedirect,
+      Location: `/${locale}`,
       Vary: 'Accept-Language',
     },
   })

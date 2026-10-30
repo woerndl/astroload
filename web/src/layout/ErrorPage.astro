@@ -1,7 +1,6 @@
 ---
 import { getGlobalData } from '../cms/getGlobalData'
 import { pickLocale } from '../cms/pickLocale'
-import { stripLocalePath } from '../cms/types'
 import LayerOrder from '../components/LayerOrder.astro'
 import MainContent from '../components/MainContent.astro'
 import SkipLink from '../components/SkipLink.astro'
@@ -15,7 +14,7 @@ type Copy = { title: string; description: string; homePageButton: string }
 
 const { kind } = Astro.props
 const lang = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
-const homeHref = stripLocalePath(`/${lang}`)
+const homeHref = '/'
 
 // When the labels fetch fails, for example during a CMS outage, the page
 // renders the fallback branch below instead of Astro's default error page.

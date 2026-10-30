@@ -29,6 +29,16 @@ export async function getStaticPathItems(): Promise<StaticPathItem[]> {
   return (await response.json()) as StaticPathItem[]
 }
 
+async function fetchHomeLocales(): Promise<Locale[]> {
+  const items = await getStaticPathItems()
+  return LOCALES.filter((locale) => items.some((item) => item.paths[locale] === `/${locale}`))
+}
+
+export function getHomeLocales(locals?: App.Locals): Promise<Locale[]> {
+  if (!locals) return fetchHomeLocales()
+  return (locals.homeLocales ??= fetchHomeLocales())
+}
+
 export async function getStaticPaths(): Promise<StaticPageParams[]> {
   const items = await getStaticPathItems()
   const missing = missingTemplates(items, pageTemplates, LOCALES)

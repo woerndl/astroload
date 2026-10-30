@@ -1,14 +1,25 @@
+import type { StaticPathItem } from '@astroload/cms/src/endpoints/staticPaths'
+
 import { DEFAULT_LOCALE, LOCALES } from '@astroload/cms/src/site-config.ts'
 
-import { env, expect, test } from './fixtures'
+import { env, expect, readKey, test } from './fixtures'
 
 const other = LOCALES.find((code) => code !== DEFAULT_LOCALE)
 
-test('the root redirects to the negotiated locale without caching', async ({ web }) => {
-  for (const [acceptLanguage, location] of [
-    ['de', '/de'],
-    ['fr', '/en'],
-  ]) {
+test('the root redirects to a locale with a published home, without caching', async ({
+  web,
+  cms,
+}) => {
+  const paths = await cms.get('/api/static-paths', { headers: readKey })
+  await expect(paths).toBeOK()
+  const items: StaticPathItem[] = await paths.json()
+  const homes = LOCALES.filter((code) => items.some((item) => item.paths[code] === `/${code}`))
+  expect(homes.length).toBeGreaterThan(0)
+  for (const [acceptLanguage, wanted] of [
+    ['de', 'de'],
+    ['fr', DEFAULT_LOCALE],
+  ] as const) {
+    const location = `/${homes.includes(wanted) ? wanted : homes[0]}`
     const res = await web.get('/', { headers: { 'Accept-Language': acceptLanguage } })
     expect(res.status(), acceptLanguage).toBe(302)
     expect(res.headers(), acceptLanguage).toMatchObject({ location, 'cache-control': 'no-store' })
