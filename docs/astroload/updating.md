@@ -75,8 +75,7 @@ Rules from past syncs:
 - Write down every KEEP. An unrecorded KEEP looks like an oversight to
   the next sync and gets overwritten.
 - Verify that a bug reported upstream exists downstream before
-  planning its fix. In one recorded sync, 3 of 13 such reports did not
-  apply.
+  planning its fix.
 - Evaluate an upstream security fix against this project's configuration
   before applying it. A hook that makes the first registered user an
   admin is a regression in a project whose admin account comes from the

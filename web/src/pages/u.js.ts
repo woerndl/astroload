@@ -7,7 +7,6 @@ export const prerender = false
 const TRACKER_URL = `${UMAMI_HOST_URL}/script.js`
 
 // Refetch the tracker at most this often and serve it from memory in between.
-// On a failed refetch the cached copy keeps serving.
 const TRACKER_TTL_MS = 15 * 60 * 1000
 let cachedScript = ''
 let fetchedAt = 0

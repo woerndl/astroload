@@ -119,25 +119,23 @@ If you add a custom endpoint that reads draftable content, pass
 [`cms/src/endpoints/canPreview.ts`](../../cms/src/endpoints/canPreview.ts)
 does, because the Local API skips access control by default. A
 regression here is hard to spot through manual testing.
-`web/e2e/drafts.e2e.ts` checks that the built pages and the sitemaps leave
-out the unpublished translation the demo seed saves, and which version
-each key reads.
 The pages plugin copies the parent's title and slug into a child's
 `breadcrumbs` and `path`, and reads the parent with `overrideAccess`. A
 public read takes them from the parent's main document. So the CMS refuses
-to publish a page or post under an unpublished parent, and refuses to
-unpublish a page while a published document in any page collection names
-it as parent, also when a save omits `_status` after a draft save. A draft
-save over a published parent stays allowed, because it leaves the main
-document alone. The pages plugin refuses to delete a page that still has
-children. A read with `draft=true` from a caller without draft access runs
-as a published read, and the plugin's parent cache keeps draft and
-published lookups apart
+to publish a page or post under an unpublished parent. It also refuses to
+unpublish a page while a published document in a page collection names it
+as parent, including a save that omits `_status` after a draft save. A
+draft save over a published parent stays allowed, because it leaves the
+main document alone. The pages plugin refuses to delete a page that still
+has children. A read with `draft=true` from a caller without draft access
+runs as a published read, and `guardDraftReads` gives the pages plugin a
+separate parent cache for draft and for published reads
 ([`cms/src/endpoints/canPreview.ts`](../../cms/src/endpoints/canPreview.ts)).
 The checks run without a transaction or a lock, so a child publish and a
 parent unpublish at the same moment can both pass. `web/e2e/drafts.e2e.ts`
-checks the unpublish and delete refusals. Draft leakage through other
-relationships has no test yet.
+checks the unpublish and delete refusals, and
+`cms/src/collections/Pages.test.ts` the draft read rules. Draft leakage
+through other relationships has no test yet.
 
 ## The preview route and the preview API key
 
@@ -242,7 +240,7 @@ queued submission pipeline. Pick one before you go to production.
 The web app reads a request body only on the analytics route
 `/api/send`. Its node adapter caps request bodies at 8 KB
 (`bodySizeLimit` in `web/astro.config.mjs`), and `/api/send` answers 413
-above it. Forms post to the CMS, so this cap does not apply to them.
+above it.
 
 ## Form submission integrity
 
@@ -250,12 +248,8 @@ The form's minimum-submit-time check relies on a client-stamped
 timestamp, so it is not a strong abuse control. See
 [`forms.md`](./forms.md) for the shipped checks and production gaps.
 
-Stored submissions hold visitor PII, so their access rules are set in
-the plugin overrides: read is limited to panel users, update is blocked,
-and delete is admin-only. The plugin's own default limits read to users
-of the admin auth collection and sets no delete rule, so without the
-explicit rules delete would fall back to any authenticated requester,
-including the API keys.
+Stored submissions hold visitor PII. [`forms.md`](./forms.md) lists their
+access rules.
 
 The spam-guard hook caps a submission at 100 entries and 10,000
 characters per entry field name or value (constants in
@@ -321,7 +315,7 @@ pass it through `lexicalEditorWithSafeLinks` so the validator applies.
 
 Auth bootstrap is its own module: `seedAuth` creates the admin user and
 the two API keys and logs the key values to stdout. It runs standalone
-as `pnpm --filter @astroload/cms seed:auth` and as the first step of the
+as `pnpm --filter ./cms seed:auth` and as the first step of the
 demo seed, so a project that deletes the demo content keeps a way to
 provision a fresh database. The key values must be pasted into `web/.env`. None of them
 are committed. Both entry points skip whatever already exists, so

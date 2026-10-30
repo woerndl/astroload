@@ -82,11 +82,10 @@ A change that affects prerendered output means a new web image. Point the deploy
 
 Create the accounts before the CMS hostname is publicly reachable:
 registration on an empty instance is open and the first account becomes an
-admin ([`security.md`](./security.md#authentication-model)). Open `/admin`
-on the not-yet-public origin, register the admin account, and create two API
-keys (types `read-only` and `preview`). The web build needs the read-only
-key's value. A workspace checkout can run the auth seed
-(`pnpm --filter @astroload/cms seed:auth`) instead, but the CMS container
+admin ([`security.md`](./security.md#authentication-model)). Open `/admin`,
+register the admin account, and create two API keys (types `read-only` and
+`preview`). The web build needs the read-only key's value. A workspace checkout can run the auth seed
+(`pnpm --filter ./cms seed:auth`) instead, but the CMS container
 image does not include it.
 
 ## MongoDB host kernel and image upgrades

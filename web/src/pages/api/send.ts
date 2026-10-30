@@ -21,8 +21,7 @@ const FIELD_LIMITS: Record<string, number> = { language: 35, screen: 11 }
 // Proxies Umami's collect endpoint from this origin. Umami Cloud ignores
 // x-forwarded-for, so the visitor IP goes in x-umami-client-ip. Without it
 // every event carries the server's egress IP, which collapses visitor counts
-// and geo. An altered User-Agent trips Cloud's bot filter, which drops the
-// event and still answers 200. A self-hosted Umami behind UMAMI_HOST_URL needs
+// and geo. A self-hosted Umami behind UMAMI_HOST_URL needs
 // CLIENT_IP_HEADER=x-umami-client-ip on the Umami server, or it records the
 // IP of this proxy.
 export const POST: APIRoute = async ({ request }) => {

@@ -46,16 +46,10 @@ in production sitemaps.
 
 To swap the default, or to change which locales ship, edit
 `site-config.ts`, then regenerate the CMS types
-(`pnpm --filter @astroload/cms generate:types`) so the generated `locale`
+(`pnpm --filter ./cms generate:types`) so the generated `locale`
 union tracks the new set. Four maps take an entry per locale, three in
-`site-config.ts` and one in `web/src/layout/shellLabels.ts`.
-`LOCALE_LABELS` holds the admin label and falls back to the locale code.
-`OG_LOCALE` holds the `og:locale` value, and a locale without an entry
-emits no `og:locale` tag, because the territory half cannot be derived
-from the language code. `INTL_LOCALE` holds the locale for dates and
-numbers, and a missing entry uses the code itself. `SHELL_LABELS` holds
-the skip link and navigation labels, and a missing entry uses the English
-labels.
+`site-config.ts` and one in `web/src/layout/shellLabels.ts`. A locale
+without an `OG_LOCALE` entry emits no `og:locale` tag.
 
 By default a project carries the `/{locale}` URL prefix only when it ships more
 than one locale. To keep the prefix on a single-locale project, so its URLs
@@ -87,8 +81,7 @@ interim content and keep its documents publishable.
 The web app serves prerendered HTML. Publishing in admin does not change
 the live site on its own. It posts to `DEPLOY_HOOK_URL`, the host rebuilds
 and redeploys, and the new build goes live. The delay from publish to live
-is the host's build and deploy time. That delay is the
-cost of having no per-request CMS read on the published path.
+is the host's build and deploy time.
 
 The deploy hook (`cms/src/hooks/triggerDeploy.ts`) coalesces bursts with one
 process-wide window shared by all documents. The first save that triggers
@@ -113,8 +106,7 @@ build. The webhook targets `DEPLOY_HOOK_URL` with a small JSON body
 request headers such as `Authorization` or replaces the default
 `Content-Type: application/json`.
 
-The window (`WINDOW_MS`) is set in code, not env, and defaults to
-300000 ms (five minutes). The default suits hosts
+The window is `WINDOW_MS` in `triggerDeploy.ts`, 300000 ms (five minutes). The default suits hosts
 that bill per build minute. Shorten it for faster publishing. Lengthen it
 to group more saves into one build. A window shorter than the build time can overlap builds.
 
@@ -177,7 +169,7 @@ makes it set both before it sends or queues a deploy. An `onInit` check in
 after a deploy request succeeds, but only if the stored time of the last
 change is earlier than the start of the request. A publish that arrives during
 the request then keeps the flag set. A project that adds the global runs
-`pnpm --filter @astroload/cms generate:types`.
+`pnpm --filter ./cms generate:types`.
 
 Start with the scheduled rebuild, which needs no code. Add the pending flag
 when a lost publish must go live before the next scheduled run.
@@ -232,8 +224,7 @@ deploy as above.
 ## Media is served as WebP and cached with a version marker
 
 The Media collection converts uploads to WebP (`xs` through `lg` and the main
-file), keeping the `og` social-card crop as JPEG because some scrapers still do
-not render a WebP `og:image`. `Img.astro` emits a responsive `srcset` from the
+file) and keeps the `og` crop as JPEG. `Img.astro` emits a responsive `srcset` from the
 generated widths, so pass a `sizes` that matches the rendered box (the call
 sites already do).
 
@@ -281,7 +272,7 @@ on disk. Anything else added to `astro.config.mjs` that reads
 
 The fetch behaves differently under the `REDIRECTS_STRICT` flag, which the
 `build` script in `web/package.json` sets so a normal
-`pnpm --filter @astroload/web build` is strict:
+`pnpm --filter ./web build` is strict:
 
 - A failed CMS fetch retries with backoff under strict (six attempts over
   roughly a minute and a half), so a build survives a CMS that is briefly
@@ -319,9 +310,6 @@ throwing in the final strict branch of `getRedirects.ts`.
 
 Source paths in the collection must be the exact string the URL router
 sees, locale prefix included. There is no pattern matching at this layer.
-If the adapter ever changes to a static host (Cloudflare Pages, Netlify
-static), the same code path produces static redirect files with no
-changes.
 
 ## Public web env is baked in at build time
 
@@ -334,11 +322,8 @@ they are already compiled into the JS.
 As a result, a build produced against staging or localhost URLs keeps those
 URLs in production even when the deploy environment "sets" the right values.
 The CMS's server-side secrets behave the opposite way, since the running
-process reads them from its environment at runtime. There is no code change
-to make here. Build the web app with the production values of these three
-vars. Splitting individual server-only consumers onto `astro:env/server` is
-a separate, optional decision and does not remove the need to build with
-correct public URLs.
+process reads them from its environment at runtime. Build the web app with
+the production values of these three vars.
 
 ## Taking the site live or moving hosts
 
@@ -459,21 +444,14 @@ are added together" in [`conventions.md`](./conventions.md).
 
 ## Divergent locale slugs in seed content
 
-The seed deliberately uses different slugs per locale (`ueber-uns` vs
-`about`, `kontakt` vs `contact`, `hallo-welt` vs `hello-world`). The
-divergence exercises the per-locale `path` field from the pages plugin
-and the language switcher's path mapping. A sitewide string replacement
-cannot translate these URLs. The plugin emits the right path per
-locale and the switcher reads it from `Astro.props.paths`. Keep the
-divergence when editing the seed, and when replacing the starter's markup
-with a prototype's, keep `LanguageSwitcher.astro` and its `paths` wiring
-rather than carrying over a prototype's switcher stub. A stub that swaps
-the locale prefix looks correct on equal slugs and breaks on the first
-translated one.
+The seed uses different slugs per locale (`ueber-uns` and `about`). Keep the
+divergence, and keep `LanguageSwitcher.astro` with its `paths` wiring when
+you replace the starter's markup: a switcher that swaps the locale prefix
+looks correct on equal slugs and breaks on the first translated one.
 
 ## API keys change on reseed unless pinned
 
-The auth seed (`pnpm --filter @astroload/cms seed:auth`, also the first
+The auth seed (`pnpm --filter ./cms seed:auth`, also the first
 step of the demo seed) reads `PAYLOAD_READ_KEY` and `PAYLOAD_PREVIEW_KEY`
 from the CMS process env. If either is unset, the seed generates a random
 value instead. A key's value is logged to stdout only when the seed
@@ -495,11 +473,7 @@ edits do not propagate to dev pages until the dev server is restarted,
 unless the route renders on demand in dev.
 
 The `prerenderOverrides` integration in `astro.config.mjs` therefore
-renders every route on demand while the dev server runs. A
-conditional prerender export (`!import.meta.env.DEV` and the like)
-does not do this: Astro's route scanner only honors a bare literal and
-silently ignores anything else, so the override has to happen in the
-integration. If you are editing in admin and not seeing changes on
+renders every route on demand while the dev server runs. If you are editing in admin and not seeing changes on
 `localhost:4321`, check whether the route is prerendered in dev.
 
 ## Database is MongoDB

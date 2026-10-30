@@ -97,11 +97,9 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
     if (!match) return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-cache' } })
     const { collection } = match
 
-    // Load the full doc in the request locale and its `path` in every
-    // locale. The `all` locale call does not get `req`, because Payload's
-    // createLocalReq writes the locale onto the passed req, and two
-    // concurrent calls with different locales would overwrite each other.
-    // Passing `user` gives it a fresh request with the same access control.
+    // The `all` call gets `user` instead of `req`, because createLocalReq writes
+    // the locale onto the passed req and the two concurrent calls would
+    // overwrite each other's locale.
     const [data, pathDoc] = await Promise.all([
       req.payload.findByID({
         collection,
@@ -124,8 +122,6 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
       }),
     ])
     const rawPaths = ((pathDoc as { path?: LocalePaths }).path ?? {}) as LocalePaths
-    // Public requests get every path in the doc in public form, including
-    // breadcrumbs and populated relations.
     const body: PageByPathBody = {
       collection,
       data: usePublicPath ? stripLocalePathsDeep(data) : data,

@@ -147,8 +147,8 @@ export const triggerDeployAfterChange: CollectionAfterChangeHook = ({
   req,
   context,
 }) => {
-  // previousDoc is the latest version, drafts included, so an unpublish after
-  // a draft save matches it.
+  // previousDoc is the latest version, drafts included, so its status does not
+  // tell an unpublish from a draft save.
   if (context.draftSave && doc?._status === 'draft') return doc
   if (doc?._status === 'published' && unchanged(doc, previousDoc)) return doc
 

@@ -15,10 +15,7 @@ template uses one of two literal shapes:
   The content catch-alls, the home page, the root sitemap, and
   `robots.txt` use this.
 - `export const prerender = false` for routes that must run per request.
-  The 404 and 500 pages, the per-locale sitemap (before `@astrojs/node` 11.1.2 a
-  prerendered dynamic endpoint answered unknown locales with a 500
-  instead of a 404),
-  the analytics relay routes (`u.js`, `/api/send`), and anything under
+  The 404 and 500 pages, the per-locale sitemap, the analytics relay routes (`u.js`, `/api/send`), and anything under
   `/preview` are in this group.
 
 Every conditional case lives in the `prerenderOverrides` integration in
@@ -43,12 +40,11 @@ the file.
 
 ## A pinned dev port needs strictPort under vite.server
 
-Each project pins its own dev port in `web/astro.config.mjs`. Astro's
-top-level `server` option ignores `strictPort`, so the flag sits under
-`vite.server`
-([Vite docs](https://vite.dev/config/server-options#server-strictport)). A
-second dev server on the same port then fails to start instead of moving to
-the next port.
+A project that pins its dev port in `web/astro.config.mjs` also sets
+`vite.server.strictPort: true`
+([Vite docs](https://vite.dev/config/server-options#server-strictport)),
+because Astro's top-level `server` option drops `strictPort`. A second dev
+server on that port then fails to start instead of moving to the next port.
 
 ## Each project's dev Mongo gets its own host port and database name
 
@@ -90,10 +86,9 @@ stylesheet can open with a component's `@layer components` block, so
 Every `<head>` renders `<LayerOrder />` right after `<meta charset>`:
 `Layout.astro`, `styleguide.astro` and the fallback head of
 `ErrorPage.astro`. A new page with its own `<html>` adds it too.
-The browser test in `web/e2e/forms.e2e.ts` checks that the form, whose
-component rule sets `display`, hides after a submission. Change the statement in `styles.css` and
-`LayerOrder.astro` together, and update its hash in the commented-out
-`security.csp` block of `web/astro.config.mjs`. Print the hash with
+Change the statement in `styles.css` and `LayerOrder.astro` together, and
+update its hash in the commented-out `security.csp` block of
+`web/astro.config.mjs`. Print the hash with
 `printf '%s' '<statement>' | openssl dgst -sha256 -binary | openssl base64`.
 
 ## The styleguide page shows type, the form block and an image
@@ -290,10 +285,6 @@ fall back to the committed `redirects.fallback.json` (empty by default). See
 [`maintenance.md`](./maintenance.md) for the retry and fallback policy in
 full.
 
-Anything else that reads `process.env` from `astro.config.mjs` needs to
-import `dotenv/config` at the top of its module, because Astro loads `.env`
-through Vite after the user config has already been evaluated.
-
 ## Localized values come from per-locale lookups
 
 Slugs, titles, summaries, and rich text are localized in Payload. Do not
@@ -325,7 +316,7 @@ To add a template:
 
 1. Add its name to `pageTemplates` and its admin labels to
    `pageTemplateLabels` in `cms/src/shared.ts`, then run
-   `pnpm --filter @astroload/cms generate:types`.
+   `pnpm --filter ./cms generate:types`.
 2. Add a body component under `web/src/layout/routes/` that takes
    `TemplatedBodyProps`, and its entry in the `bodies` map in
    `TemplatedBody.astro`. `astro check` fails while a template has no body.
@@ -358,11 +349,10 @@ after the end-to-end build.
 `formatDate()` in `web/src/lib/format.ts` formats with
 `Intl.DateTimeFormat`. It takes the BCP 47 locale from `INTL_LOCALE` and the
 time zone from `TIME_ZONE`, both in `cms/src/site-config.ts`. Do not call
-`toLocale*String()` or `Intl.DateTimeFormat` directly for a date. `formatDate()` takes no `timeZone` option, so call
-`Intl.DateTimeFormat` for a date that needs a zone other than `TIME_ZONE`.
-`TIME_ZONE` is `'UTC'`, so a post published at 00:30 Vienna time shows
-the previous day. A site whose readers share one zone sets that zone, for
-example `'Europe/Vienna'`.
+`toLocale*String()` or `Intl.DateTimeFormat` directly, except for a date
+that needs a zone other than `TIME_ZONE`: `formatDate()` takes no
+`timeZone` option. `TIME_ZONE` is `'UTC'`, so a post published at 00:30
+Vienna time shows the previous day.
 
 The region in `INTL_LOCALE` changes what visitors see: `de-AT` renders
 "Jänner", `de-DE` renders "Januar". Add an
@@ -445,9 +435,8 @@ add its type to the union and its component to the map in the same change. The
 runtime `throw` still catches a block that reaches the renderer without a
 case.
 
-This is the general shape for any producer-consumer pair in the codebase: when
-one side gains a case the other must handle, encode the link as a type the
-compiler checks, not a comment a reader has to find.
+When one side of a producer-consumer pair gains a case the other must
+handle, encode the link as a type the compiler checks.
 
 ## Accessibility floor
 
@@ -540,9 +529,6 @@ logo and the date of the last change of a post:
   organization as publisher.
 - Other pages: `WebPage`.
 
-The component writes the graph with `jsonLdText`, which escapes only `<`.
-Parsing the script returns each string as its builder wrote it.
-
 `web/src/cms/structuredData.ts` holds a builder per type. Each builder takes
 plain inputs and emits a property only when its input is set. Before a
 project passes more inputs to a builder, it shows that data on the page:
@@ -559,7 +545,7 @@ Test each type a project adds with the
 ## Generated files
 
 `cms/src/payload-types.ts` is regenerated by Payload. It is checked in so
-that downstream type imports work without a build step. Do not edit it. Run the type generator (`pnpm --filter @astroload/cms generate:types`)
+that downstream type imports work without a build step. Do not edit it. Run the type generator (`pnpm --filter ./cms generate:types`)
 after collection changes.
 
 ## Installing dependencies
@@ -568,7 +554,6 @@ Install dependencies with `pnpm install --frozen-lockfile`. pnpm runs the
 build scripts of dependencies only for the packages in
 `onlyBuiltDependencies` in the root `package.json`
 ([pnpm settings](https://pnpm.io/settings#onlybuiltdependencies)).
-`packageManager` pins pnpm 10.24.0.
 
 ## Lints and checks before opening a PR
 
@@ -599,21 +584,9 @@ config (`web/eslint.config.js`) runs the recommended rules of ESLint and
 `astro check` reports type errors.
 
 The test runner is Vitest in both workspaces. The root `pnpm test` runs
-the web tests and then the CMS tests. The web tests cover pure units such
-as URL building, the link sanitizer and the JSON-LD encoding.
-`web/vitest.config.ts` builds its config with `getViteConfig()` from
-`astro/config`. With `{ configFile: false }`, the tests skip
-`astro.config.mjs`, render with Astro's defaults and do not fetch
-redirects from the CMS. The CMS tests cover `triggerDeployAfterChange`
-(the draft check, unpublish and the Railway upsert) and the templated
-page guards and access rules in Pages.
-`cms/src/env.ts` reads the environment once at import, so a CMS test
-stubs `process.env` with `vi.stubEnv` and then imports the module under
-test after `vi.resetModules()`. The end-to-end suite below checks that the
-built pages and the sitemaps leave out an unpublished translation, and covers the
-form submission path. Draft leakage through populated relationships has no
-test yet. See
-[`security.md`](./security.md).
+the web tests and then the CMS tests. `cms/src/env.ts` reads the environment once at
+import, so a CMS test stubs `process.env` with `vi.stubEnv` and then
+imports the module under test after `vi.resetModules()`.
 
 ## A test earns its place
 
@@ -641,16 +614,16 @@ value or a tag name fails this rule.
 covers the API key and draft rules from [`security.md`](./security.md) and
 the form path from [`forms.md`](./forms.md). It also covers the preview
 route, media variants, routing, sitemaps, redirects, the deploy webhook and
-the analytics relay. Add a test only for a contract these docs state.
+the analytics relay. Add a test only for such a contract.
 Check behavior that matters for one release only by hand during that
 upgrade.
 
 The suite needs a seeded Mongo. It starts the CMS and the web app itself.
-Before you run `pnpm --filter @astroload/web test:e2e`, set up the
+Before you run `pnpm --filter ./web test:e2e`, set up the
 following:
 
 - Mongo runs at `DATABASE_URI` from `cms/.env` and holds the demo content
-  (`pnpm --filter @astroload/cms seed`). The suite logs in as the seeded
+  (`pnpm --filter ./cms seed`). The suite logs in as the seeded
   admin: `PAYLOAD_ADMIN_EMAIL` and `PAYLOAD_ADMIN_PASSWORD` from `cms/.env`,
   or `admin@example.com` / `admin1234` when they are unset. `drafts.e2e.ts`
   and `routing.e2e.ts` use the demo seed's `/<default locale>/untranslated`
@@ -669,15 +642,12 @@ following:
   web app that already answers at its URL. Stop a web app that runs a build
   from before your last content or env change.
 - Chromium is installed once with
-  `pnpm --filter @astroload/web exec playwright install chromium`. If
+  `pnpm --filter ./web exec playwright install chromium`. If
   Playwright does not support your Linux release yet, prefix the command
   with `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` or another
   supported platform. The suite and CI run Chromium only. WebKit on macOS
-  moves Tab focus to links only with the Option key, as Safari does, so
-  the skip link test fails there. A project that adds a WebKit run keeps
-  the key name in a `TAB` constant, `'Alt+Tab'` when `browserName` is
-  `'webkit'` and `'Tab'` otherwise, and passes it to each
-  `page.keyboard.press`.
+  moves Tab focus to links only with the Option key. A project that adds a
+  WebKit run presses `Alt+Tab` instead of `Tab` in the skip link test.
 
 Three spec files need setup that the CMS or the web app reads at start, or
 that the web build bakes in:
@@ -692,10 +662,8 @@ that the web build bakes in:
   later saves keep a window open. Before a rerun, restart a CMS that the
   suite did not start.
 - Analytics relay: `UMAMI_WEBSITE_ID=<any value>` and
-  `UMAMI_HOST_URL=http://127.0.0.1:4323` in `web/.env`. With the id set,
-  the suite runs the relay test and a test that the preview secret
-  reaches neither the pageview url nor its referrer. Without the id, both
-  skip.
+  `UMAMI_HOST_URL=http://127.0.0.1:4323` in `web/.env`. Without the id,
+  the analytics tests skip.
 - Redirects: at least one Redirects document before the build. The demo
   seed creates one. The test reads the Redirects documents from the CMS and
   expects the built web app to answer each one. Rebuild after you add or
@@ -706,12 +674,8 @@ default-locale home page. It expects the tag when `CONTENT_BUILD_ID` was
 set in `web/.env` before the build, and no tag otherwise. Rebuild after
 changing it.
 
-Spec files end in `.e2e.ts`, so vitest does not collect them. They run one
-at a time in name order because they share one CMS. The `deploy-hook`
-project in `playwright.config.ts` runs `deploy-hook.e2e.ts` first, and the
-`e2e` project, which depends on it, runs the other files after it, so the
-webhook test runs before any other test publishes. Before any server
-starts, a check stops the run with one message when a key is missing or
+Spec files end in `.e2e.ts`, so vitest does not collect them. Before any
+server starts, a check stops the run with one message when a key is missing or
 `PREVIEW_SECRET` differs between the two env files. A failed test leaves a
 trace under `web/.playwright/results/`. Every run writes an HTML report to
 `web/.playwright/report/`. Git ignores both.

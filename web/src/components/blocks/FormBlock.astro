@@ -278,9 +278,6 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ form: formId, submissionData }),
         })
-        // Hook rejections are English and Payload's validation messages follow the
-        // Accept-Language header, so the visitor sees the localized generic error
-        // instead of the server's message.
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
         if (confirmationType === 'redirect' && redirectUrl) {
           window.location.href = redirectUrl

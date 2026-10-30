@@ -142,7 +142,7 @@ alternates is built in the `page-by-path` and `static-paths` endpoints
 from `locale: 'all'` queries, not read from the pages plugin's
 `alternatePathsField()`. That map also feeds the single-locale
 prefix-stripping and the endpoint responses, which the plugin field does
-not provide. Leaving the field unused is deliberate.
+not provide.
 
 A localized field without a value in the read locale falls back to the
 default locale. The page `path` does not. With Payload 3.91.0 and pages
@@ -198,8 +198,7 @@ ones that show up most in this starter:
   Payload + Next.js has by default takes extra work here. Astroload pairs Payload
   autosave (on Pages and Posts) with an iframe reload, plus a
   standalone `/preview` SSR route for sharing draft URLs. Updates appear
-  after each autosave cycle. That is slower than a single-process setup
-  and fast enough for editorial work.
+  after each autosave cycle.
 - No shared component bundle between admin and frontend. The admin
   renders in React, the frontend in Astro, so the Next.js + Payload
   monorepo pattern of importing the same React component from both does

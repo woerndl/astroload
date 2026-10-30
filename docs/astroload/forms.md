@@ -101,9 +101,8 @@ bots. If your project needs more, replace the client stamp with a
 server-stamped signed token (HMAC, short TTL) or put a CDN rule in front
 of the endpoint.
 
-There is no per-IP or per-form rate limit on `/api/form-submissions`,
-so a motivated attacker can post until the table fills. See
-[`security.md`](./security.md) for recommended mitigations.
+Rate limiting is not bundled. See
+[`security.md`](./security.md#rate-limiting-is-not-bundled).
 
 ## Accessibility
 
@@ -119,8 +118,7 @@ The renderer implements these patterns:
 Not included: `aria-invalid` toggling after validation, per-field
 error display, and `fieldset`/`legend` grouping. Per-field errors would
 require a wrapper endpoint because the plugin's submission API returns a
-flat error. That is more scope than the starter takes on. Add it in your
-fork if your project needs it.
+flat error. Add it when your project needs it.
 
 ## What the spamGuard hook checks
 
@@ -173,11 +171,5 @@ public-read surfaces. Form saves and deletions fire the deploy webhook,
 since the rendered fields, labels, and confirmation are baked into the
 prerendered pages that embed the form.
 
-`web/e2e/forms.e2e.ts` tests this path. It submits the contact page once
-in a browser and checks the stored fields and the access rules around that
-submission. It sends a forged POST for each reject above except a missing
-`submissionData` and an unknown form id, and for a required field that
-holds only spaces or an unchecked required checkbox.
-It also checks the CORS preflight, that the `emails` recipients stay hidden
-from anonymous and API key reads, and that a field named `fax` is refused.
-Add a case there when you change a check.
+`web/e2e/forms.e2e.ts` tests this path. Add a case there when you change a
+check.

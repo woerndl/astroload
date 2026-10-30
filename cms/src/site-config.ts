@@ -7,7 +7,7 @@ export const LOCALES: readonly Locale[] = ['de', 'en']
 
 export const DEFAULT_LOCALE: Locale = 'en'
 
-// Admin labels by locale code. A code without an entry shows the code itself.
+// Admin labels by locale code.
 // Keyed by string so a project can keep labels for locales it dropped.
 export const LOCALE_LABELS: Record<string, string> = {
   de: 'Deutsch',
@@ -22,8 +22,7 @@ export const OG_LOCALE: Record<string, string> = {
   en: 'en_US',
 }
 
-// BCP 47 locale for dates, keyed by locale code. Use the same
-// region as OG_LOCALE. A missing entry uses the code itself.
+// BCP 47 locale for dates. Use the same region as OG_LOCALE.
 export const INTL_LOCALE: Record<string, string> = {
   de: 'de-DE',
   en: 'en-US',

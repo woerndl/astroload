@@ -11,7 +11,7 @@ Run a script with `payload run`, which boots the Payload config and gives the
 file the Local API on a `payload` instance:
 
 ```bash
-pnpm --filter @astroload/cms payload run src/scripts/scratch/backfill.ts
+pnpm --filter ./cms payload run src/scripts/scratch/backfill.ts
 ```
 
 A minimal script:

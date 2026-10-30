@@ -77,7 +77,7 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 
 ## Quickstart
 
-Prerequisites: Node `>=22.23.4` (see `.nvmrc`), pnpm `>=9`, Docker. The package scripts assume a POSIX shell, so on Windows run them under WSL or Git Bash.
+Prerequisites: Node `>=22.23.4` (see `.nvmrc`), pnpm 10, Docker. The package scripts assume a POSIX shell, so on Windows run them under WSL or Git Bash.
 
 ```bash
 # 1. Get the code
@@ -97,7 +97,7 @@ cp web/.env.example web/.env
 # In both files, set the same PREVIEW_SECRET  (openssl rand -hex 32)
 
 # 5. Seed the database (creates admin user, API keys, demo content)
-pnpm --filter @astroload/cms seed
+pnpm --filter ./cms seed
 # The seed prints PAYLOAD_READ_KEY and PAYLOAD_PREVIEW_KEY.
 # Paste both into web/.env.
 ```
@@ -110,12 +110,12 @@ Then run the two dev servers in separate terminals:
 
 ```bash
 # Terminal 1: Payload admin at http://localhost:3000/admin
-pnpm --filter @astroload/cms dev
+pnpm --filter ./cms dev
 ```
 
 ```bash
 # Terminal 2: Astro site at http://localhost:4321
-pnpm --filter @astroload/web dev
+pnpm --filter ./web dev
 ```
 
 Once users exist, re-seeding needs `--force` or `SEED_FORCE=1`, which clears the seeded collections and recreates users, API keys, and demo content.
@@ -170,14 +170,14 @@ Both apps are Node servers with no serverless adapter or provider-specific build
 
 ### CMS
 
-- `pnpm --filter @astroload/cms build` then `pnpm --filter @astroload/cms start`.
+- `pnpm --filter ./cms build` then `pnpm --filter ./cms start`.
 - Needs `DATABASE_URI`, `PAYLOAD_SECRET`, `SERVER_URL`, `WEBSITE_URL`, `PREVIEW_SECRET` at runtime. Boot aborts with one consolidated error listing any that are missing.
 - S3 and Resend turn on when their env vars are set.
 - There is no bundled rate limiter. Rate limiting belongs at the edge or in a proxy in front of the CMS, see [`astroload/security.md`](./astroload/security.md).
 
 ### Web
 
-- `pnpm --filter @astroload/web build` then `pnpm --filter @astroload/web start`. The `start` script binds `0.0.0.0:4321` by default. `HOST` and `PORT` override that, and container hosts usually inject them.
+- `pnpm --filter ./web build` then `pnpm --filter ./web start`. The `start` script binds `0.0.0.0:4321` by default. `HOST` and `PORT` override that, and container hosts usually inject them.
 - `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are `astro:env/client` public values, inlined into the output at `astro build`. The web app must be built with the production values. Injecting them only at `start` has no effect.
 - The Astro standalone server does not auto-load `.env`, unlike the CMS's `next start`. The host injects the runtime server vars (`PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `PREVIEW_SECRET`, plus `UMAMI_HOST_URL` for a self-hosted Umami). For local production testing, export them or run `node --env-file=web/.env web/server.mjs` from the repo root.
 - Content pages, the sitemap index, and `robots.txt` are prerendered. The per-locale sitemaps and the `/preview` route are SSR, so the CMS must stay reachable for them at runtime. A client-side script POSTs form submissions as JSON to Payload's `/api/form-submissions` endpoint, so `web/` needs no submission route. Submission requires JavaScript.

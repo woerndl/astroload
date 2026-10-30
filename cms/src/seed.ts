@@ -269,9 +269,6 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         ],
       }),
     })
-  // A page published in the default locale only, with an unpublished edit and,
-  // given a second locale, an unpublished translation. drafts.e2e.ts and
-  // routing.e2e.ts use it.
   const untranslated = await payload.create({
     collection: 'pages',
     locale: DEFAULT_LOCALE,

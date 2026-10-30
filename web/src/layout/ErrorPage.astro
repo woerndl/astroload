@@ -16,9 +16,6 @@ const { kind } = Astro.props
 const lang = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
 const homeHref = '/'
 
-// When the labels fetch fails, for example during a CMS outage, the page
-// renders the fallback branch below instead of Astro's default error page.
-// Keyed by string so a locale without an entry falls back to en.
 const fallback: Record<string, Record<Props['kind'], Copy>> = {
   de: {
     notFound: {

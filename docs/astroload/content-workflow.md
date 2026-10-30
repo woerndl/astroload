@@ -15,7 +15,7 @@ directory instead, so it does not enter git history.
    Nothing to clean up.
 2. MCP is the recommended path for an agent. With the Payload MCP plugin
    enabled, an assistant edits content through typed tools instead of writing a
-   script. See [Enabling MCP](#enabling-mcp). It is off by default in this starter.
+   script. See [Enabling MCP](#enabling-mcp).
 3. The REST API is the path for a program or a CI step. Authenticate, then call
    the documented endpoints. See [REST](#rest).
 4. A Local API script is for a change the paths above cannot express, or one
@@ -73,14 +73,13 @@ documents on every run instead of duplicating them. Its lookup includes
 drafts, so a re-run also overwrites an editor's unpublished draft with the
 script's values. A script that may run again once editors manage the
 content must either skip documents that already exist or write only empty
-fields. The demo seed avoids the problem by refusing to run once users
-exist.
+fields.
 `cms/src/scripts/seed.ts` is the worked example: re-running it skips once
 users exist, and `--force` or `SEED_FORCE=1` clears the seeded collections,
 users and API keys included, and recreates the demo content. The auth
 bootstrap (admin user and API keys) is in `cms/src/seedAuth.ts` with its own
 script entry
-(`pnpm --filter @astroload/cms seed:auth` from the repo root), so a real
+(`pnpm --filter ./cms seed:auth` from the repo root), so a real
 project can delete the demo seed without losing the path that provisions a
 fresh database.
 
@@ -91,7 +90,7 @@ it does not enter git history.
 Both kinds run the same way, through `payload run`:
 
 ```bash
-pnpm --filter @astroload/cms payload run src/scripts/scratch/backfill.ts
+pnpm --filter ./cms payload run src/scripts/scratch/backfill.ts
 ```
 
 Await the script's work at the top level, the way the committed scripts

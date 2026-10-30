@@ -58,11 +58,9 @@ const prerenderOverrides = {
         route.prerender = false
         return
       }
-      // In a single-locale project the [lang] routes have no static paths, but
-      // their prerendered patterns still register, and @astrojs/node before
-      // 11.1.2 answered them with a 500. Rendering them on demand lets each
-      // route's own locale guard return the 404. The [lang] sitemap endpoint
-      // sets `prerender = false` in its route file for the same reason.
+      // In a single-locale project the [lang] routes have no static paths.
+      // Rendering them on demand lets each route's locale guard answer 404. The
+      // [lang] sitemap endpoint sets prerender = false for the same reason.
       if (!LOCALE_URL_PREFIX && route.component.includes('/pages/[lang]/')) {
         route.prerender = false
       }
@@ -79,8 +77,8 @@ export default defineConfig({
   adapter: node({ mode: 'standalone', bodySizeLimit: 8 * 1024 }),
   integrations: [prerenderOverrides],
   prerenderConflictBehavior: 'error',
-  // Astro 7 defaults compressHTML to 'jsx', which collapses inter-element
-  // whitespace. Pin the Astro 6 behavior so templates render unchanged.
+  // Astro 7 defaults compressHTML to 'jsx', which collapses whitespace between
+  // elements.
   compressHTML: true,
   trailingSlash: 'never',
   // Astro inlines a stylesheet under 4 kB by default. The honeypot rule in
@@ -91,9 +89,7 @@ export default defineConfig({
   // unstorage from the server bundle.
   session: false,
   security: {
-    // Astro.url takes its host from Host or x-forwarded-host only for a host
-    // in this list, and localhost:<port> for any other. See
-    // docs/astroload/deployment.md.
+    // Hosts Astro.url may take from the request. See docs/astroload/deployment.md.
     allowedDomains: process.env.WEBSITE_URL
       ? [{ hostname: new URL(process.env.WEBSITE_URL).hostname }]
       : [],
@@ -111,8 +107,8 @@ export default defineConfig({
   redirects: await getRedirects(),
   image: { responsiveStyles: true, layout: 'constrained' },
   // Fetched at build time and served first-party under /_astro/fonts/, so no
-  // visitor traffic goes to Google. src/styles/tokens.css maps --font-sans to
-  // --font-inter. Set the subsets to cover the project's locales. See
+  // visitor traffic goes to Google. Set the subsets to cover the project's
+  // locales. See
   // docs/astroload/conventions.md.
   fonts: [
     {
@@ -124,9 +120,7 @@ export default defineConfig({
       fallbacks: ['ui-sans-serif', 'system-ui', 'sans-serif'],
     },
   ],
-  // Pinned dev port. Renumber per project. strictPort only takes effect under
-  // vite.server, and it makes a second dev server fail to start instead of
-  // moving to the next free port while a stale process answers this one.
+  // Renumber per project. strictPort takes effect only under vite.server.
   server: { port: 4321 },
   vite: {
     server: { strictPort: true },
@@ -161,11 +155,8 @@ export default defineConfig({
         access: 'secret',
         default: 'https://cloud.umami.is',
       }),
-      // Written into every page the shared layout renders as
-      // <meta name="content-build-id">. A value that changes per deploy makes a
-      // rebuild of the same commit produce different output once the host
-      // includes it in its build cache key or build caching is off. See
-      // maintenance.md for the setup per host.
+      // Rendered as <meta name="content-build-id"> on every page of the shared
+      // layout. See docs/astroload/maintenance.md.
       CONTENT_BUILD_ID: envField.string({
         context: 'server',
         access: 'public',

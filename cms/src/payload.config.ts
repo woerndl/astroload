@@ -158,10 +158,6 @@ export default buildConfig({
         upload: false,
       },
       formOverrides: {
-        // The plugin sets no write rules, so any authenticated requester could
-        // write, including the web app's API keys. A leaked read-only key could
-        // then rewrite a form's emails, confirmation, and redirect, or delete
-        // the form. API keys have no roles, so isAdminOrEditor rejects them.
         access: {
           create: isAdminOrEditor,
           update: isAdminOrEditor,
@@ -170,16 +166,11 @@ export default buildConfig({
         admin: { group: CollectionGroups.System },
         hooks: {
           beforeValidate: [validateFormFields],
-          // Forms are baked into the prerendered pages that embed them, so a
-          // form edit needs a rebuild like any other content change.
           afterChange: [triggerDeployAlwaysAfterChange],
           afterDelete: [triggerDeployAlwaysAfterDelete],
         },
       },
       formSubmissionOverrides: {
-        // Submissions hold visitor PII. The plugin sets no delete rule, so
-        // delete would fall back to any authenticated requester, including the
-        // api keys.
         access: { delete: isAdmin },
         admin: { group: CollectionGroups.System },
         hooks: {
@@ -187,10 +178,8 @@ export default buildConfig({
         },
       },
     }),
-    // Kept in the list and switched with `enabled`. The plugin registers its
-    // admin component either way, so leaving it out without S3 env would make
-    // a local `generate:importmap` drop an entry that S3 deployments need, and
-    // their admin would render blank.
+    // Stays listed while disabled so generate:importmap keeps its admin
+    // component. See docs/astroload/architecture.md.
     s3Storage({
       enabled: s3Configured,
       collections: { media: true },
