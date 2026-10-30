@@ -26,13 +26,7 @@ export async function getStaticPathItems(): Promise<StaticPathItem[]> {
     init: { headers: cacheHeader(true) },
   })
 
-  const items = (await response.json()) as StaticPathItem[]
-  // Route enumeration, sitemaps and the home lookup trust this shape, so a
-  // wrong shape fails here with a clear message instead of during a render.
-  if (!Array.isArray(items)) {
-    throw new Error('the static-paths endpoint did not return an array')
-  }
-  return items
+  return (await response.json()) as StaticPathItem[]
 }
 
 export async function getStaticPaths(): Promise<StaticPageParams[]> {

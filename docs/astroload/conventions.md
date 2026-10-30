@@ -4,31 +4,6 @@ Rules that hold across the codebase. LLM agents follow them as written.
 Human contributors follow them too and can push back on any rule that no
 longer makes sense.
 
-## Comments stand on their own
-
-Code comments and commit messages must not reference internal plans or
-their labels, issue numbers, ids of internal findings or patterns, or any
-docs that may not be in the repo. If a rule matters at a call site, write the
-rule there. Stable upstream URLs and committed top-level files are fine to
-cite. Comments outlive the docs they reference, so "see internal note X"
-breaks when that note is renamed or moved.
-
-A comment says what the code cannot show: a constraint, a mechanism or a
-fact that is hard to find. Delete banners and group headers, labels over
-self-describing lines, values repeated from the code, narration of a
-change, and tails that justify the code. Section headers in `.gitignore`
-files stay.
-
-## No AI slop in committed text
-
-Applies to code comments, commit messages, README, error messages, and any
-public-facing prose. Watch in particular for em dashes,
-semicolons in prose, bold-first bullets, "not X but Y" parallelism,
-rhetorical questions of the form "the X? a Y.", magic adverbs (quietly,
-fundamentally, deeply), "serves as" or "represents" instead of "is", and
-unicode arrows or smart quotes. Banner-style separator comments
-(`# --- Section ---`, `// ===== Foo =====`) also belong on this list.
-
 ## Render-mode choices live at the top of the file
 
 Astro only honors a bare literal in a prerender export. Anything
@@ -55,73 +30,25 @@ Accept-Language redirect needs the request). If a new route needs a
 conditional render mode, extend that integration rather than computing
 the export.
 
-A small subset of the second shape is the on-demand opt-in: a public route
-that must reflect the latest content without waiting for a rebuild (a live
-listing, a dashboard). It uses the same `prerender = false`, wraps its CMS
-read in the `staleOnError` helper (`web/src/cms/staleOnError.ts`), and sets
-`Cache-Control: no-store`. The helper serves the last good response when the
-CMS read fails, so an outage degrades that one route instead of failing it,
-and logs the swallowed error so the failing read stays visible. On a cold
-start with nothing cached the error still propagates, so the route shows its
-normal error page rather than a blank success. Here is that shape, a live
-listing of the newest posts:
-
-```astro
----
-import { payloadSDK } from '../cms/sdk'
-import { cacheHeader } from '../cms/sdk/cachedFetch'
-import { staleOnError } from '../cms/staleOnError'
-import { DEFAULT_LOCALE } from '../cms/types'
-
-export const prerender = false
-
-// An on-demand route must not be cached at the edge, or it stops being live.
-// Set before the await so a cold-start failure response stays uncacheable.
-Astro.response.headers.set('Cache-Control', 'no-store')
-
-const { data: posts, stale } = await staleOnError('latest-posts', async () => {
-  // cacheHeader(false) bypasses the cross-request LRU so each request is live.
-  const result = await payloadSDK.find(
-    {
-      collection: 'posts',
-      locale: DEFAULT_LOCALE,
-      where: { _status: { equals: 'published' } },
-      sort: '-publishedAt',
-      limit: 5,
-      pagination: false,
-    },
-    { headers: cacheHeader(false) },
-  )
-  return result.docs
-})
----
-
-{stale && <p>Showing the last known content. The latest could not be loaded.</p>}
-<ul>{posts.map((post) => <li>{post.title}</li>)}</ul>
-```
-
-A read that renders document paths must go through `findPublicDocs` so the
-stored locale prefix is stripped. Keep this set small. Static prerendering
-stays the default for everything else.
+A public route that must show the latest content without a rebuild (a
+live listing) uses the same `prerender = false` and sets
+`Cache-Control: no-store`, so an edge cache does not keep it. A read that
+renders document paths passes its result through `stripLocalePathsDeep`, as
+`getPageData.ts` does, so no returned `path` keeps the stored locale prefix.
+Keep the set of on-demand routes small. Static prerendering stays the
+default for everything else.
 
 If you add a new route, pick the right shape and write it at the top of
 the file.
 
 ## A pinned dev port needs strictPort under vite.server
 
-Astro's top-level `server` option accepts `port` but ignores keys it does
-not know, so `server: { port: 4321, strictPort: true }` pins the port
-without the strictness. When the port is taken, the dev server hops to the
-next free one and a stale process keeps answering the pinned URL. Put the
-flag in Vite's config, which Astro passes through:
-
-```js
-server: { port: 4321 },
-vite: { server: { strictPort: true } },
-```
-
-With `strictPort` in place, a second dev server on the same port refuses
-to start instead of moving to the next port.
+Each project pins its own dev port in `web/astro.config.mjs`. Astro's
+top-level `server` option ignores `strictPort`, so the flag sits under
+`vite.server`
+([Vite docs](https://vite.dev/config/server-options#server-strictport)). A
+second dev server on the same port then fails to start instead of moving to
+the next port.
 
 ## Each project's dev Mongo gets its own host port and database name
 
@@ -143,8 +70,7 @@ a project, add two guards:
 
 The compose file also binds the port to `127.0.0.1`. Keep it, because a
 mongod without auth published on `0.0.0.0` is reachable from the local
-network. Production is unaffected: the production compose gives Mongo no
-host port at all.
+network.
 
 ## Styles live in cascade layers
 
@@ -162,8 +88,8 @@ The first layer that the browser sees sets the order. The bundled
 stylesheet can open with a component's `@layer components` block, so
 `LayerOrder.astro` repeats the layer statement in an inline `<style>`.
 Every `<head>` renders `<LayerOrder />` right after `<meta charset>`:
-`Layout.astro`, `styleguide.astro` and the fallback heads of `404.astro`
-and `500.astro`. A new page with its own `<html>` adds it too.
+`Layout.astro`, `styleguide.astro` and the fallback head of
+`ErrorPage.astro`. A new page with its own `<html>` adds it too.
 The browser test in `web/e2e/forms.e2e.ts` checks that the form, whose
 component rule sets `display`, hides after a submission. Change the statement in `styles.css` and
 `LayerOrder.astro` together, and update its hash in the commented-out
@@ -315,28 +241,16 @@ sets it on the post cover.
 
 ## Webfonts go through the Fonts API
 
-Fonts are configured in the top-level `fonts` array in
-`web/astro.config.mjs`. Astro fetches them from the provider at build time
-and serves them first-party as subsetted WOFF2 under `/_astro/fonts/`, with
-the same immutable caching as other build assets. Do not add a `<link>` to a
-font CDN (a third-party request on every page view) or self-hosted font
-files in `public/` (served with `max-age=0`, see the static-art section
-above). Licensed or branded font files that must not be fetched from a
-public provider go through `fontProviders.local()`.
+Fonts are configured in the `fonts` array of `web/astro.config.mjs` and
+served first-party by Astro
+([Fonts guide](https://docs.astro.build/en/guides/fonts/)). Do not add a
+`<link>` to a font CDN or font files in `public/` (served with `max-age=0`,
+see the static-art section above). Three parts are starter-specific:
 
-The wiring has four parts that must match:
-
-- The `fonts` entry names the family, weights, styles, subsets, and
-  fallbacks. Subsets follow the project's locale set: `latin` covers the
-  starter's German and English. A locale that needs more glyphs adds its
-  subset.
 - The entry's `cssVariable` is `--font-inter`. `web/src/styles/tokens.css`
-  maps `--font-sans` to it. The generated variable already carries the
-  configured fallbacks plus Astro's metric-adjusted one.
-- The shared layout renders `<Font cssVariable="..." preload={[...]}>` in its
-  head. Preload covers the latin upright style. The italic style loads lazily.
-  A page that renders its own `<html>` instead of the shared layout (the
-  404/500 CMS-down fallbacks) needs its own `<Font>` tags or deliberately
+  maps `--font-sans` to it.
+- A page that renders its own `<html>` instead of the shared layout (the
+  CMS-down fallback of `ErrorPage.astro`) needs its own `<Font>` tags or
   stays on system fonts. Find such pages with `rg -l "<html" web/src`.
 - The web Dockerfile asserts after the build that WOFF2 files were emitted.
   A provider metadata failure does not fail the build, so without the
@@ -440,20 +354,19 @@ link unchanged. `node scripts/locale-prefix.mjs` fails on a doubled prefix
 such as `/en/en/` in `web/dist`. CI runs it through `sh scripts/gates.sh dist`
 after the end-to-end build.
 
-## Dates and numbers go through `format.ts`
+## Dates go through `format.ts`
 
-`formatDate()` and `formatNumber()` in `web/src/lib/format.ts` format with
-`Intl.DateTimeFormat` and `Intl.NumberFormat`. They take the BCP 47 locale
-from `INTL_LOCALE` and the time zone from `TIME_ZONE`, both in
-`cms/src/site-config.ts`. Do not call `toLocale*String()` or the `Intl`
-formatters directly. `formatDate()` takes no `timeZone` option, so call
+`formatDate()` in `web/src/lib/format.ts` formats with
+`Intl.DateTimeFormat`. It takes the BCP 47 locale from `INTL_LOCALE` and the
+time zone from `TIME_ZONE`, both in `cms/src/site-config.ts`. Do not call
+`toLocale*String()` or `Intl.DateTimeFormat` directly for a date. `formatDate()` takes no `timeZone` option, so call
 `Intl.DateTimeFormat` for a date that needs a zone other than `TIME_ZONE`.
 `TIME_ZONE` is `'UTC'`, so a post published at 00:30 Vienna time shows
 the previous day. A site whose readers share one zone sets that zone, for
 example `'Europe/Vienna'`.
 
 The region in `INTL_LOCALE` changes what visitors see: `de-AT` renders
-"Jänner" and "1 234,5", `de-DE` renders "Januar" and "1.234,5". Add an
+"Jänner", `de-DE` renders "Januar". Add an
 `INTL_LOCALE` entry with each new locale.
 
 ## API keys are server-only
@@ -562,8 +475,8 @@ Starter policy, stricter than the WCAG minimum where noted.
 - Every page starts with a skip link: the first focusable element in
   `<body>` links to `main#main`. `main#main` has `tabindex="-1"`, so it
   takes focus. The link shows only when focused. `Layout.astro`,
-  `styleguide.astro` and the fallback pages of `404.astro` and
-  `500.astro` render the link with `SkipLink.astro` and `main#main` with
+  `styleguide.astro` and the fallback branch of `ErrorPage.astro` render the
+  link with `SkipLink.astro` and `main#main` with
   `MainContent.astro`. The link text and the label of the primary `nav`
   in `Header.astro` come from `web/src/layout/shellLabels.ts`, one entry
   per locale. Sources:
@@ -630,6 +543,9 @@ logo and the date of the last change of a post:
   url, photo and role.
 - Other pages: `WebPage`.
 
+The component writes the graph with `jsonLdText`, which escapes only `<`.
+Parsing the script returns each string as its builder wrote it.
+
 `web/src/cms/structuredData.ts` holds a builder per type. Each builder takes
 plain inputs and emits a property only when its input is set. Before a
 project passes more inputs to a builder, it shows that data on the page:
@@ -637,16 +553,11 @@ project passes more inputs to a builder, it shows that data on the page:
 | Builder | Show first |
 |---|---|
 | `organizationLd`: `legalName`, `vatID`, `foundingDate`, `address`, `contactPoint`, `sameAs`, `subOrganization` | the values, for example in the footer or on the imprint page, from new site settings fields |
-| `localBusinessLd` | address, telephone and opening hours, plus a field for the subtype. A page that passes `geo` shows the address. A page that passes `parentOrganization` shows the parent's name |
 | `personLd`: `sameAs`, `worksFor`, `description` | profile links, the employer, and a plain text version of the bio for `description` |
 | `articleLd`: `dateModified` | nothing. It is the one exception: Google's [Article structured data](https://developers.google.com/search/docs/appearance/structured-data/article) recommends `dateModified`, and the post page does not need to show it |
 | `articleLd`: more images | Google asks for 16:9, 4:3 and 1:1 crops of at least 50,000 pixels each. Media makes one 1200 by 630 `og` crop. Add `imageSizes` entries in `cms/src/collections/Media.ts`. Existing uploads get the new crops only when their file is uploaded again, or cropped, resized or given a new focal point in the admin image editor |
-| `breadcrumbListLd` | a breadcrumb trail with a URL on every item except the current page, for example from the `breadcrumbs` field of the pages plugin |
-| `jobPostingLd` | title, description as HTML, date posted, employer and a location with a country, from a job collection |
-| `eventLd` | name, start date with a time zone offset, venue name and address, from an event collection |
 
-A project that uses `localBusinessLd` logs `localBusinessWarnings` at
-build time. Test each type a project adds with the
+Test each type a project adds with the
 [Rich Results test](https://search.google.com/test/rich-results).
 
 ## Generated files
@@ -657,31 +568,13 @@ after collection changes.
 
 ## Installing dependencies
 
-Install dependencies with `pnpm install --frozen-lockfile`. pnpm 10 runs the
-build scripts of dependencies only for the packages in `onlyBuiltDependencies`
-in the root `package.json`, so no install needs `--ignore-scripts` or a
-`pnpm rebuild <pkg>` step. `packageManager` pins pnpm 10.24.0. Do not raise
-the major version. Before a new package goes in, check with
-`pnpm view <pkg> time` that its version is at least 7 days old, and check that
-it keeps the provenance of its earlier versions.
+Install dependencies with `pnpm install --frozen-lockfile`. pnpm runs the
+build scripts of dependencies only for the packages in
+`onlyBuiltDependencies` in the root `package.json`
+([pnpm settings](https://pnpm.io/settings#onlybuiltdependencies)).
+`packageManager` pins pnpm 10.24.0.
 
 ## Lints and checks before opening a PR
-
-Run `git config core.hooksPath` once per clone. If it prints nothing, run
-`pnpm run setup`, which sets `core.hooksPath` to `.githooks`. If it prints
-another folder, add the checks from `.githooks/pre-commit` and
-`.githooks/commit-msg` to the hooks in that folder. The `pre-commit` hook runs
-Prettier, ESLint and Stylelint on the staged files, then
-`sh scripts/gates.sh source` over all of `web/src`. The tools read the working
-tree copy, so a partially staged file is checked with its unstaged changes.
-The gates script needs ripgrep (`rg`). The `commit-msg` hook accepts
-`type(scope)!: subject` with an optional lower-case scope and `!`. It rejects
-a type other than `feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `ci` or
-`test`, a subject that starts with an upper-case letter or white space, more
-than 72 characters, or a trailing full stop. Merge, revert and reapply
-subjects in the Git formats that the hook lists also pass. The hook reads only
-the subject. Add a body only when the subject cannot carry the reason for the
-change.
 
 Run `pnpm verify` before opening a PR. It runs `pnpm lint`, `pnpm check` and
 `pnpm test`, regenerates the types and the import map and fails if
@@ -691,8 +584,9 @@ The web build reads the redirects from the CMS,
 so `verify` needs the CMS running at the `CMS_URL` in `web/.env`. The
 end-to-end suite is a separate command (see
 [End-to-end tests](#end-to-end-tests)). The CI workflow
-(`.github/workflows/ci.yml`) runs `pnpm lint`, `pnpm check` and `pnpm test` on
-every push to `main` and every pull request. Two more steps regenerate the
+(`.github/workflows/ci.yml`) runs `pnpm lint`, `sh scripts/gates.sh source`,
+`pnpm check` and `pnpm test` on every push to `main` and every pull request.
+The gates script needs ripgrep (`rg`). Two more steps regenerate the
 types and the import map and fail if a committed file is out of date. The
 import map step runs a second time with the S3 variables set, which `verify`
 does not repeat. The `e2e` job builds the web app, runs the end-to-end suite and then
@@ -710,11 +604,9 @@ config (`web/eslint.config.js`) runs the recommended rules of ESLint and
 
 The test runner is Vitest in both workspaces. The root `pnpm test` runs
 the web tests and then the CMS tests. The web tests cover pure units such
-as URL building, the link sanitizer and the structured data builders that
-the starter's pages call.
+as URL building, the link sanitizer and the JSON-LD encoding.
 `web/vitest.config.ts` builds its config with `getViteConfig()` from
-`astro/config`, so a web test can render an `.astro` component with the
-container API. With `{ configFile: false }`, the tests skip
+`astro/config`. With `{ configFile: false }`, the tests skip
 `astro.config.mjs`, render with Astro's defaults and do not fetch
 redirects from the CMS. The CMS tests cover `triggerDeployAfterChange`
 (the draft check, unpublish and the Railway upsert) and the templated
@@ -801,8 +693,8 @@ that the web build bakes in:
 - Analytics relay: `UMAMI_WEBSITE_ID=<any value>` and
   `UMAMI_HOST_URL=http://127.0.0.1:4322` in `web/.env`. With the id set,
   the suite runs the relay test and a test that the preview secret
-  reaches neither the pageview url nor its referrer. Without the id, it
-  checks that `POST /api/send` answers 204 instead.
+  reaches neither the pageview url nor its referrer. Without the id, both
+  skip.
 - Redirects: at least one Redirects document before the build. The demo
   seed creates one. The test reads the Redirects documents from the CMS and
   expects the built web app to answer each one. Rebuild after you add or
@@ -826,7 +718,7 @@ The `e2e` job in `.github/workflows/ci.yml` runs the suite against a
 `mongo:8` service. It appends fixed test values to copies of both
 `.env.example` files, so it needs no repository secret. The values set up
 the deploy webhook and analytics relay tests, and the seed creates the
-Redirects document, so only the 204 test in `umami.e2e.ts` skips. When a
+Redirects document, so no test skips. When a
 step fails, the job uploads `web/.playwright/` as the `playwright`
 artifact.
 

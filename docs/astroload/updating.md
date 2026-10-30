@@ -111,35 +111,7 @@ Rules from past syncs:
 
 ## Preparing for Payload 4
 
-Payload 4 is in beta (`4.0.0-beta.3` when this was written). Its
-[migration guide](https://github.com/payloadcms/payload/blob/beta/docs/migration-guide/v4.mdx)
-on the `beta` branch lists these changes that touch the starter:
-
-- Payload 4 needs Node 24.22.1 or newer and TypeScript 6.0.3 or newer. The
-  starter pins Node 22.23.4 and TypeScript 5.9.3.
-- `overrideAccess` defaults to `false` on Local API operations. Seed scripts,
-  hooks and other trusted server code that relied on the old default pass
-  `overrideAccess: true`.
-- A query without `depth` populates one relationship level instead of two.
-  Check each query that reads a relationship without an explicit `depth`, or
-  set `defaultDepth: 2` in the config.
-- Collections and globals get versions by default. Auth collections do not.
-  Set `versions: false` where a collection or global stays without versions,
-  or run `npx @payloadcms/codemod --transform migrate-versions-default`.
-- Without `readVersions`, version access follows the `read` access, so a
-  public `read` exposes drafts and old versions. The content collections set
-  `readVersions: isPanelUser` in `cms/src/access/contentAccess.ts`. Media, the
-  form builder `forms` collection and the globals have a public `read`. Give
-  them `readVersions: isPanelUser` or `versions: false`, and do the same for
-  each project collection with a public `read`.
-- All collections and globals, including the form builder and redirects
-  collections, gain `createdBy` and `updatedBy` fields. Regenerate the types
-  with `pnpm --filter @astroload/cms generate:types`.
-- The `sizes` group on upload documents becomes `variants`, and `imageSizes`
-  moves to `sharpTransformer`. Find the places that read them with
-  `rg -n '\.sizes\b|imageSizes' cms/src web/src`. Stored documents keep
-  `sizes` until a data migration runs:
-  `pnpm --filter @astroload/cms payload migrate:create --file @payloadcms/db-mongodb/sizes-to-variants`,
-  then `pnpm --filter @astroload/cms payload migrate`.
-- Payload ships no SCSS toolchain. Custom admin stylesheets are plain `.css`
-  files. The starter's is `cms/src/app/(payload)/custom.css`.
+Payload 4 is in beta. Before an upgrade, read its
+[migration guide](https://payloadcms.com/docs/beta/migration-guide/v4) and
+check each change against the starter's seed scripts, hooks, access rules
+and upload readers.

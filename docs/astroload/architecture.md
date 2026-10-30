@@ -53,8 +53,7 @@ The frontend reads content in three modes:
    and any route that opts in with `prerender = false`
    run on each request. Editor previews go through
    this path so changes appear without a redeploy. A public route can opt
-   in the same way to stay current. When the CMS read fails, the
-   `staleOnError` helper serves the route's last good response. See
+   in the same way to stay current. See
    [`conventions.md`](./conventions.md) for which routes prerender and how
    a route opts into request-time rendering.
 3. Astro config evaluation. Redirects are fetched from the CMS once when
@@ -207,20 +206,3 @@ it with a separate package because Payload's official Lexical renderer is
 React-only and does not work inside `.astro` files. Custom block and upload
 renderers live next to the wrapper component. The supported inline blocks
 are tracked in [`maintenance.md`](./maintenance.md).
-
-## Multi-tenant is deferred
-
-The template is single-tenant. The collections, the access helpers, and
-the frontend's `WEBSITE_URL` handling are kept simple so a future
-`tenant` field is an additive change rather than a rewrite. Access
-logic lives in helpers under `cms/src/access/` (one place to add
-a tenant filter), slugs are plain fields (a compound `(slug, tenant)`
-index can be added later), and the frontend reads `WEBSITE_URL` without
-parsing or routing on it (a host-to-tenant resolver can replace the
-env read at a few call sites).
-
-If you fork the template for a single site, ignore this layer. If you
-have a multi-site project in mind, plan the tenancy migration before you
-introduce patterns that work against it (per-collection hardcoded tenant
-assumptions, host parsing in routing, slug uniqueness as a single-tenant
-DB constraint).

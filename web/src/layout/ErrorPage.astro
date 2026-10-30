@@ -1,0 +1,122 @@
+---
+import { getGlobalData } from '../cms/getGlobalData'
+import { pickLocale } from '../cms/pickLocale'
+import { stripLocalePath } from '../cms/types'
+import LayerOrder from '../components/LayerOrder.astro'
+import MainContent from '../components/MainContent.astro'
+import SkipLink from '../components/SkipLink.astro'
+import Layout from './Layout.astro'
+
+interface Props {
+  kind: 'notFound' | 'serverError'
+}
+
+type Copy = { title: string; description: string; homePageButton: string }
+
+const { kind } = Astro.props
+const lang = pickLocale(Astro.url.pathname, Astro.request.headers.get('accept-language'))
+const homeHref = stripLocalePath(`/${lang}`)
+
+// When the labels fetch fails, for example during a CMS outage, the page
+// renders the fallback branch below instead of Astro's default error page.
+// Keyed by string so a locale without an entry falls back to en.
+const fallback: Record<string, Record<Props['kind'], Copy>> = {
+  de: {
+    notFound: {
+      title: 'Seite nicht gefunden',
+      description: 'Die angeforderte Seite existiert nicht.',
+      homePageButton: 'Zur Startseite',
+    },
+    serverError: {
+      title: 'Serverfehler',
+      description: 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
+      homePageButton: 'Zur Startseite',
+    },
+  },
+  en: {
+    notFound: {
+      title: 'Page not found',
+      description: 'The requested page does not exist.',
+      homePageButton: 'Go to the home page',
+    },
+    serverError: {
+      title: 'Server error',
+      description: 'An unexpected error occurred. Please try again later.',
+      homePageButton: 'Go to the home page',
+    },
+  },
+}
+
+let cmsLabels: Copy | null = null
+try {
+  const { labels } = await getGlobalData({ locale: lang, preview: false, locals: Astro.locals })
+  cmsLabels = labels[kind]
+} catch (error) {
+  console.error(`The ${kind} page renders its fallback, the labels fetch failed:`, error)
+}
+const { title, description, homePageButton } = cmsLabels ?? (fallback[lang] ?? fallback.en)[kind]
+---
+
+{cmsLabels ? (
+  <Layout title={title} description={description} lang={lang}>
+    <section class="message">
+      <h1>{title}</h1>
+      <p>{description}</p>
+      <a href={homeHref} class="button">
+        {homePageButton}
+      </a>
+    </section>
+  </Layout>
+) : (
+  <html lang={lang}>
+    <head>
+      <meta charset="utf-8" />
+      <LayerOrder />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="robots" content="noindex" />
+      <title>{title}</title>
+    </head>
+    <body class="fallback">
+      <SkipLink lang={lang} />
+      <MainContent>
+        <h1>{title}</h1>
+        <p>{description}</p>
+        <p>
+          <a href={homeHref}>{homePageButton}</a>
+        </p>
+      </MainContent>
+    </body>
+  </html>
+)}
+
+<style>
+  @layer components {
+    .message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      padding-block: 6rem;
+      text-align: center;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      background: var(--color-accent);
+      color: var(--color-on-accent);
+    }
+
+    .button:hover {
+      background: var(--color-accent-hover);
+    }
+
+    .fallback {
+      padding: 6rem 1rem;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+    }
+  }
+</style>

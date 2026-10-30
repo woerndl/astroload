@@ -11,7 +11,6 @@ import { fileURLToPath } from 'url'
 
 import { isAdmin } from './access/isAdmin'
 import { isAdminOrEditor } from './access/isAdminOrEditor'
-import { isPanelUser } from './access/isPanelUser'
 import { ApiKeys } from './collections/ApiKeys'
 import { Authors } from './collections/Authors'
 import { Media } from './collections/Media'
@@ -182,15 +181,10 @@ export default buildConfig({
         },
       },
       formSubmissionOverrides: {
-        // Submissions hold visitor PII. The plugin default limits read to the
-        // admin auth collection but sets no delete rule, so delete would fall
-        // back to any authenticated requester, including the api keys.
-        access: {
-          create: () => true,
-          read: isPanelUser,
-          update: () => false,
-          delete: isAdmin,
-        },
+        // Submissions hold visitor PII. The plugin sets no delete rule, so
+        // delete would fall back to any authenticated requester, including the
+        // api keys.
+        access: { delete: isAdmin },
         admin: { group: CollectionGroups.System },
         hooks: {
           beforeChange: [spamGuard, validateSubmission],

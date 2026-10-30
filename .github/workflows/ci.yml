@@ -57,6 +57,9 @@ jobs:
       - name: Lint (cms and web eslint, prettier, stylelint)
         run: pnpm lint
 
+      - name: Source gates
+        run: sudo apt-get update && sudo apt-get install -y ripgrep && sh scripts/gates.sh source
+
       - name: Typecheck (cms tsc, web astro check)
         run: pnpm check
 

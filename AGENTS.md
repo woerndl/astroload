@@ -24,7 +24,7 @@ Read the matching doc in `docs/astroload/` before working on its topics:
 - conventions.md: prerender shapes, new routes, SDK layer, server-only keys, collection changes, generated types, localized values, static assets, tests
 - forms.md: field renderer, cross-origin POST, spam guard, JS-required submission, accessibility
 - content-workflow.md: changing content, scratch scripts, MCP and REST paths, local-vs-deployed targets
-- deployment.md: Docker images, standalone output, media volume, production compose, baked build env
+- deployment.md: Docker images, standalone output, media volume, first boot, baked build env
 - maintenance.md: global schema changes, default locale, new locale, deploy throttle, redirects at config-eval, lexical link slip, lexical blocks, seed
 - security.md: threat model, draft leakage, preview route, cross-origin posture, rate limiting, hardening
 - updating.md: syncing a derived project, derivation marker, sync-inventory script, classification verdicts, when to update the marker

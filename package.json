@@ -12,8 +12,7 @@
     "check": "pnpm --filter @astroload/cms check && pnpm --filter @astroload/web check",
     "test": "pnpm --filter @astroload/web test && pnpm --filter @astroload/cms test",
     "knip": "SKIP_ENV_VALIDATION=1 knip",
-    "verify": "pnpm lint && pnpm check && pnpm test && pnpm --filter @astroload/cms generate:types && pnpm --filter @astroload/cms generate:importmap && git diff --exit-code -- cms/src/payload-types.ts 'cms/src/app/(payload)/admin/importMap.js' && pnpm knip && sh scripts/gates.sh source && pnpm --filter @astroload/web build && sh scripts/gates.sh dist",
-    "setup": "git config core.hooksPath .githooks"
+    "verify": "pnpm lint && pnpm check && pnpm test && pnpm --filter @astroload/cms generate:types && pnpm --filter @astroload/cms generate:importmap && git diff --exit-code -- cms/src/payload-types.ts 'cms/src/app/(payload)/admin/importMap.js' && pnpm knip && sh scripts/gates.sh source && pnpm --filter @astroload/web build && sh scripts/gates.sh dist"
   },
   "engines": {
     "node": ">=22.23.4",

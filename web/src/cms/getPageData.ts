@@ -1,5 +1,6 @@
-import { findPublicDocs } from './findPublicDocs'
+import { payloadSDK } from './sdk'
 import { cacheHeader } from './sdk/cachedFetch'
+import { stripLocalePathsDeep } from './types'
 import type { Locale, PageCollectionSlug, PageData } from './types'
 
 export async function getPageData(
@@ -7,7 +8,7 @@ export async function getPageData(
   id: string | number,
   locale: Locale,
 ): Promise<PageData | null> {
-  const result = await findPublicDocs(
+  const result = await payloadSDK.find(
     {
       collection,
       locale,
@@ -22,5 +23,5 @@ export async function getPageData(
     { headers: cacheHeader(true) },
   )
 
-  return (result.docs[0] as PageData | undefined) ?? null
+  return (stripLocalePathsDeep(result.docs[0]) as PageData | undefined) ?? null
 }

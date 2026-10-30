@@ -78,77 +78,28 @@ A change that affects prerendered output means a new web image. Point the deploy
 `DEPLOY_RAILWAY_TOKEN` and `DEPLOY_RAILWAY_SERVICE_ID` in the CMS instead (see
 [`maintenance.md`](./maintenance.md#same-commit-redeploys-and-the-content-build-id)).
 
-## Compose scaffold
+## First boot
 
-[`deploy/docker-compose.production.yml`](../../deploy/docker-compose.production.yml)
-defines the three services, with volumes for the database and uploads.
-Copy it and adapt it. Its header comment covers the first boot, which has
-to start the CMS before the web image can build. On first boot, create the
-accounts before the CMS hostname is publicly reachable: registration on an
-empty instance is open and the first account becomes an admin
-([`security.md`](./security.md#authentication-model)). Open `/admin` on the
-not-yet-public origin, register the admin account, and create two API keys
-(types `read-only` and `preview`). The web build needs the read-only key's
-value. A workspace checkout can run the auth seed
+Create the accounts before the CMS hostname is publicly reachable:
+registration on an empty instance is open and the first account becomes an
+admin ([`security.md`](./security.md#authentication-model)). Open `/admin`
+on the not-yet-public origin, register the admin account, and create two API
+keys (types `read-only` and `preview`). The web build needs the read-only
+key's value. A workspace checkout can run the auth seed
 (`pnpm --filter @astroload/cms seed:auth`) instead, but the CMS container
-image does not include it. The web build's
-`PAYLOAD_READ_KEY` comes in through a build arg that Compose reads from
-the shell environment or a `.env` beside the compose file. `web.env` only
-reaches the running container.
-
-The web service carries commented `UMAMI_WEBSITE_ID` and `CONTENT_BUILD_ID`
-build args. Uncomment `CONTENT_BUILD_ID` when the publish hook rebuilds
-through this compose file: without a fresh value per publish, `docker compose
-build web` on an unchanged commit replays the cached prerender layer and the
-new content does not reach the image (see
-[`maintenance.md`](./maintenance.md#same-commit-redeploys-and-the-content-build-id)).
+image does not include it.
 
 ## MongoDB host kernel and image upgrades
 
-MongoDB 8 stops at startup on Linux kernels 6.19 to 7.0.13. It checks the
-kernel version at startup because its bundled memory allocator (TCMalloc)
-can crash on these kernels. Kernels 7.0.14 and later run MongoDB 8. Every
-MongoDB 8 package has the check, Docker images included, so no other 8.x tag
-avoids it
+MongoDB 8 stops at startup on Linux kernels 6.19 to 7.0.13
 ([MongoDB 8.0 release notes](https://www.mongodb.com/docs/manual/release-notes/8.0/)).
-
-The `mongo` container uses the kernel of the Docker host: the production
-server, or the Linux VM of Docker Desktop, Colima or WSL on a workstation.
-Before you upgrade that kernel, or Docker Desktop, Colima or WSL, check which
-kernel version the upgrade installs. Before you move a project from an older
-MongoDB to `mongo:8`, check the running kernel:
-
-```bash
-uname -r                          # on a Linux host
-docker run --rm alpine uname -r   # Docker VM on macOS or Windows
-```
-
-On a PaaS, run `uname -r` in a service shell, if the platform offers one. A
-managed database service such as Atlas runs MongoDB on its own hosts, so
-this check does not apply.
-
-The compose files use the `mongo:8` tag. After a pull, the next container
-start can run a newer 8.x release series on the existing volume. The data
-keeps its feature compatibility version (FCV) until an admin raises it with
-`setFeatureCompatibilityVersion`. Before you pull, read the FCV in the
-directory of the compose file in use:
-
-```bash
-docker compose exec mongo mongosh --quiet --eval 'db.adminCommand({getParameter: 1, featureCompatibilityVersion: 1})'
-```
-
-After the pull, read the series of the new image. This does not touch the
-volume:
-
-```bash
-docker run --rm mongo:8 mongod --version
-```
-
-If that series is newer than the FCV, back up with `mongodump` (see
-[`maintenance.md`](./maintenance.md#moving-data-between-mongo-databases)).
-Then follow the upgrade steps in the release notes for that series
-([release notes index](https://www.mongodb.com/docs/manual/release-notes/))
-before the container restarts on the new image.
+The `mongo` container uses the kernel of the Docker host. Before you upgrade
+that kernel or the Docker VM, or move a project to `mongo:8`, check the
+kernel with `uname -r` (on macOS or Windows: `docker run --rm alpine uname -r`).
+A pull of `mongo:8` can start a newer 8.x series on the existing volume.
+Before the pull, back up with `mongodump` (see
+[`maintenance.md`](./maintenance.md#moving-data-between-mongo-databases)) and
+follow the upgrade steps in the release notes of the new series.
 
 ## Direct media serving (optional)
 

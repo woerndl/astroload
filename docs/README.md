@@ -70,7 +70,7 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 
 - Astro 7 with the Node adapter (`@astrojs/node`)
 - Payload 3 on Next 16 and React 19
-- MongoDB 8 via `@payloadcms/db-mongodb`, standalone (transactions disabled). Postgres remains available as a documented alternative, see [`astroload/maintenance.md`](./astroload/maintenance.md)
+- MongoDB 8 via `@payloadcms/db-mongodb`, standalone (transactions disabled), see [`astroload/maintenance.md`](./astroload/maintenance.md)
 - TypeScript 5.9
 - pnpm 10 workspaces
 - Node `>=22.23.4` (see `.nvmrc` for the pinned version)
@@ -166,7 +166,7 @@ Two Node processes, one MongoDB database. `cms/` owns the admin, the API, and th
 
 ## Deployment
 
-Both apps are Node servers with no serverless adapter or provider-specific build step, so a plain Node host is enough. For containers, each app has a Dockerfile and `deploy/docker-compose.production.yml` is a scaffold to copy. See [`astroload/deployment.md`](./astroload/deployment.md).
+Both apps are Node servers with no serverless adapter or provider-specific build step, so a plain Node host is enough. For containers, each app has a Dockerfile. See [`astroload/deployment.md`](./astroload/deployment.md).
 
 ### CMS
 
@@ -197,7 +197,6 @@ Issues and pull requests are welcome. Run `pnpm verify` before opening a PR. It 
 - [`jhb-software/payload-astro-website-template`](https://github.com/jhb-software/payload-astro-website-template) for the starting reference.
 - [`@jhb.software/payload-pages-plugin`](https://github.com/jhb-software/payload-plugins) for the URL tree.
 - [`@jhb.software/astro-payload-richtext-lexical`](https://github.com/jhb-software/payload-plugins) for Lexical rendering.
-- [`astro-seo-schema`](https://github.com/codingcatdev/astro-seo-schema) for JSON-LD output.
 
 ## License
 

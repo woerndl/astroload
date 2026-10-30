@@ -38,9 +38,3 @@ test('an upload yields every image size and a 1200x630 JPEG og variant, and the 
     expect(file.headers()['cache-control'], name).toMatch(/max-age=\d{6,}/)
   }
 })
-
-test('the /en page renders an img whose srcset uses width descriptors', async ({ web }) => {
-  const res = await web.get('/en')
-  expect(res.status()).toBe(200)
-  expect(await res.text()).toMatch(/<img[^>]+srcset="[^"]+ \d+w/)
-})

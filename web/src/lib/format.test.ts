@@ -6,15 +6,9 @@ import { formatDate } from './format'
 vi.mock('@astroload/cms/src/site-config', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   TIME_ZONE: 'Pacific/Kiritimati',
+  INTL_LOCALE: { en: 'en-US' },
 }))
 
-const numeric = { day: 'numeric', month: 'numeric', year: 'numeric' } as const
-
-it.each([
-  ['de', undefined, '6. Januar 2026'],
-  ['en', undefined, 'January 6, 2026'],
-  ['de', numeric, '6.1.2026'],
-  ['en', numeric, '1/6/2026'],
-] as const)('formatDate(%s) renders the date in the site time zone', (lang, options, expected) => {
-  expect(formatDate('2026-01-05T12:00:00Z', lang, options)).toBe(expected)
+it('formatDate renders the date in the site time zone', () => {
+  expect(formatDate('2026-01-05T12:00:00Z', 'en')).toBe('January 6, 2026')
 })

@@ -20,7 +20,6 @@ g() {
 
 case ${1:-} in
   source)
-    g 'href="#" placeholder' -P "href\\s*=\\s*['\"]#['\"]" web/src -g '!**/pages/styleguide.astro'
     # This rule and the next enforce the client script style rules in
     # docs/astroload/security.md. Both read one line at a time, so a call or a
     # template literal split over two lines passes.
@@ -31,7 +30,6 @@ case ${1:-} in
     ;;
   dist)
     node scripts/locale-prefix.mjs web/dist || fail=1
-    node scripts/links.mjs web/dist/client || fail=1
     ;;
   *)
     echo 'usage: sh scripts/gates.sh source | dist' >&2

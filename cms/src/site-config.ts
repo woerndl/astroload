@@ -22,7 +22,7 @@ export const OG_LOCALE: Record<string, string> = {
   en: 'en_US',
 }
 
-// BCP 47 locale for dates and numbers, keyed by locale code. Use the same
+// BCP 47 locale for dates, keyed by locale code. Use the same
 // region as OG_LOCALE. A missing entry uses the code itself.
 export const INTL_LOCALE: Record<string, string> = {
   de: 'de-DE',

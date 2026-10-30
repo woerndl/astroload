@@ -25,7 +25,6 @@ export function createCachedFetch(baseFetch: typeof fetch): typeof fetch {
     const useCache = headers.get(USE_CACHE_HEADER) === 'true'
     headers.delete(USE_CACHE_HEADER)
     // Without a timeout a stalled CMS holds a build until the host kills it.
-    // staleOnError handles the rejection where a fallback exists.
     const cleanInit = { ...init, headers, signal: init?.signal ?? AbortSignal.timeout(15_000) }
 
     // Disabled in dev so CMS edits propagate without an Astro restart.

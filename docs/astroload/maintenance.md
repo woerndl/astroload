@@ -222,9 +222,7 @@ Host examples:
 - Vercel/Netlify: set `CONTENT_BUILD_ID` to the deploy id env the platform
   exposes, or turn off build cache for the project.
 - Coolify/Docker hosts: pass `--build-arg CONTENT_BUILD_ID=$(date +%s)` or an
-  equivalent unique value at build time. The compose scaffold in
-  `deploy/docker-compose.production.yml` carries a commented
-  `CONTENT_BUILD_ID` build arg for this.
+  equivalent unique value at build time.
 
 Leaving `CONTENT_BUILD_ID` unset omits the meta tag and turns the check off.
 Skip it only when a same-commit redeploy has been verified to serve the new
@@ -309,8 +307,8 @@ This policy applies to the build only. The running
 standalone server has no request-time dependency on the CMS for redirects or
 prerendered content (see above), so a CMS outage does not take those down.
 The request-time routes (`/preview`, the per-locale sitemaps, and any SSR
-opt-in) can fail during the outage or serve their last good response where
-`staleOnError` applies. The error pages fall back to their hardcoded copy.
+opt-in) can fail during the outage. The error pages fall back to their
+hardcoded copy.
 
 `redirects.fallback.json` is the committed redirect table for non-strict runs
 (offline dev and CI). It is committed empty, so a fresh project loses nothing.
@@ -504,7 +502,7 @@ silently ignores anything else, so the override has to happen in the
 integration. If you are editing in admin and not seeing changes on
 `localhost:4321`, check whether the route is prerendered in dev.
 
-## Database is MongoDB, with Postgres as an option
+## Database is MongoDB
 
 The CMS runs on MongoDB through `@payloadcms/db-mongodb`. The adapter sets
 `transactionOptions: false`, which turns transactions off. Transactions need a
@@ -516,7 +514,8 @@ under concurrent writes.
 If you do want transactions, run Mongo as a single-node replica set
 (`mongod --replSet rs0`, then `rs.initiate()` once), point `DATABASE_URI` at it
 with `?replicaSet=rs0`, and remove the `transactionOptions: false` line in
-`cms/src/payload.config.ts`.
+`cms/src/payload.config.ts`. For another adapter, see Payload's
+[database docs](https://payloadcms.com/docs/database/overview).
 
 ### Moving data between Mongo databases
 
@@ -527,33 +526,6 @@ restores cleanly into another:
 mongodump    --uri "$DATABASE_URI" --out ./dump
 mongorestore --uri "$TARGET_URI"   ./dump
 ```
-
-There is no automatic path from Postgres rows to Mongo documents. To carry
-existing Postgres data over, export it and re-import it through Payload's API
-or a one-off script, the same way the seed writes content.
-
-### Staying on Postgres
-
-Postgres is still supported. To switch back:
-
-1. In `cms/package.json`, replace `@payloadcms/db-mongodb` with
-   `@payloadcms/db-postgres` at the same Payload version, then `pnpm install`.
-2. In `cms/src/payload.config.ts`, swap the import and the `db` adapter:
-
-   ```ts
-   import { postgresAdapter } from '@payloadcms/db-postgres'
-
-   db: postgresAdapter({
-     pool: { connectionString: env.DATABASE_URI },
-   }),
-   ```
-
-3. Point `DATABASE_URI` at Postgres
-   (`postgres://astroload:astroload@127.0.0.1:5432/astroload`) and restore a
-   Postgres service in `docker-compose.yml`.
-4. Re-run `pnpm --filter @astroload/cms generate:types`. Ids switch from
-   `string` back to `number`. The web app types ids as `string | number`, so
-   no frontend code changes.
 
 ## Cutting a release
 

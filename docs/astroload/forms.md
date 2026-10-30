@@ -155,13 +155,11 @@ in `cms/src/payload.config.ts`, and the authoring-side `validateFormFields`
 through `formOverrides` next to them. If you change the field shape,
 update the hooks to match.
 
-The same overrides set the submission access rules. Submissions hold
-visitor PII, so anyone may create one, only panel users (admins and
-editors) may read them, nobody may update one, and only admins may
-delete. The plugin's own default limits read to users of the admin
-auth collection and blocks update, but sets no delete rule, so without
-the explicit rules any authenticated requester, including the web
-app's API keys, could delete.
+Submissions hold visitor PII. The plugin lets anyone create one, limits
+read to users of the admin auth collection (admins and editors) and blocks
+update. It sets no delete rule, so the overrides limit delete to admins.
+Without that rule any authenticated requester, including the web app's API
+keys, could delete.
 
 The Forms collection itself restricts writes the same way as the content
 collections (`isAdminOrEditor`): the plugin sets no write rules, so

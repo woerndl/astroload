@@ -53,15 +53,15 @@ export const dateTimeField = {
   timeFormat: 'HH:mm',
 } as const
 
+/** @public */
 export const dateOnlyField = {
   pickerAppearance: 'dayOnly',
   displayFormat: DATE_ONLY_FORMAT,
 } as const
 
-// maxPerDoc caps the version history, which autosave would otherwise grow
-// without limit.
+// Payload keeps at most 100 versions per document by default (maxPerDoc), which
+// caps the history that autosave grows.
 export const draftVersions = {
-  maxPerDoc: 50,
   drafts: {
     autosave: { interval: AUTOSAVE_INTERVAL },
     schedulePublish: false,

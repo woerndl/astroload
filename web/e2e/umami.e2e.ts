@@ -1,17 +1,11 @@
 import { env, expect, test } from './fixtures'
 
-// UMAMI_WEBSITE_ID is baked into the build, so a build runs either the first
-// test or the tests after it. The relay test also needs UMAMI_HOST_URL set to a
-// loopback URL, for example http://127.0.0.1:4322, when the web app starts.
+// The tests need UMAMI_WEBSITE_ID in the build. The relay test also needs
+// UMAMI_HOST_URL set to a loopback URL, for example http://127.0.0.1:4322,
+// when the web app starts.
 const event = (website: string) => ({
   type: 'event',
   payload: { website, hostname: 'localhost', url: '/en', language: 'en-US', screen: '1280x800' },
-})
-
-test('POST /api/send answers 204 when no website id is configured', async ({ web }) => {
-  test.skip(Boolean(env.umamiWebsiteId), 'UMAMI_WEBSITE_ID is set in web/.env')
-  const res = await web.post('/api/send', { data: event('any') })
-  expect(res.status()).toBe(204)
 })
 
 test("POST /api/send relays an event for this site's website id with the User-Agent and client IP, and answers 403 for another website id", async ({

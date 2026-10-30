@@ -47,7 +47,6 @@ export async function getRedirects(): Promise<Record<string, RedirectConfig>> {
   let lastError: unknown
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      // Redirects have no localized `path`, so this read skips findPublicDocs.
       // A slug change records its redirect against the stored `/${locale}/...`
       // path, which a single-locale site does not serve, so both paths get the
       // locale strip. stripLocalePath leaves unprefixed paths unchanged.

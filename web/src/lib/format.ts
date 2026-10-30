@@ -10,6 +10,3 @@ export const formatDate = (
   new Intl.DateTimeFormat(intlLocale(lang), { ...options, timeZone: TIME_ZONE }).format(
     new Date(value),
   )
-
-export const formatNumber = (value: number, lang: string, options: Intl.NumberFormatOptions = {}) =>
-  new Intl.NumberFormat(intlLocale(lang), options).format(value)

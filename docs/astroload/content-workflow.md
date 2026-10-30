@@ -27,36 +27,10 @@ the admin UI, not a script.
 
 ## Enabling MCP
 
-With MCP enabled, an assistant changes content through typed tools and
-writes no files to the working tree. Access control still applies. MCP is
-opt-in so the starter adds no extra endpoint or key collection by default. A project
-that does agent-driven editing should turn it on.
-
-Add the Payload MCP plugin (`@payloadcms/plugin-mcp`) to
-`cms/src/payload.config.ts` and opt each collection and global you want
-exposed into the plugin config. The plugin serves MCP at `/api/mcp` and
-authenticates with an API key created in the admin panel under MCP, sent
-as a bearer token. Capabilities are toggled per key, so a key grants only
-what you enable on it. Payload's access rules and hooks still apply. A
-project-level client config:
-
-```jsonc
-// .mcp.json
-{
-  "mcpServers": {
-    "payload": {
-      "type": "http",
-      "url": "http://localhost:3000/api/mcp",
-      "headers": { "Authorization": "Bearer ${PAYLOAD_MCP_KEY}" }
-    }
-  }
-}
-```
-
-`PAYLOAD_MCP_KEY` holds the admin-created key in the MCP client's
-environment.
-
-Point the client at the local CMS while developing. Read [Local versus
+MCP is off by default, so the starter adds no extra endpoint or key
+collection. A project that does agent-driven editing adds the Payload MCP
+plugin as its [docs](https://payloadcms.com/docs/plugins/mcp) describe. Point
+the client at the local CMS while developing. Read [Local versus
 deployed](#local-versus-deployed) before letting any agent reach a deployed
 instance.
 
