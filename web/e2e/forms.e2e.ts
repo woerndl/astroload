@@ -198,4 +198,14 @@ test('a form redirect to a javascript: URL is refused with 400', async ({ admin 
   })
   expect(res.status()).toBe(400)
   expect(await res.text()).toContain('is not a path')
+  const object = await admin.post('/api/forms', {
+    data: {
+      title: 'E2E redirect',
+      confirmationType: 'redirect',
+      redirect: { url: { _id: 'javascript:alert(1)' } },
+      fields: [{ blockType: 'text', name: 'name', label: 'Name' }],
+    },
+  })
+  expect(object.status()).toBe(400)
+  expect(await object.text()).toContain('must be a text value')
 })

@@ -14,6 +14,9 @@ const RESERVED_FIELD_NAMES = ['fax', '_rendered_at']
 // it treats a duplicate field name in a submission as forged.
 export const validateFormFields: CollectionBeforeValidateHook = ({ data }) => {
   const redirect = (data?.redirect as { url?: unknown } | undefined)?.url
+  if (redirect != null && typeof redirect !== 'string') {
+    throw new APIError('The redirect must be a text value.', 400, undefined, true)
+  }
   if (typeof redirect === 'string' && redirect !== '' && !isAllowedLinkUrl(redirect)) {
     throw new APIError(
       `The redirect "${redirect}" is not a path or an http(s), mailto: or tel: address.`,

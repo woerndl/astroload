@@ -18,8 +18,14 @@ type Args = {
   locale?: string
 }
 
-const validate = (args: Args) =>
-  Pages.hooks!.beforeValidate![0]!({
+const validate = async (args: Args) => {
+  let data = args.data
+  for (const hook of Pages.hooks!.beforeValidate!) data = await hook(hookArgs({ ...args, data }))
+  return data
+}
+
+const hookArgs = (args: Args) =>
+  ({
     data: args.data,
     // Payload passes an empty originalDoc on create.
     originalDoc: args.originalDoc ?? {},
@@ -33,7 +39,7 @@ const validate = (args: Args) =>
       },
       locale: args.locale ?? 'en',
     },
-  } as unknown as Parameters<CollectionBeforeValidateHook>[0])
+  }) as unknown as Parameters<CollectionBeforeValidateHook>[0]
 
 const home = { id: 'p1', template: 'landing', slug: '', parent: null, isRootPage: true }
 const child = { id: 'p2', template: 'landing', slug: 'contact', parent: 'p1', isRootPage: false }
@@ -50,6 +56,7 @@ it.each<[string, Args, string]>([
   ['a slug change in one locale of an all-locale write', { data: { slug: { en: 'contact', de: 'neu' } }, originalDoc: slugs, locale: 'all' }, 'fixed in code'],
   ['an unknown locale key', { data: { slug: { en: 'contact', xx: 'neu' } }, originalDoc: slugs, locale: 'all' }, 'fixed in code'],
   ['an object slug on a one-locale write', { data: { slug: { _id: 'renamed' } }, originalDoc: child }, 'fixed in code'],
+  ['an object status', { data: { _status: { _id: 'published' } }, originalDoc: child }, 'draft or published'],
   ['a parent change', { data: { parent: 'p9' }, originalDoc: child }, 'fixed in code'],
   ['a root state change', { data: { isRootPage: false }, originalDoc: home }, 'fixed in code'],
   ["a string root state such as '0'", { data: { isRootPage: '0' }, originalDoc: home }, 'fixed in code'],

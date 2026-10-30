@@ -138,6 +138,9 @@ async function refusePublishedChildren(id: string, req: PayloadRequest) {
 export const guardPublishedParent: CollectionBeforeValidateHook = async (args) => {
   const { data, originalDoc, operation, context, req } = args
   if (context?.seed || (context?.isRestoringVersion && context.draftSave)) return data
+  if (data?._status !== undefined && data._status !== 'draft' && data._status !== 'published') {
+    throw new APIError('The status must be draft or published.', 400)
+  }
   if (operation === 'update' && originalDoc && unpublishes(args)) {
     await refusePublishedChildren(String(originalDoc.id), req)
     return data
