@@ -239,6 +239,11 @@ Common ways to handle this include a CDN or load-balancer rule
 middleware on the CMS that throttles per IP, a reverse-proxy rule, or a
 queued submission pipeline. Pick one before you go to production.
 
+The web app reads a request body only on the analytics route
+`/api/send`. Its node adapter caps request bodies at 8 KB
+(`bodySizeLimit` in `web/astro.config.mjs`), and `/api/send` answers 413
+above it. Forms post to the CMS, so this cap does not apply to them.
+
 ## Form submission integrity
 
 The form's minimum-submit-time check relies on a client-stamped
@@ -256,8 +261,8 @@ The spam-guard hook caps a submission at 100 entries and 10,000
 characters per entry field name or value (constants in
 `cms/src/hooks/spamGuard.ts`). A single accepted submission can then
 store about 1 MB of text. The hook limits stored submission fields
-only. Request-body size limits and rate limiting belong at the host or
-proxy.
+only. A body size limit for `/api/form-submissions` and rate limiting
+belong at the host or proxy.
 
 ## Preview secret in URLs leaks through Referer
 
@@ -300,7 +305,9 @@ as a clickable XSS vector. Astroload closes this in two layers:
   backslashes (browsers treat them as slashes in http(s) URLs, so
   `/\evil.example` would navigate off-origin too), and rejects the rest at
   save time for every editor that inherits the global feature set. Both
-  layers share the scheme list from `cms/src/shared.ts`.
+  layers share the scheme list from `cms/src/shared.ts`. The Forms
+  collection runs a form's `redirect.url` through the same check, because
+  the form script assigns it to `window.location.href`.
 - The renderer
   ([`web/src/components/lexical/sanitizeLinks.ts`](../../web/src/components/lexical/sanitizeLinks.ts))
   unwraps link nodes whose `url` carries a disallowed scheme, a

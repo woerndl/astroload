@@ -91,11 +91,12 @@ Rules from past syncs:
 ## 3. Verify, then update the marker
 
 - A passing build alone does not verify behavior. Run the build and
-  typecheck, then `pnpm --filter @astroload/web test:e2e` against the
-  built web app and a local database with the seeded demo content (setup
-  in [`conventions.md`](./conventions.md#end-to-end-tests)). The suite
-  expects the demo pages and the Contact form and creates and deletes
-  documents as an admin, so do not run it against a restored dump. Then
+  typecheck, then `pnpm --filter ./web test:e2e` against the built web
+  app and a local database that holds the content this project's suite
+  expects (setup in
+  [`conventions.md`](./conventions.md#end-to-end-tests)). The suite
+  creates and deletes documents as an admin, so do not run it against a
+  restored dump. Then
   check by hand each request path that the applied changes touch and the
   suite does not cover.
 - On a live project, verify against a restored production dump when the

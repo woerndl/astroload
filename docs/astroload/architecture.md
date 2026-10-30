@@ -93,8 +93,8 @@ console-logging outgoing email. Both checks are in
 
 ## Localization runs through the URL
 
-Content is localized in Payload. Slugs, titles, excerpts, role and bio
-fields, media alt and caption, form intro content, and rich text bodies
+Content is localized in Payload. Slugs, titles, excerpts, media alt and
+caption, form intro content, and rich text bodies
 all carry per-locale values where the relevant collection defines them.
 The Astro routes are shaped as
 `[lang]/<path>` with `lang` constrained to the configured locales.
@@ -102,6 +102,14 @@ Content pages emit `hreflang` for the locales where a translation
 exists, plus an `x-default` pointing at the default locale's translation
 when that translation exists. The error pages and the root redirect emit
 none, because they have no per-locale counterpart to point at.
+
+With a locale prefix, the root sends a 302 to the visitor's preferred
+locale when that locale has a published home page, a document whose path
+is `/{locale}`. Otherwise it sends the visitor to the first locale in
+`LOCALES` that has one. The build reads that list from
+`/api/static-paths` and embeds it. The build fails when no locale has a
+home or when a listed home was not prerendered. The error pages link to
+`/`, so their home link follows the same redirect.
 
 A project that serves a single locale drops the `[lang]` segment entirely.
 Pages serve at `/<path>`, the root serves the home page directly with no

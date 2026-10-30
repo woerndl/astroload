@@ -21,7 +21,7 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 ### Content and CMS
 
 - Page builder with rich text, image, form, and posts list blocks
-- Drafts and autosave on Pages, Posts, and Authors
+- Drafts and autosave on Pages, Posts, and Authors, with Payload's default cap of 100 versions per document (`maxPerDoc`)
 - Role-based access (`admin`, `editor`) plus separate API keys for read-only and preview reads. The Astro side uses these scoped keys, so `web/.env` holds no admin-capable Payload token
 - Editor-managed Header, Footer, Labels, and SiteSettings globals
 - Seed script for an admin user, API keys, and demo content

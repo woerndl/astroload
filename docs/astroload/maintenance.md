@@ -547,12 +547,13 @@ release is three steps, in order.
    git commit -m "docs: release X.Y.Z in CHANGELOG"
    ```
 
-2. Tag that commit. Tags are lightweight and named `vX.Y.Z` (note the
-   `v`, which the commit subject omits):
+2. Tag that commit and push `main` together with the tag. Tags are
+   lightweight and named `vX.Y.Z` (note the `v`, which the commit subject
+   omits):
 
    ```bash
    git tag vX.Y.Z
-   git push origin vX.Y.Z
+   git push origin main vX.Y.Z
    ```
 
 3. Create the GitHub release against the tag. The title is the bare

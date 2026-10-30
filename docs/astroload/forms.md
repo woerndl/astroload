@@ -90,7 +90,10 @@ includes three checks against automated contact-form spam:
 The names `fax` and `_rendered_at` are reserved for these checks. The
 Forms collection rejects a form that names a field after either (and any
 duplicate field name) at save time, through the `validateFormFields`
-hook wired into `formOverrides`.
+hook wired into `formOverrides`. The same hook rejects a redirect URL that
+the rich text link check would reject (`isAllowedLinkUrl` in
+`cms/src/lexical/editor.ts`), so a `javascript:` redirect fails at save
+time.
 
 The timestamp is client-controlled. A bot can post any timestamp older
 than the threshold and pass the check, so the check stops only simple

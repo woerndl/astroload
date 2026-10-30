@@ -25,8 +25,8 @@ Every conditional case lives in the `prerenderOverrides` integration in
 `astro.config.mjs`, Astro's supported way to override render modes per
 route. It renders everything on demand in dev (so admin edits show up
 without a restart), the `[lang]` routes on demand in a single-locale
-build, and the root on demand in a multi-locale build (the
-Accept-Language redirect needs the request). If a new route needs a
+build, and the root on demand in a multi-locale build (the redirect to
+a locale with a published home reads Accept-Language). If a new route needs a
 conditional render mode, extend that integration rather than computing
 the export.
 
@@ -673,7 +673,12 @@ following:
   `pnpm --filter @astroload/web exec playwright install chromium`. If
   Playwright does not support your Linux release yet, prefix the command
   with `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` or another
-  supported platform.
+  supported platform. The suite and CI run Chromium only. WebKit on macOS
+  moves Tab focus to links only with the Option key, as Safari does, so
+  the skip link test fails there. A project that adds a WebKit run keeps
+  the key name in a `TAB` constant, `'Alt+Tab'` when `browserName` is
+  `'webkit'` and `'Tab'` otherwise, and passes it to each
+  `page.keyboard.press`.
 
 Three spec files need setup that the CMS or the web app reads at start, or
 that the web build bakes in:
