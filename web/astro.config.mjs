@@ -44,8 +44,12 @@ const prerenderOverrides = {
 }
 
 export default defineConfig({
-  adapter: node({ mode: 'standalone' }),
+  // /api/send is the only route that reads a body, and an Umami event is under 2 KB.
+  adapter: node({ mode: 'standalone', bodySizeLimit: 8 * 1024 }),
   integrations: [prerenderOverrides],
+  // Two documents with the same public path fail the build instead of one
+  // page silently winning.
+  prerenderConflictBehavior: 'error',
   // Astro 7 defaults compressHTML to 'jsx', which collapses inter-element
   // whitespace. Pin the Astro 6 behavior so templates render unchanged.
   compressHTML: true,

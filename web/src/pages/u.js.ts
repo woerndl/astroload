@@ -18,9 +18,10 @@ let fetchedAt = 0
 export const GET: APIRoute = async () => {
   if (!UMAMI_WEBSITE_ID) return script('')
 
-  if (!cachedScript || Date.now() - fetchedAt > TRACKER_TTL_MS) {
+  if (Date.now() - fetchedAt > TRACKER_TTL_MS) {
     try {
-      const upstream = await fetch(TRACKER_URL)
+      // The page loads the tag with defer, so a stalled upstream would delay DOMContentLoaded.
+      const upstream = await fetch(TRACKER_URL, { signal: AbortSignal.timeout(5_000) })
       if (upstream.ok) cachedScript = await upstream.text()
     } catch {
       // A failed fetch must not break the page, so serve the cached copy, or an

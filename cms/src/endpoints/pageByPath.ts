@@ -81,51 +81,57 @@ export async function getPageByPath(req: PayloadRequest): Promise<Response> {
       ),
     )
 
-    for (const [i, lookup] of lookups.entries()) {
-      const collection = pageCollectionsSlugs[i]!
-      const match = (lookup.docs as Array<{ id: string | number; path?: string }>).find(
-        (doc) => (usePublicPath ? stripLocalePath(doc.path ?? '') : doc.path) === fullPath,
-      )
-      if (!match) continue
-
-      // Load the full doc in the request locale and its `path` in every
-      // locale. The `all` locale call does not get `req`, because Payload's
-      // createLocalReq writes the locale onto the passed req, and two
-      // concurrent calls with different locales would overwrite each other.
-      // Passing `user` gives it a fresh request with the same access control.
-      const [data, pathDoc] = await Promise.all([
-        req.payload.findByID({
-          collection,
-          id: match.id,
-          locale,
-          draft: preview,
-          depth: 2,
-          overrideAccess: false,
-          req,
-        }),
-        req.payload.findByID({
-          collection,
-          id: match.id,
-          locale: 'all',
-          draft: preview,
-          overrideAccess: false,
-          select: { path: true },
-          depth: 0,
-          user: req.user,
-        }),
-      ])
-      const rawPaths = ((pathDoc as { path?: LocalePaths }).path ?? {}) as LocalePaths
-      // Public requests get every path in the doc in public form, including
-      // breadcrumbs and populated relations.
-      const body: PageByPathBody = {
-        collection,
-        data: usePublicPath ? stripLocalePathsDeep(data) : data,
-        paths: usePublicPath ? toPublicPaths(rawPaths) : rawPaths,
-      }
-      return Response.json(body, { headers: { 'Cache-Control': 'no-cache' } })
+    const matches = lookups.flatMap((lookup, i) =>
+      (lookup.docs as Array<{ id: string | number; path?: string }>)
+        .filter((doc) => (usePublicPath ? stripLocalePath(doc.path ?? '') : doc.path) === fullPath)
+        .map((doc) => ({ collection: pageCollectionsSlugs[i]!, id: doc.id })),
+    )
+    if (matches.length > 1) {
+      const owners = matches.map((match) => `${match.collection} ${match.id}`).join(', ')
+      return new Response(`${fullPath} belongs to more than one document: ${owners}`, {
+        status: 409,
+        headers: { 'Cache-Control': 'no-cache' },
+      })
     }
+    const match = matches[0]
+    if (!match) return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-cache' } })
+    const { collection } = match
 
-    return new Response(null, { status: 404, headers: { 'Cache-Control': 'no-cache' } })
+    // Load the full doc in the request locale and its `path` in every
+    // locale. The `all` locale call does not get `req`, because Payload's
+    // createLocalReq writes the locale onto the passed req, and two
+    // concurrent calls with different locales would overwrite each other.
+    // Passing `user` gives it a fresh request with the same access control.
+    const [data, pathDoc] = await Promise.all([
+      req.payload.findByID({
+        collection,
+        id: match.id,
+        locale,
+        draft: preview,
+        depth: 2,
+        overrideAccess: false,
+        req,
+      }),
+      req.payload.findByID({
+        collection,
+        id: match.id,
+        locale: 'all',
+        draft: preview,
+        overrideAccess: false,
+        select: { path: true },
+        depth: 0,
+        user: req.user,
+      }),
+    ])
+    const rawPaths = ((pathDoc as { path?: LocalePaths }).path ?? {}) as LocalePaths
+    // Public requests get every path in the doc in public form, including
+    // breadcrumbs and populated relations.
+    const body: PageByPathBody = {
+      collection,
+      data: usePublicPath ? stripLocalePathsDeep(data) : data,
+      paths: usePublicPath ? toPublicPaths(rawPaths) : rawPaths,
+    }
+    return Response.json(body, { headers: { 'Cache-Control': 'no-cache' } })
   } catch (error) {
     req.payload.logger.error({ err: error }, 'pageByPath endpoint failed')
     throw new APIError('Internal server error', 500)

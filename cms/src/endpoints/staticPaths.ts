@@ -57,27 +57,6 @@ export async function getStaticPaths(req: PayloadRequest): Promise<Response> {
       }
     }
 
-    // Slugs are unique per collection only, so a page and a post can claim the
-    // same public path. pageByPath then serves the first collection in
-    // pageCollectionsSlugs.
-    const owners = new Map<string, string>()
-    for (const item of items) {
-      for (const [locale, path] of Object.entries(item.paths)) {
-        // An untranslated document holds undefined for that locale. Skipping
-        // it avoids a warning for every pair of untranslated documents.
-        if (!path) continue
-        const key = `${locale}:${path}`
-        const owner = owners.get(key)
-        if (owner) {
-          req.payload.logger.warn(
-            `public path ${path} (${locale}) is claimed by both ${owner} and ${item.collection}/${item.id}; the page lookup serves the first match`,
-          )
-        } else {
-          owners.set(key, `${item.collection}/${item.id}`)
-        }
-      }
-    }
-
     return new Response(JSON.stringify(items), {
       headers: { 'Cache-Control': 'no-cache', 'Content-Type': 'application/json' },
     })

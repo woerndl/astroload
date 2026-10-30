@@ -10,7 +10,7 @@ import { ALLOWED_LINK_SCHEMES } from '../shared'
 // characters while resolving a URL and treat backslashes as slashes in http(s)
 // URLs, so '/\t/evil.com' and '/\evil.example' would navigate off-origin.
 // The value is checked untrimmed because the renderer resolves the raw value.
-function isAllowedLinkUrl(url: string): boolean {
+export function isAllowedLinkUrl(url: string): boolean {
   if (!url) return false
   if (/[\u0000-\u001f]/.test(url)) return false
   if (url.includes('\\')) return false

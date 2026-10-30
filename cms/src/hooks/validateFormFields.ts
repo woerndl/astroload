@@ -2,6 +2,8 @@ import type { CollectionBeforeValidateHook } from 'payload'
 
 import { APIError } from 'payload'
 
+import { isAllowedLinkUrl } from '../lexical/editor'
+
 // `fax` is the honeypot input on every rendered form, and `_rendered_at` is the
 // client timestamp. A form field with either name would collide in the posted
 // FormData, and spamGuard would read visitor input as spam signals.
@@ -11,6 +13,15 @@ const RESERVED_FIELD_NAMES = ['fax', '_rendered_at']
 // rejecting every submission later. validateSubmission relies on unique names:
 // it treats a duplicate field name in a submission as forged.
 export const validateFormFields: CollectionBeforeValidateHook = ({ data }) => {
+  const redirect = (data?.redirect as { url?: unknown } | undefined)?.url
+  if (typeof redirect === 'string' && redirect !== '' && !isAllowedLinkUrl(redirect)) {
+    throw new APIError(
+      `The redirect "${redirect}" is not a path or an http(s), mailto: or tel: address.`,
+      400,
+      undefined,
+      true,
+    )
+  }
   const fields = (data?.fields ?? []) as { name?: unknown }[]
   const seen = new Set<string>()
   for (const field of fields) {

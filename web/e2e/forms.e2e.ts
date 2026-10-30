@@ -186,3 +186,16 @@ test('a form field named fax is refused with 400', async ({ admin }) => {
   expect(reserved.status()).toBe(400)
   expect(await reserved.text()).toContain('reserved')
 })
+
+test('a form redirect to a javascript: URL is refused with 400', async ({ admin }) => {
+  const res = await admin.post('/api/forms', {
+    data: {
+      title: 'E2E redirect',
+      confirmationType: 'redirect',
+      redirect: { url: 'javascript:alert(1)' },
+      fields: [{ blockType: 'text', name: 'name', label: 'Name' }],
+    },
+  })
+  expect(res.status()).toBe(400)
+  expect(await res.text()).toContain('is not a path')
+})

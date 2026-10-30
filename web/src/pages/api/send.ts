@@ -42,11 +42,18 @@ export const POST: APIRoute = async ({ request }) => {
   }
   if (clientIp) headers.set('x-umami-client-ip', clientIp)
 
+  // text() throws when the body exceeds the adapter's bodySizeLimit in astro.config.mjs.
+  let raw: string
+  try {
+    raw = await request.text()
+  } catch {
+    return new Response('', { status: 413 })
+  }
+
   // Relay events for this site only. Otherwise anyone could send events for
   // any website id through this origin and spend its egress and, on Umami
   // Cloud, its event quota. The tracker always posts { payload: { website } },
   // so a body without this site's id is forged.
-  const raw = await request.text()
   let parsed: unknown
   try {
     parsed = JSON.parse(raw)
@@ -61,7 +68,12 @@ export const POST: APIRoute = async ({ request }) => {
   const body = pruneOverlongFields(parsed, raw)
 
   try {
-    const upstream = await fetch(COLLECT_URL, { method: 'POST', headers, body })
+    const upstream = await fetch(COLLECT_URL, {
+      method: 'POST',
+      headers,
+      body,
+      signal: AbortSignal.timeout(5_000),
+    })
     return new Response(await upstream.text(), {
       status: upstream.status,
       headers: { 'Content-Type': upstream.headers.get('content-type') ?? 'text/plain' },
