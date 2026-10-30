@@ -144,11 +144,7 @@ export default buildConfig({
         typeof doc?.path === 'string'
           ? new URL(stripLocalePath(doc.path), env.WEBSITE_URL).toString()
           : '',
-      generateTitle: ({ doc }) => {
-        if (typeof doc?.title === 'string') return doc.title
-        if (typeof doc?.name === 'string') return doc.name
-        return ''
-      },
+      generateTitle: ({ doc }) => (typeof doc?.title === 'string' ? doc.title : ''),
     }),
     formBuilderPlugin({
       fields: {

@@ -183,7 +183,7 @@ export interface Page {
   breadcrumbs: Breadcrumbs;
   template: 'default';
   title: string;
-  sections?: (RichTextBlock | ImageBlock | FormBlock | PostsListBlock | AuthorsListBlock)[] | null;
+  sections?: (RichTextBlock | ImageBlock | FormBlock | PostsListBlock)[] | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -523,49 +523,10 @@ export interface Post {
  */
 export interface Author {
   id: string;
-  slug: string;
-  parent: string | Page;
-  path: string;
-  breadcrumbs: Breadcrumbs;
   name: string;
-  role?: string | null;
-  photo?: (string | null) | Media;
-  bio?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (string | null) | Media;
-  };
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "AuthorsListBlock".
- */
-export interface AuthorsListBlock {
-  authors?: (string | Author)[] | null;
-  id?: string | null;
-  blockName?: string | null;
-  blockType: 'authorsList';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -773,7 +734,6 @@ export interface PagesSelect<T extends boolean = true> {
         image?: T | ImageBlockSelect<T>;
         form?: T | FormBlockSelect<T>;
         postsList?: T | PostsListBlockSelect<T>;
-        authorsList?: T | AuthorsListBlockSelect<T>;
       };
   meta?:
     | T
@@ -836,15 +796,6 @@ export interface PostsListBlockSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "AuthorsListBlock_select".
- */
-export interface AuthorsListBlockSelect<T extends boolean = true> {
-  authors?: T;
-  id?: T;
-  blockName?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
@@ -874,21 +825,7 @@ export interface PostsSelect<T extends boolean = true> {
  * via the `definition` "authors_select".
  */
 export interface AuthorsSelect<T extends boolean = true> {
-  slug?: T;
-  parent?: T;
-  path?: T;
-  breadcrumbs?: T | BreadcrumbsSelect<T>;
   name?: T;
-  role?: T;
-  photo?: T;
-  bio?: T;
-  meta?:
-    | T
-    | {
-        title?: T;
-        description?: T;
-        image?: T;
-      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -1203,10 +1140,6 @@ export interface Header {
           | {
               relationTo: 'posts';
               value: string | Post;
-            }
-          | {
-              relationTo: 'authors';
-              value: string | Author;
             };
         label: string;
         id?: string | null;
@@ -1234,10 +1167,6 @@ export interface Footer {
                 | {
                     relationTo: 'posts';
                     value: string | Post;
-                  }
-                | {
-                    relationTo: 'authors';
-                    value: string | Author;
                   };
               label: string;
               id?: string | null;
@@ -1262,7 +1191,6 @@ export interface Labels {
   };
   lists: {
     noPosts: string;
-    noAuthors: string;
   };
   form: {
     submit: string;
@@ -1361,7 +1289,6 @@ export interface LabelsSelect<T extends boolean = true> {
     | T
     | {
         noPosts?: T;
-        noAuthors?: T;
       };
   form?:
     | T

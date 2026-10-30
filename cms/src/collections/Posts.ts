@@ -35,7 +35,6 @@ export const Posts: PageCollectionConfig = {
       sharedDocument: true,
     },
   },
-  // authors: true uses the Authors defaultPopulate, which leaves out bio.
   defaultPopulate: {
     title: true,
     path: true,

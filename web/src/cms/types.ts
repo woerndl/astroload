@@ -1,4 +1,4 @@
-import type { Author, Page, Post } from '@astroload/cms/src/payload-types'
+import type { Page, Post } from '@astroload/cms/src/payload-types'
 import {
   isLocale,
   type Locale,
@@ -24,7 +24,7 @@ export {
   OG_LOCALE,
 } from '@astroload/cms/src/site-config'
 export { stripLocalePath, stripLocalePathsDeep } from '@astroload/cms/src/stripLocalePath'
-export type PageData = Page | Post | Author
+export type PageData = Page | Post
 
 export interface PreviewContext {
   collection: PageCollectionSlug
@@ -38,7 +38,7 @@ export function isPopulated<T extends object>(
 }
 
 type NavLink = {
-  page: { value: string | number | Page | Post | Author }
+  page: { value: string | number | Page | Post }
   label: string
 }
 

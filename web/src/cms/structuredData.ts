@@ -5,7 +5,6 @@ import type {
   Organization,
   Person,
   PostalAddress,
-  ProfilePage,
 } from 'schema-dts'
 
 type Leaf<T, K extends string> = Extract<T, { '@type': K }>
@@ -32,16 +31,6 @@ export interface OrganizationInput {
   subOrganization?: OrganizationInput[]
 }
 
-export interface PersonInput {
-  name: string
-  url?: string
-  image?: string
-  description?: string
-  sameAs?: string[]
-  jobTitle?: string
-  worksFor?: { name: string; url?: string }
-}
-
 export interface ArticleInput {
   type?: 'Article' | 'NewsArticle'
   headline: string
@@ -51,7 +40,7 @@ export interface ArticleInput {
   // ISO 8601 with a time zone offset, as Payload stores dates.
   datePublished?: string
   dateModified?: string
-  authors: { name: string; url?: string }[]
+  authors: { name: string }[]
   images?: (string | ImageObject)[]
   publisher?: Organization
 }
@@ -102,22 +91,6 @@ export function organizationLd(input: OrganizationInput): Organization {
   return organizationFields(input, { '@type': 'Organization', name: input.name })
 }
 
-export function personLd(input: PersonInput): Person {
-  const node: Leaf<Person, 'Person'> = { '@type': 'Person', name: input.name }
-  if (filled(input.url)) node.url = input.url
-  if (filled(input.image)) node.image = input.image
-  if (filled(input.description)) node.description = input.description
-  const sameAs = (input.sameAs ?? []).filter(filled)
-  if (sameAs.length > 0) node.sameAs = sameAs
-  if (filled(input.jobTitle)) node.jobTitle = input.jobTitle
-  if (input.worksFor) node.worksFor = organizationLd(input.worksFor)
-  return node
-}
-
-export function profilePageLd(input: { url: string; person: Person }): ProfilePage {
-  return { '@type': 'ProfilePage', url: input.url, mainEntity: input.person }
-}
-
 export function articleLd(input: ArticleInput): Article {
   const node = {
     '@type': input.type ?? 'Article',
@@ -130,11 +103,7 @@ export function articleLd(input: ArticleInput): Article {
   if (filled(input.datePublished)) node.datePublished = input.datePublished
   if (filled(input.dateModified)) node.dateModified = input.dateModified
   if (input.authors.length > 0) {
-    node.author = input.authors.map((author): Person => {
-      const person: Leaf<Person, 'Person'> = { '@type': 'Person', name: author.name }
-      if (filled(author.url)) person.url = author.url
-      return person
-    })
+    node.author = input.authors.map((author): Person => ({ '@type': 'Person', name: author.name }))
   }
   if (input.images && input.images.length > 0) node.image = input.images
   if (input.publisher) node.publisher = input.publisher

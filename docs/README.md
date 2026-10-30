@@ -20,7 +20,7 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 
 ### Content and CMS
 
-- Page builder with rich text, image, form, and dynamic posts/authors list blocks
+- Page builder with rich text, image, form, and posts list blocks
 - Drafts and autosave on Pages, Posts, and Authors
 - Role-based access (`admin`, `editor`) plus separate API keys for read-only and preview reads. The Astro side uses these scoped keys, so `web/.env` holds no admin-capable Payload token
 - Editor-managed Header, Footer, Labels, and SiteSettings globals
@@ -36,7 +36,7 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 
 ### Live preview
 
-- Autosave-driven preview on Pages, Posts, and Authors
+- Autosave-driven preview on Pages and Posts
 - Mobile, tablet, and desktop breakpoints preconfigured in the admin
 - Editor toolbar overlay on the standalone preview tab, hidden inside the Payload iframe
 - Preview route guarded by a shared secret with `crypto.timingSafeEqual`, served with `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, and `Referrer-Policy: no-referrer`
@@ -45,8 +45,8 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 
 - Configurable locale set (`en` and `de` by default). With more than one locale, URLs carry a `/{locale}` segment and content pages get `hreflang` plus `x-default` alternates (error and root pages carry none)
 - With a single locale the prefix is omitted, so URLs read `/about` rather than `/en/about`, and the switcher and alternates are off. A single-locale project that may add languages later can set `FORCE_URL_PREFIX` in `cms/src/site-config.ts` to keep the `/{locale}` prefix. URLs then stay the same when a locale is added and need no redirects
-- Editable SEO metadata (title, description, image) on Pages, Posts, and Authors, with fallbacks
-- JSON-LD output: `WebSite` and `Organization` on home, `Article` on posts, `Person` on authors
+- Editable SEO metadata (title, description, image) on Pages and Posts, with fallbacks
+- JSON-LD output: `WebSite` and `Organization` on home, `Article` on posts
 - Sitemaps with `lastmod`: a single sitemap for unprefixed single-locale builds, otherwise a sitemap index plus per-locale sitemaps with alternate-locale links
 - `robots.txt` controlled by a SiteSettings toggle so staging stays out of search
 - Language switcher in the header when more than one locale is configured

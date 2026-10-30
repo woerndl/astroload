@@ -7,7 +7,6 @@ import {
 } from 'payload'
 
 import { contentAccess } from '../access/contentAccess'
-import { AuthorsListBlock } from '../blocks/AuthorsListBlock'
 import { FormBlock } from '../blocks/FormBlock'
 import { ImageBlock } from '../blocks/ImageBlock'
 import { PostsListBlock } from '../blocks/PostsListBlock'
@@ -210,7 +209,7 @@ export const Pages: PageCollectionConfig = {
     {
       name: 'sections',
       type: 'blocks',
-      blocks: [RichTextBlock, ImageBlock, FormBlock, PostsListBlock, AuthorsListBlock],
+      blocks: [RichTextBlock, ImageBlock, FormBlock, PostsListBlock],
       admin: { condition: (data) => !data?.template || data.template === 'default' },
     },
   ],

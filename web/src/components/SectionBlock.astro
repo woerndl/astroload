@@ -2,7 +2,6 @@
 import type { Labels, Page } from '@astroload/cms/src/payload-types'
 
 import type { Locale } from '../cms/types'
-import AuthorsListBlock from './blocks/AuthorsListBlock.astro'
 import FormBlock from './blocks/FormBlock.astro'
 import ImageBlock from './blocks/ImageBlock.astro'
 import PostsListBlock from './blocks/PostsListBlock.astro'
@@ -18,16 +17,9 @@ const renderers = {
   image: ImageBlock,
   form: FormBlock,
   postsList: PostsListBlock,
-  authorsList: AuthorsListBlock,
 } satisfies Record<Section['blockType'], unknown>
 
-const {
-  richText: RichText,
-  image: Image,
-  form: Form,
-  postsList: PostsList,
-  authorsList: AuthorsList,
-} = renderers
+const { richText: RichText, image: Image, form: Form, postsList: PostsList } = renderers
 
 interface Props {
   block: Section
@@ -43,7 +35,4 @@ const { block, lang, labels } = Astro.props
 {block.blockType === 'form' && <Form {...block} labels={labels.form} />}
 {block.blockType === 'postsList' && (
   <PostsList {...block} lang={lang} emptyLabel={labels.lists.noPosts} />
-)}
-{block.blockType === 'authorsList' && (
-  <AuthorsList {...block} emptyLabel={labels.lists.noAuthors} />
 )}

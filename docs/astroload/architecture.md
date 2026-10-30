@@ -190,7 +190,7 @@ ones that show up most in this starter:
   scoping are explicit.
 - A more involved editor preview. The in-process iframe preview that
   Payload + Next.js has by default takes extra work here. Astroload pairs Payload
-  autosave (on Pages, Posts, and Authors) with an iframe reload, plus a
+  autosave (on Pages and Posts) with an iframe reload, plus a
   standalone `/preview` SSR route for sharing draft URLs. Updates appear
   after each autosave cycle. That is slower than a single-process setup
   and fast enough for editorial work.

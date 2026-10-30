@@ -30,7 +30,7 @@ export const Labels: GlobalConfig = {
     {
       name: 'lists',
       type: 'group',
-      fields: [labelField('noPosts'), labelField('noAuthors')],
+      fields: [labelField('noPosts')],
     },
     {
       name: 'form',

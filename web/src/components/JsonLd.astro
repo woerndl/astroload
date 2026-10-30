@@ -3,13 +3,7 @@ import type { Author, SiteSetting } from '@astroload/cms/src/payload-types'
 import type { Distance, ImageObject, Thing, WebPage, WebSite } from 'schema-dts'
 
 import type { PageByPathResult } from '../cms/getPageByPath'
-import {
-  articleLd,
-  jsonLdText,
-  organizationLd,
-  personLd,
-  profilePageLd,
-} from '../cms/structuredData'
+import { articleLd, jsonLdText, organizationLd } from '../cms/structuredData'
 import { isPopulated, type Locale } from '../cms/types'
 import { absoluteSiteURL, versionedMediaURL } from '../cms/urls'
 import { localePath } from '../lib/localePath'
@@ -86,24 +80,11 @@ if (isHome) {
       inLanguage: lang,
       datePublished: post.publishedAt ?? undefined,
       dateModified: post.updatedAt,
-      authors: authors.map((a) => ({
-        name: a.name,
-        url: a.path ? absoluteSiteURL(a.path) : undefined,
-      })),
+      authors: authors.map((a) => ({ name: a.name })),
       images: image ? [image] : [],
       publisher: organization,
     }),
   )
-} else if (result.collection === 'authors') {
-  const author = result.data
-  const photo = isPopulated(author.photo) ? author.photo : null
-  const person = personLd({
-    name: author.name,
-    url: pageURL,
-    image: mediaURL(photo),
-    jobTitle: author.role ?? undefined,
-  })
-  graph.push(profilePageLd({ url: pageURL, person }))
 } else if (result.collection === 'pages') {
   const webPage: WebPage = {
     '@type': 'WebPage',

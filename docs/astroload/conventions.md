@@ -537,10 +537,8 @@ logo and the date of the last change of a post:
 - Home page: `WebSite`, and `Organization` with name, url and logo (the
   default SEO image of the site settings).
 - Post: `Article` with headline, excerpt, publication date, date of the
-  last change (`updatedAt`), author names and author page URLs, the cover
-  image, and the organization as publisher.
-- Author page: `ProfilePage` whose `mainEntity` is a `Person` with name,
-  url, photo and role.
+  last change (`updatedAt`), author names, the cover image, and the
+  organization as publisher.
 - Other pages: `WebPage`.
 
 The component writes the graph with `jsonLdText`, which escapes only `<`.
@@ -553,7 +551,6 @@ project passes more inputs to a builder, it shows that data on the page:
 | Builder | Show first |
 |---|---|
 | `organizationLd`: `legalName`, `vatID`, `foundingDate`, `address`, `contactPoint`, `sameAs`, `subOrganization` | the values, for example in the footer or on the imprint page, from new site settings fields |
-| `personLd`: `sameAs`, `worksFor`, `description` | profile links, the employer, and a plain text version of the bio for `description` |
 | `articleLd`: `dateModified` | nothing. It is the one exception: Google's [Article structured data](https://developers.google.com/search/docs/appearance/structured-data/article) recommends `dateModified`, and the post page does not need to show it |
 | `articleLd`: more images | Google asks for 16:9, 4:3 and 1:1 crops of at least 50,000 pixels each. Media makes one 1200 by 630 `og` crop. Add `imageSizes` entries in `cms/src/collections/Media.ts`. Existing uploads get the new crops only when their file is uploaded again, or cropped, resized or given a new focal point in the admin image editor |
 

@@ -16,7 +16,7 @@ export const isLocale = (value: unknown): value is Locale =>
 // that skip the validator, such as imports, seeds, and autosaved drafts.
 export const ALLOWED_LINK_SCHEMES = ['http:', 'https:', 'mailto:', 'tel:']
 
-export const pageCollectionsSlugs = ['pages', 'posts', 'authors'] as const
+export const pageCollectionsSlugs = ['pages', 'posts'] as const
 
 export type PageCollectionSlug = (typeof pageCollectionsSlugs)[number]
 
@@ -72,7 +72,7 @@ export const navLinkFields: Field[] = [
   {
     name: 'page',
     type: 'relationship',
-    relationTo: ['pages', 'posts', 'authors'],
+    relationTo: ['pages', 'posts'],
     required: true,
   },
   {

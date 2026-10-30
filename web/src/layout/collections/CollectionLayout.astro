@@ -2,7 +2,6 @@
 import type { PageByPathResult } from '../../cms/getPageByPath'
 import type { Locale, LocalePaths } from '../../cms/types'
 
-import AuthorLayout from './AuthorLayout.astro'
 import PageLayout from './PageLayout.astro'
 import PostLayout from './PostLayout.astro'
 
@@ -19,8 +18,6 @@ const previewCtx = preview ? { collection: result.collection, id: result.data.id
 
 {result.collection === 'pages' ? (
   <PageLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
-) : result.collection === 'posts' ? (
-  <PostLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
 ) : (
-  <AuthorLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
+  <PostLayout result={result} lang={lang} paths={paths} preview={previewCtx} />
 )}

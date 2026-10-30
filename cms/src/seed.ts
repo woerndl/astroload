@@ -45,8 +45,8 @@ const configuredLocale = (code: string): Locale | null =>
   (LOCALES as readonly string[]).includes(code) ? (code as Locale) : null
 
 // Globals go first so their relationships do not keep pages or media. The
-// pages plugin blocks deleting a parent that still has children, so posts and
-// authors go before pages, and non-root pages before the root page. Users and
+// pages plugin blocks deleting a parent that still has children, so posts go
+// before pages, and non-root pages before the root page. Users and
 // API keys are cleared too, so the reseed does not collide with existing keys.
 async function clearAll(payload: Payload): Promise<void> {
   const all: Where = { id: { exists: true } }
@@ -127,7 +127,6 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
   }
 
   const heroImage = await createMedia('Platzhalterbild', 'Placeholder image')
-  const authorPhoto = await createMedia('Autorenfoto', 'Author photo')
 
   payload.logger.info('Seed: creating contact form')
   // The plugin localizes submitButtonLabel, confirmationMessage, and each
@@ -342,7 +341,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       }),
     })
 
-  payload.logger.info('Seed: creating posts and authors parent pages')
+  payload.logger.info('Seed: creating posts parent page')
   const postsParentDe = await payload.create({
     collection: 'pages',
     locale: baseLocale,
@@ -383,71 +382,15 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       }),
     })
 
-  const authorsParentDe = await payload.create({
-    collection: 'pages',
-    locale: baseLocale,
-    data: seedData({
-      title: 'Autoren',
-      slug: 'authors',
-      sections: [
-        {
-          blockType: 'richText',
-          text: richText('Wer schreibt hier eigentlich.'),
-        },
-        {
-          blockType: 'authorsList',
-        },
-      ],
-      _status: 'published',
-    }),
-  })
-  if (en)
-    await payload.update({
-      collection: 'pages',
-      id: authorsParentDe.id,
-      locale: en,
-      data: seedData({
-        title: 'Authors',
-        slug: 'authors',
-        sections: [
-          {
-            id: authorsParentDe.sections![0]!.id,
-            blockType: 'richText',
-            text: richText('Meet the people writing here.'),
-          },
-          {
-            id: authorsParentDe.sections![1]!.id,
-            blockType: 'authorsList',
-          },
-        ],
-      }),
-    })
-
   payload.logger.info('Seed: creating author')
   const authorDe = await payload.create({
     collection: 'authors',
     locale: baseLocale,
     data: seedData({
       name: 'Sam Houston',
-      slug: 'sam-houston',
-      parent: authorsParentDe.id,
-      role: 'Redakteur',
-      photo: authorPhoto.id,
-      bio: richText('Sam schreibt über Web, Performance und CMS-Architektur.'),
       _status: 'published',
     }),
   })
-  if (en)
-    await payload.update({
-      collection: 'authors',
-      id: authorDe.id,
-      locale: en,
-      data: seedData({
-        slug: 'sam-houston',
-        role: 'Editor',
-        bio: richText('Sam writes about the web, performance, and CMS architecture.'),
-      }),
-    })
 
   payload.logger.info('Seed: creating post')
   const postDe = await payload.create({
@@ -545,10 +488,7 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         },
         {
           heading: 'Inhalte',
-          links: [
-            { page: { relationTo: 'pages', value: postsParentDe.id }, label: 'Beiträge' },
-            { page: { relationTo: 'pages', value: authorsParentDe.id }, label: 'Autoren' },
-          ],
+          links: [{ page: { relationTo: 'pages', value: postsParentDe.id }, label: 'Beiträge' }],
         },
       ],
       copyright: `© ${year} ${SITE_NAME}`,
@@ -585,11 +525,6 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
                 page: { relationTo: 'pages', value: postsParentDe.id },
                 label: 'Posts',
               },
-              {
-                id: footerDe.columns![1]!.links![1]!.id,
-                page: { relationTo: 'pages', value: authorsParentDe.id },
-                label: 'Authors',
-              },
             ],
           },
         ],
@@ -607,7 +542,6 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
       },
       lists: {
         noPosts: 'Noch keine Beiträge.',
-        noAuthors: 'Noch keine Autoren.',
       },
       form: {
         submit: 'Senden',
@@ -641,7 +575,6 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         },
         lists: {
           noPosts: 'No posts yet.',
-          noAuthors: 'No authors yet.',
         },
         form: {
           submit: 'Submit',
