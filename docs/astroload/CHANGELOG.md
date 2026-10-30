@@ -8,6 +8,40 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-10-30
+
+### Fixed
+
+- A form submission whose form id has the wrong type for the database adapter, or whose JSON body is not an object, gets the generic 400. Before, both got a 500.
+- `FormBlock.astro` posts to `/api/form-submissions?locale=<page locale>`, so a form’s emails use its subject and message in the page’s language. `SectionBlock.astro` passes the new `lang` prop.
+  - **Upgrade notes:** A project that renders `FormBlock.astro` outside `SectionBlock.astro` passes `lang`, as `styleguide.astro` does. A project with its own copy of `FormBlock.astro` adds the prop and the `locale` query.
+- After a successful submission, focus moves to the confirmation message.
+  - **Upgrade notes:** A project with its own copy of `FormBlock.astro` adds `tabindex="-1"` to the `[data-confirmation]` element and calls `confirmation.focus()` after it shows the message.
+- A posts list leaves out a post that has no page in the current locale. Before, the post showed as a link without an `href`.
+- Rich text shows heading sizes, list markers and underlined links. `LexicalContent.astro` wraps its output in an element with the class `rich-text`, and `styles.css` styles that element and spaces its children.
+  - **Upgrade notes:** A project with its own copy of `LexicalContent.astro` adds the `rich-text` class. A project whose CSS targets rich text paragraphs as direct children of `.page-sections` targets `.rich-text > *` instead.
+- The skip link target `main` shows no focus ring.
+- A forced reseed deletes page trees of any depth. Before, a page with children below the root page could stop the reseed with an error.
+- A build with locale prefixes and without `CMS_URL` fails with an error that names `CMS_URL`.
+- `scripts/locale-prefix.mjs` accepts a link to a built page whose slug equals its locale, such as `/de/de`.
+
+### Changed
+
+- Post titles in a posts list are `h2` headings.
+  - **Upgrade notes:** A project whose CSS or tests select `h3` in `PostsListBlock.astro` selects `h2`.
+- The root `.gitignore` holds the rules of the deleted `cms/.gitignore`. It ignores all of `.vscode/` and no longer lists `deploy/*.env` or `.internal-notes/`. `.dockerignore` no longer lists `deploy`.
+  - **Upgrade notes:** Delete `cms/.gitignore` after the merge. A project that deploys with its copy of `deploy/docker-compose.production.yml` keeps `deploy/*.env` in `.gitignore` and `deploy` in `.dockerignore`, so its secrets stay out of git and out of the images. A project that commits `.vscode/extensions.json` or `.vscode/settings.json` keeps their exceptions.
+- The end-to-end tests read more values from the CMS. `drafts.e2e.ts` reads the draft title and the translation path of the untranslated page with the preview key, so a project may change the seeded titles and the translation slug. `deploy-hook.e2e.ts` waits up to five minutes for a POST that the deploy throttle holds back, so a rerun needs no CMS restart. It does not check the request body, so it passes with a custom `DEPLOY_HOOK_BODY`. `redirects.e2e.ts` requests and expects the public paths, so it passes in a project without locale prefixes. `forms.e2e.ts` also checks a numeric form id, a JSON body that is not an object, and the focus on the confirmation.
+  - **Upgrade notes:** A project with its own copies of these tests takes the new versions. `deploy-hook.e2e.ts` can take up to 5.5 minutes.
+- The docs give `SEED_FORCE=1 pnpm --filter ./cms seed` for a reseed, and the scratch script example does not print the database URI. `cms/.env.example` does not ask for bucket CORS, because uploads go through the CMS.
+
+### Removed
+
+- The `--force` flag of the seed script.
+  - **Upgrade notes:** A script that passes `--force` sets `SEED_FORCE=1` instead.
+- The exports `escapeXml` from `web/src/cms/sitemap.ts` and `USE_CACHE_HEADER` from `web/src/cms/sdk/cachedFetch.ts`. Only their own modules read them.
+  - **Upgrade notes:** A project that imports one exports it again in its copy.
+
 ## [0.10.0] - 2026-10-30
 
 ### Added
@@ -41,8 +75,8 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ### Removed
 
-- `staleOnError`, `formatNumber`, `findPublicDocs`, `dateOnlyField`, `DATE_ONLY_FORMAT`, the `AddressInput` type, the `organizationLd` inputs other than `name`, `url` and `logo`, and the JSON-LD builders `localBusinessLd`, `localBusinessWarnings`, `jobPostingLd`, `eventLd` and `breadcrumbListLd`, with their tests. No starter code used them.
-  - **Upgrade notes:** Run `rg -n "staleOnError|formatNumber|findPublicDocs|dateOnlyField|DATE_ONLY_FORMAT|AddressInput|localBusinessLd|localBusinessWarnings|jobPostingLd|eventLd|breadcrumbListLd" cms/src web/src`. A project that calls one keeps its copy. A project that passes `organizationLd` more inputs than `name`, `url` and `logo` keeps its copy of the builder. A `findPublicDocs(...)` call becomes `payloadSDK.find(...)` with the docs passed through `stripLocalePathsDeep`, as in `getPageData.ts`.
+- `staleOnError`, `formatNumber`, `findPublicDocs`, `dateOnlyField`, `DATE_ONLY_FORMAT`, the `AddressInput`, `LocalBusinessInput`, `JobPostingInput` and `EventInput` types, the `organizationLd` inputs other than `name`, `url` and `logo`, and the JSON-LD builders `localBusinessLd`, `localBusinessWarnings`, `jobPostingLd`, `eventLd` and `breadcrumbListLd`, with their tests. No starter code used them.
+  - **Upgrade notes:** Run `rg -n "staleOnError|formatNumber|findPublicDocs|dateOnlyField|DATE_ONLY_FORMAT|AddressInput|LocalBusinessInput|JobPostingInput|EventInput|localBusinessLd|localBusinessWarnings|jobPostingLd|eventLd|breadcrumbListLd" cms/src web/src`. A project that calls one keeps its copy. A project that passes `organizationLd` more inputs than `name`, `url` and `logo` keeps its copy of the builder. A `findPublicDocs(...)` call becomes `payloadSDK.find(...)` with the docs passed through `stripLocalePathsDeep`, as in `getPageData.ts`.
 - `loadPageResult`.
   - **Upgrade notes:** A project that calls it calls `loadCatchAllPage` instead, as `index.astro` does.
 - The public author page (`AuthorLayout.astro`) and the authors list block (`AuthorsListBlock` in the CMS and the web app). `Authors` keeps a `name` for post bylines and its drafts, without a path, parent, SEO fields, role, photo or bio. Header and footer links can no longer point to an author, and the rich text link picker does not offer Authors. The Article JSON-LD names each author without a `url`. `personLd`, `profilePageLd` and the `noAuthors` label are gone. The demo seed has no authors page and no footer link to it.
