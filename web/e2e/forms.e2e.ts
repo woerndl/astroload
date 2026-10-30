@@ -87,7 +87,8 @@ test('a visitor submits a form in the browser, only panel users read the stored 
   // The spam guard rejects a submission sent less than 1.5 s after the form script started.
   await page.waitForTimeout(1_600)
   const posted = page.waitForResponse(
-    (res) => res.url().endsWith('/api/form-submissions') && res.request().method() === 'POST',
+    (res) =>
+      new URL(res.url()).pathname === '/api/form-submissions' && res.request().method() === 'POST',
   )
   await page.getByRole('button', { name: 'Send' }).click()
   const created = await posted
@@ -96,6 +97,7 @@ test('a visitor submits a form in the browser, only panel users read the stored 
   cleanup(() => admin.delete(url))
   expect(created.headers()['access-control-allow-origin']).toBe(env.websiteUrl)
   await expect(confirmation).toBeVisible()
+  await expect(page.locator('[data-confirmation]')).toBeFocused()
   await expect(page.locator('form[data-form-id]')).toBeHidden()
 
   const editor = { email: `e2e-editor-${Date.now()}@example.com`, password: 'e2e-editor-1234' }
@@ -161,6 +163,7 @@ test('the spam guard and the submission validator reject forged POSTs with 400',
     'unchecked required checkbox': () =>
       submission(checkboxForm.id, [{ field: 'consent', value: 'false' }]),
     'duplicate field name': () => submission(formId, [...FIELDS, FIELDS[0]!]),
+    'numeric form id': () => ({ ...submission(formId), form: 12 }),
   }
   for (const [name, data] of Object.entries(forged)) {
     const res = await cms.post('/api/form-submissions', { headers: fromSite, data: data() })
@@ -176,6 +179,11 @@ test('the spam guard and the submission validator reject forged POSTs with 400',
     form: { form: formId, name: 'x' },
   })
   expect(formEncoded.status(), 'form-encoded body').toBe(400)
+  const primitive = await cms.post('/api/form-submissions', {
+    headers: { ...fromSite, 'Content-Type': 'application/json' },
+    data: '"x"',
+  })
+  expect(primitive.status(), 'primitive JSON body').toBe(400)
 })
 
 test('the CORS preflight allows the web app origin and no other origin', async ({ cms }) => {

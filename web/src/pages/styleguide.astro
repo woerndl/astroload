@@ -7,6 +7,7 @@ import FormBlock from '../components/blocks/FormBlock.astro'
 import LayerOrder from '../components/LayerOrder.astro'
 import MainContent from '../components/MainContent.astro'
 import SkipLink from '../components/SkipLink.astro'
+import { DEFAULT_LOCALE } from '../cms/types'
 import { CONTENT_COLUMN_SIZES } from '../layout/contentColumn'
 import '../styles/styles.css'
 
@@ -67,6 +68,7 @@ const form: Form = {
         <h2 class="heading">Form</h2>
         <FormBlock
           form={form}
+          lang={DEFAULT_LOCALE}
           labels={{ submit: 'Submit', sending: 'Sending', error: 'Submission failed.' }}
         />
       </section>

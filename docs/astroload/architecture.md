@@ -165,9 +165,8 @@ breadcrumbs, SEO meta, preview URL), so a page laid out in code still
 loads its identity from a document.
 
 A project has started rebuilding the plugin in code when page copy moves
-into globals while placeholder Pages docs keep the routes alive, when
-SEO fields render in no template, or when a guard locks an editable slug
-field to a constant in code. Each of these takes part of the page's
+into globals while placeholder Pages docs keep the routes alive, or when
+SEO fields render in no template. Each of these takes part of the page's
 identity away from its document. Put it back on the document and keep
 only layout in code.
 

@@ -83,9 +83,6 @@ const commits = git(up, 'log', '--reverse', '--format=%H\x1f%s', `${base}..${tar
     return {
       sha,
       subject,
-      // One git call per commit and two or three per file below. This is fast
-      // enough for tens of commits. Switch to `git cat-file --batch-check` if it
-      // gets slow.
       files: parseNameStatus(
         git(up, 'diff-tree', '-r', '-M', '--no-commit-id', '--name-status', sha),
       ),

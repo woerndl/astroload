@@ -23,7 +23,8 @@ renderer or extend the field config.
 
 The bundled `<script>` builds a JSON payload of the shape
 `{ form: <id>, submissionData: [...] }` and POSTs it to
-`${CMS_URL}/api/form-submissions`. The script:
+`${CMS_URL}/api/form-submissions?locale=<page locale>`, so the form's emails
+use the page's language. The script:
 
 - Captures `Date.now()` at attach time and includes it in the payload as
   `_rendered_at`. The stamp is generated in the browser, not at render

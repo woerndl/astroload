@@ -8,20 +8,21 @@ dist/
 build/
 .next/
 .output/
+*.tsbuildinfo
+next-env.d.ts
 
 # Environment
 .env
 .env.local
 .env.*.local
 !.env.example
+*.pem
 
 # Editor / OS
 .DS_Store
 .claude/
 .idea/
 .vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
 *.swp
 *.swo
 
@@ -36,9 +37,6 @@ yarn-error.log*
 coverage/
 .nyc_output/
 
-# Runtime env for the production compose scaffold
-deploy/*.env
-
 # Payload
 cms/media/
 
@@ -49,6 +47,3 @@ cms/src/scripts/scratch/*
 # Misc
 .turbo/
 .cache/
-
-# Internal notes (working files, legacy ADRs, decision records)
-.internal-notes/

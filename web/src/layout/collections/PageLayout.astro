@@ -53,9 +53,7 @@ const { labels } = await getGlobalData({
       margin-top: 2rem;
     }
 
-    /* A rich text section renders its paragraphs without a wrapper, so this
-       rule spaces every direct child. :where() keeps the specificity at zero,
-       so a block's own margin wins. */
+    /* :where() keeps the specificity at zero, so a block's own margin wins. */
     :global(:where(.page-sections > :not(:last-child))) {
       margin-block-end: 1.5rem;
     }

@@ -47,8 +47,9 @@ in production sitemaps.
 To swap the default, or to change which locales ship, edit
 `site-config.ts`, then regenerate the CMS types
 (`pnpm --filter ./cms generate:types`) so the generated `locale`
-union tracks the new set. Four maps take an entry per locale, three in
-`site-config.ts` and one in `web/src/layout/shellLabels.ts`. A locale
+union tracks the new set. Five maps take an entry per locale: three in
+`site-config.ts`, one in `web/src/layout/shellLabels.ts` and the fallback
+copy in `web/src/layout/ErrorPage.astro`. A locale
 without an `OG_LOCALE` entry emits no `og:locale` tag.
 
 By default a project carries the `/{locale}` URL prefix only when it ships more

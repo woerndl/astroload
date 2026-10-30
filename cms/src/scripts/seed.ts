@@ -3,7 +3,7 @@ import { getPayload } from 'payload'
 import config from '../payload.config'
 import { seedCMS } from '../seed'
 
-const force = process.argv.includes('--force') || process.env.SEED_FORCE === '1'
+const force = process.env.SEED_FORCE === '1'
 
 const payload = await getPayload({ config })
 

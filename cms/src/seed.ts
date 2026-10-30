@@ -46,8 +46,8 @@ const configuredLocale = (code: string): Locale | null =>
 
 // Globals go first so their relationships do not keep pages or media. The
 // pages plugin blocks deleting a parent that still has children, so posts go
-// before pages, and non-root pages before the root page. Users and
-// API keys are cleared too, so the reseed does not collide with existing keys.
+// before pages. Users and API keys are cleared too, so the reseed does not
+// collide with existing keys.
 async function clearAll(payload: Payload): Promise<void> {
   const all: Where = { id: { exists: true } }
 
@@ -61,11 +61,16 @@ async function clearAll(payload: Payload): Promise<void> {
     data: seedData({ siteName: SITE_NAME, defaultSeo: { image: null } }),
   })
 
-  // Bulk deletes report per-document errors instead of rejecting. Abort on
-  // any, or the create pass collides with leftovers (a second root page,
-  // api-key uniqueness) or duplicates content.
-  const deleteAll = async (collection: CollectionSlug, where: Where = all) => {
-    const result = await payload.delete({ collection, where })
+  // Bulk deletes report per-document errors instead of rejecting. A pass that
+  // deleted something runs again, because a parent page stays until its
+  // children are gone. Abort on errors that remain, or the create pass
+  // collides with leftovers (a second root page, api-key uniqueness) or
+  // duplicates content.
+  const deleteAll = async (collection: CollectionSlug) => {
+    let result = await payload.delete({ collection, where: all })
+    while (result.errors.length > 0 && result.docs.length > 0) {
+      result = await payload.delete({ collection, where: all })
+    }
     if (result.errors.length > 0) {
       const detail = result.errors.map((e) => `${e.id}: ${e.message}`).join('; ')
       throw new Error(
@@ -76,7 +81,6 @@ async function clearAll(payload: Payload): Promise<void> {
 
   await deleteAll('posts')
   await deleteAll('authors')
-  await deleteAll('pages', { isRootPage: { not_equals: true } })
   await deleteAll('pages')
   await deleteAll('redirects')
   await deleteAll('form-submissions')

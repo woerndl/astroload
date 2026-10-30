@@ -26,7 +26,7 @@ import config from '../../payload.config'
 // only when you mean to touch a remote database.
 const uri = process.env.DATABASE_URI ?? ''
 if (!/\/\/(?:[^/@]+@)?(?:127\.0\.0\.1|localhost)[:/]/.test(uri) && process.env.ALLOW_DEPLOYED_SCRATCH !== '1') {
-  throw new Error(`Refusing to run against ${uri}. Set ALLOW_DEPLOYED_SCRATCH=1 to override.`)
+  throw new Error('Refusing to run against a remote DATABASE_URI. Set ALLOW_DEPLOYED_SCRATCH=1 to override.')
 }
 
 const payload = await getPayload({ config })

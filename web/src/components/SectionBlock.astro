@@ -32,7 +32,7 @@ const { block, lang, labels } = Astro.props
 
 {block.blockType === 'richText' && <RichText {...block} />}
 {block.blockType === 'image' && <Image {...block} />}
-{block.blockType === 'form' && <Form {...block} labels={labels.form} />}
+{block.blockType === 'form' && <Form {...block} labels={labels.form} lang={lang} />}
 {block.blockType === 'postsList' && (
   <PostsList {...block} lang={lang} emptyLabel={labels.lists.noPosts} />
 )}

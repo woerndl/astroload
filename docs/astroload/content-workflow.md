@@ -75,7 +75,7 @@ script's values. A script that may run again once editors manage the
 content must either skip documents that already exist or write only empty
 fields.
 `cms/src/scripts/seed.ts` is the worked example: re-running it skips once
-users exist, and `--force` or `SEED_FORCE=1` clears the seeded collections,
+users exist, and `SEED_FORCE=1` clears the seeded collections,
 users and API keys included, and recreates the demo content. The auth
 bootstrap (admin user and API keys) is in `cms/src/seedAuth.ts` with its own
 script entry

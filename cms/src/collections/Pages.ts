@@ -107,7 +107,7 @@ const guardTemplatedPage: CollectionBeforeValidateHook = async ({
   return data
 }
 
-async function requirePublishedParent(parent: string, req: PayloadRequest) {
+async function requirePublishedParent(parent: string, collection: string, req: PayloadRequest) {
   const { totalDocs } = await req.payload.count({
     collection: 'pages',
     where: { id: { equals: parent }, _status: { equals: 'published' } },
@@ -115,7 +115,7 @@ async function requirePublishedParent(parent: string, req: PayloadRequest) {
   })
   if (totalDocs > 0) return
   throw new ValidationError({
-    collection: 'pages',
+    collection,
     errors: [{ path: 'parent', message: 'Publish the parent page first.' }],
     req,
   })
@@ -123,32 +123,32 @@ async function requirePublishedParent(parent: string, req: PayloadRequest) {
 
 async function refusePublishedChildren(id: string, req: PayloadRequest) {
   const where = { parent: { equals: id }, _status: { equals: 'published' } }
-  const counts = await Promise.all(
-    pageCollectionsSlugs.map((collection) => req.payload.count({ collection, where, req })),
-  )
-  if (counts.every(({ totalDocs }) => totalDocs === 0)) return
-  throw new APIError(
-    'This page has published children. Unpublish them or move them to another parent first.',
-    400,
-  )
+  for (const collection of pageCollectionsSlugs) {
+    const { totalDocs } = await req.payload.count({ collection, where, req })
+    if (totalDocs === 0) continue
+    throw new APIError(
+      'This page has published children. Unpublish them or move them to another parent first.',
+      400,
+    )
+  }
 }
 
 // The pages plugin copies a child's breadcrumbs from the parent's main
 // document, which only a publish or an unpublish changes.
 export const guardPublishedParent: CollectionBeforeValidateHook = async (args) => {
-  const { data, originalDoc, operation, context, req } = args
+  const { collection, data, originalDoc, operation, context, req } = args
   if (context?.seed || (context?.isRestoringVersion && context.draftSave)) return data
   if (data?._status !== undefined && data._status !== 'draft' && data._status !== 'published') {
     throw new APIError('The status must be draft or published.', 400)
   }
   if (operation === 'update' && originalDoc && unpublishes(args)) {
-    await refusePublishedChildren(String(originalDoc.id), req)
+    if (collection.slug === 'pages') await refusePublishedChildren(String(originalDoc.id), req)
     return data
   }
   const status = context?.draftSave ? data?._status : (data?._status ?? originalDoc?._status)
   if (status !== 'published') return data
   const parent = relationId(data?.parent !== undefined ? data.parent : originalDoc?.parent)
-  if (parent) await requirePublishedParent(parent, req)
+  if (parent) await requirePublishedParent(parent, collection.slug, req)
   return data
 }
 

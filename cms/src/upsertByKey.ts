@@ -4,8 +4,6 @@ import type { Locale, PageTemplate } from './shared'
 
 interface UpsertByKeyArgs<T extends CollectionSlug> {
   collection: T
-  // Must match at most one document, e.g. { slug: { equals: 'kontakt' } }.
-  // More than one match throws.
   where: Where
   data: Partial<DataFromCollectionSlug<T>>
   locale?: Locale
@@ -23,8 +21,6 @@ export async function upsertByKey<T extends CollectionSlug>(
   payload: Payload,
   { collection, where, data, locale, context }: UpsertByKeyArgs<T>,
 ): Promise<DataFromCollectionSlug<T>> {
-  // The calls set overrideAccess explicitly, so they do not depend on the Local
-  // API default.
   const existing = await payload.find({
     collection,
     where,
@@ -42,8 +38,7 @@ export async function upsertByKey<T extends CollectionSlug>(
     )
   }
 
-  // Payload's generated create and update types do not fit partial per-locale
-  // writes. seed.ts uses the same cast in seedData.
+  // Payload's generated create and update types do not fit partial per-locale writes.
   const match = existing.docs[0]
   if (match) {
     return payload.update({

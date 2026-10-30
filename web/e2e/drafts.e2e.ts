@@ -3,11 +3,8 @@ import { DEFAULT_LOCALE, LOCALES } from '@astroload/cms/src/site-config.ts'
 import { expect, prefix, previewKey, readKey, test } from './fixtures'
 
 // The seed publishes /<default locale>/untranslated with an unpublished edit,
-// and with a second locale an unpublished translation at the slug
-// unpublished-translation.
+// and with a second locale an unpublished translation.
 const other = LOCALES.find((code) => code !== DEFAULT_LOCALE)
-const EDIT = 'Unpublished edit'
-const DRAFT = 'Unpublished translation'
 
 test('a page with a published child can be neither unpublished nor deleted', async ({
   admin,
@@ -33,12 +30,21 @@ test('a page with a published child can be neither unpublished nor deleted', asy
 
 test.describe('the seeded page with unpublished changes', () => {
   let id: string
+  const drafts: { locale: string; path: string; title: string }[] = []
 
-  test.beforeAll(async ({ admin }) => {
+  test.beforeAll(async ({ admin, cms }) => {
     const res = await admin.get('/api/pages?where[slug][equals]=untranslated')
     await expect(res).toBeOK()
     id = (await res.json()).docs[0]?.id
     expect(id, 'no page has the slug untranslated. Reseed with SEED_FORCE=1').toBeTruthy()
+    for (const locale of other ? [DEFAULT_LOCALE, other] : [DEFAULT_LOCALE]) {
+      const draft = await cms.get(`/api/pages/${id}?locale=${locale}&draft=true`, {
+        headers: previewKey,
+      })
+      await expect(draft).toBeOK()
+      const { path, title } = await draft.json()
+      drafts.push({ locale, path, title })
+    }
   })
 
   test('the built site and its sitemaps leave out an unpublished edit and translation', async ({
@@ -47,32 +53,31 @@ test.describe('the seeded page with unpublished changes', () => {
     const page = await web.get(`${prefix}/untranslated`)
     await expect(page).toBeOK()
     const html = await page.text()
-    expect(html).not.toContain(EDIT)
+    expect(html).not.toContain(drafts[0]!.title)
     const own = await web.get(`${prefix}/sitemap.xml`)
     await expect(own).toBeOK()
     expect(await own.text()).toContain(`${prefix}/untranslated</loc>`)
     if (!other) return
-    expect(html).not.toContain('unpublished-translation')
-    expect((await web.get(`/${other}/unpublished-translation`)).status()).toBe(404)
+    const { path } = drafts[1]!
+    expect(html).not.toContain(path)
+    expect((await web.get(path)).status()).toBe(404)
     const translated = await web.get(`/${other}/sitemap.xml`)
     await expect(translated).toBeOK()
-    expect((await own.text()) + (await translated.text())).not.toContain('unpublished-translation')
+    expect((await own.text()) + (await translated.text())).not.toContain(path)
   })
 
   test('only the preview key reads the unpublished edit and translation, and only panel users read version history', async ({
     cms,
     admin,
   }) => {
-    const drafts: [string, string, string][] = [[DEFAULT_LOCALE, 'untranslated', EDIT]]
-    if (other) drafts.push([other, 'unpublished-translation', DRAFT])
-    for (const [locale, slug, title] of drafts) {
+    for (const { locale, path: draftPath, title } of drafts) {
       // A draft read from the read-only key runs as a published read.
       const draft = await cms.get(`/api/pages/${id}?locale=${locale}&draft=true`, {
         headers: readKey,
       })
       await expect(draft).toBeOK()
       expect((await draft.json()).title, locale).not.toBe(title)
-      const path = `/api/page-by-path?path=/${locale}/${slug}&preview=true`
+      const path = `/api/page-by-path?path=${draftPath}&preview=true`
       expect((await cms.get(path, { headers: readKey })).status(), locale).toBe(403)
       const preview = await cms.get(path, { headers: previewKey })
       await expect(preview).toBeOK()

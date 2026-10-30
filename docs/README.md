@@ -23,7 +23,7 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 - Page builder with rich text, image, form, and posts list blocks
 - Drafts and autosave on Pages, Posts, and Authors
 - Role-based access (`admin`, `editor`) plus separate API keys for read-only and preview reads. The Astro side uses these scoped keys, so `web/.env` holds no admin-capable Payload token
-- Editor-managed Header, Footer, Labels, and SiteSettings globals
+- Header, Footer, Labels, and SiteSettings globals that editors manage
 - Seed script for an admin user, API keys, and demo content
 
 ### Frontend rendering
@@ -36,7 +36,7 @@ Astroload is an Astro 7 + Payload CMS starter template, built as a pnpm workspac
 
 ### Live preview
 
-- Autosave-driven preview on Pages and Posts
+- Preview on Pages and Posts, updated on each autosave
 - Mobile, tablet, and desktop breakpoints preconfigured in the admin
 - Editor toolbar overlay on the standalone preview tab, hidden inside the Payload iframe
 - Preview route guarded by a shared secret with `crypto.timingSafeEqual`, served with `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow`, and `Referrer-Policy: no-referrer`
@@ -118,7 +118,7 @@ pnpm --filter ./cms dev
 pnpm --filter ./web dev
 ```
 
-Once users exist, re-seeding needs `--force` or `SEED_FORCE=1`, which clears the seeded collections and recreates users, API keys, and demo content.
+Once users exist, re-seeding needs `SEED_FORCE=1 pnpm --filter ./cms seed`, which clears the seeded collections and recreates users, API keys, and demo content.
 
 ## Environment
 
@@ -178,8 +178,8 @@ Both apps are Node servers with no serverless adapter or provider-specific build
 ### Web
 
 - `pnpm --filter ./web build` then `pnpm --filter ./web start`. The `start` script binds `0.0.0.0:4321` by default. `HOST` and `PORT` override that, and container hosts usually inject them.
-- `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are `astro:env/client` public values, inlined into the output at `astro build`. The web app must be built with the production values. Injecting them only at `start` has no effect.
-- The Astro standalone server does not auto-load `.env`, unlike the CMS's `next start`. The host injects the runtime server vars (`PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `PREVIEW_SECRET`, plus `UMAMI_HOST_URL` for a self-hosted Umami). For local production testing, export them or run `node --env-file=web/.env web/server.mjs` from the repo root.
+- `CMS_URL`, `WEBSITE_URL`, and `UMAMI_WEBSITE_ID` are `astro:env/client` public values, inlined into the output at `astro build`. The web app must be built with the production values. Injecting them only at `start` does not change the built pages.
+- The Astro standalone server does not auto-load `.env`, unlike the CMS's `next start`. The host injects the runtime server vars (`CMS_URL`, `PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY`, `PREVIEW_SECRET`, plus `UMAMI_HOST_URL` for a self-hosted Umami). For local production testing, export them or run `node --env-file=web/.env web/server.mjs` from the repo root.
 - Content pages, the sitemap index, and `robots.txt` are prerendered. The per-locale sitemaps and the `/preview` route are SSR, so the CMS must stay reachable for them at runtime. A client-side script POSTs form submissions as JSON to Payload's `/api/form-submissions` endpoint, so `web/` needs no submission route. Submission requires JavaScript.
 - `astro build` reads redirects from the `Redirects` collection through the CMS REST API. The CMS must be reachable during build.
 - The web app compresses its own responses: `web/server.mjs` wraps the standalone handler and negotiates brotli or gzip per request. A proxy or CDN in front passes the already-encoded responses through. [`astroload/maintenance.md`](./astroload/maintenance.md) shows how to verify compression end to end.

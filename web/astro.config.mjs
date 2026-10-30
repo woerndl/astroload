@@ -18,6 +18,7 @@ let devServer = false
 let homeLocales = []
 
 async function getBuiltHomeLocales() {
+  if (!process.env.CMS_URL) throw new Error('CMS_URL is required to build the root redirect')
   const response = await fetch(new URL('/api/static-paths', process.env.CMS_URL), {
     headers: { Authorization: `api-keys API-Key ${process.env.PAYLOAD_READ_KEY}` },
     signal: AbortSignal.timeout(15_000),

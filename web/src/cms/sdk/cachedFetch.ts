@@ -2,7 +2,7 @@ import { createHash } from 'crypto'
 
 import { cache } from '../cache'
 
-export const USE_CACHE_HEADER = 'X-Use-Cache'
+const USE_CACHE_HEADER = 'X-Use-Cache'
 
 export const cacheHeader = (useCache: boolean): Record<string, string> => ({
   [USE_CACHE_HEADER]: useCache ? 'true' : 'false',

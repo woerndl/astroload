@@ -8,7 +8,7 @@ import Img from '../Img.astro'
 type Props = Omit<PostsListBlockType, 'blockType'> & { lang: Locale; emptyLabel: string }
 
 const { posts, lang, emptyLabel } = Astro.props
-const items = (posts ?? []).filter((p): p is Post => isPopulated(p))
+const items = (posts ?? []).filter((p): p is Post => isPopulated(p) && Boolean(p.path))
 ---
 
 {items.length === 0 ? (
@@ -32,7 +32,7 @@ const items = (posts ?? []).filter((p): p is Post => isPopulated(p))
               </div>
             )}
             <div class="text">
-              <h3 class="title">{post.title}</h3>
+              <h2 class="title">{post.title}</h2>
               {published && <p class="date">{published}</p>}
               <p class="excerpt">{post.excerpt}</p>
             </div>

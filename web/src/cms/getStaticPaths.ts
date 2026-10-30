@@ -19,7 +19,6 @@ export interface StaticPageParams {
 }
 
 export async function getStaticPathItems(): Promise<StaticPathItem[]> {
-  // The SDK throws on any non-ok response, so there is no status branch here.
   const response = await payloadSDK.request({
     method: 'GET',
     path: '/static-paths',

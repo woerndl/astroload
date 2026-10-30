@@ -29,5 +29,5 @@ const nodes = sanitizeLexicalLinks(content?.root?.children ?? [])
   nodes={nodes}
   UploadRenderer={UploadRenderer}
   BlockRenderer={BlockRenderer}
-  class:list={[className]}
+  class:list={['rich-text', className]}
 />

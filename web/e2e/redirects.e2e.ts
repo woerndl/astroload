@@ -1,3 +1,5 @@
+import { stripLocalePath } from '@astroload/cms/src/stripLocalePath.ts'
+
 import { expect, readKey, test } from './fixtures'
 
 type Redirect = { sourcePath: string; destinationPath: string; type: 'permanent' | 'temporary' }
@@ -17,8 +19,9 @@ test("the built web app redirects each Redirects document's source path with its
   )
 
   for (const redirect of docs) {
-    const hit = await web.get(redirect.sourcePath)
-    expect(hit.status(), redirect.sourcePath).toBe(redirect.type === 'permanent' ? 301 : 302)
-    expect(hit.headers()['location'], redirect.sourcePath).toBe(redirect.destinationPath)
+    const source = stripLocalePath(redirect.sourcePath)
+    const hit = await web.get(source)
+    expect(hit.status(), source).toBe(redirect.type === 'permanent' ? 301 : 302)
+    expect(hit.headers()['location'], source).toBe(stripLocalePath(redirect.destinationPath))
   }
 })

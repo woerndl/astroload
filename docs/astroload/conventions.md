@@ -129,8 +129,7 @@ spread carries the parent's `data-astro-cid-*` attribute.
 Use `:global()` only for the page itself (`html`, `body`) and for the
 direct children of an element the component renders. The section
 spacing rule in `PageLayout.astro` is the example: it matches each
-element directly inside `.page-sections`. A rich text section renders no
-wrapper, so the rule also spaces its paragraphs.
+element directly inside `.page-sections`.
 
 ## A component with an optional slot takes a boolean prop
 
@@ -244,8 +243,9 @@ see the static-art section above). Three parts are starter-specific:
 - The entry's `cssVariable` is `--font-inter`. `web/src/styles/tokens.css`
   maps `--font-sans` to it.
 - A page that renders its own `<html>` instead of the shared layout (the
-  CMS-down fallback of `ErrorPage.astro`) needs its own `<Font>` tags or
-  stays on system fonts. Find such pages with `rg -l "<html" web/src`.
+  fallback that `ErrorPage.astro` renders when the CMS is down) needs its
+  own `<Font>` tags or stays on system fonts. Find such pages with
+  `rg -l "<html" web/src`.
 - The web Dockerfile asserts after the build that WOFF2 files were emitted.
   A provider metadata failure does not fail the build, so without the
   assert a fontless image would go unnoticed. Keep the assert when
@@ -266,12 +266,12 @@ re-register them, so an endpoint edit is not live until the CMS dev
 server restarts. If an edit seems to have no effect, restart before
 debugging anything else.
 
-There is one deliberate exception. `web/src/cms/getRedirects.ts` runs
-from `astro.config.mjs` at config-evaluation time. At that point
-`astro:env` is not yet set up, so it imports `dotenv/config` and
-constructs its own `PayloadSDK` from `process.env` instead of going
-through the rest of the SDK helpers. Do not add new exceptions without
-a similarly hard reason.
+There are two deliberate exceptions. `web/src/cms/getRedirects.ts` and
+`getBuiltHomeLocales` in `web/astro.config.mjs` run at config-evaluation
+time. At that point `astro:env` is not yet set up, so both read
+`process.env`, loaded by `dotenv/config`. `getRedirects.ts` constructs
+its own `PayloadSDK`, and `getBuiltHomeLocales` calls `fetch`. Do not
+add new exceptions without a similarly hard reason.
 
 ## Build-time CMS reads fail a strict build, degrade otherwise
 
@@ -655,10 +655,8 @@ that the web build bakes in:
   unset or is not a loopback `http` URL with a port. The CMS sends the
   webhook at once only when no five-minute window is open, and it holds
   later saves until the window closes (see
-  [`maintenance.md`](./maintenance.md)). The test passes only when the
-  webhook did not fire in the five minutes before the run. The suite's own
-  later saves keep a window open. Before a rerun, restart a CMS that the
-  suite did not start.
+  [`maintenance.md`](./maintenance.md)). When a window is open, the test
+  waits up to five minutes for the POST.
 - Analytics relay: `UMAMI_WEBSITE_ID=<any value>` and
   `UMAMI_HOST_URL=http://127.0.0.1:4323` in `web/.env`. Without the id,
   the analytics tests skip.

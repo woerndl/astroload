@@ -177,7 +177,7 @@ export default buildConfig({
           // Payload parses JSON and multipart bodies only, so a form-encoded POST arrives without data.
           beforeOperation: [
             ({ args, operation }) => {
-              if (operation === 'create' && !args.data) {
+              if (operation === 'create' && (!args.data || typeof args.data !== 'object')) {
                 throw new APIError('Submission rejected.', 400, undefined, true)
               }
               return args

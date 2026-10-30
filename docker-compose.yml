@@ -1,7 +1,7 @@
 # Local MongoDB for development. A standalone mongod is enough because the
 # CMS disables transactions (transactionOptions: false in
 # cms/src/payload.config.ts). The CMS and Astro run on the host with
-# `pnpm --filter @astroload/cms dev` and `pnpm --filter @astroload/web dev`.
+# `pnpm --filter ./cms dev` and `pnpm --filter ./web dev`.
 services:
   mongo:
     # MongoDB 8 stops at startup on Linux kernels 6.19 to 7.0.13. Check the

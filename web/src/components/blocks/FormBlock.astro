@@ -1,16 +1,16 @@
 ---
 import type { Form, FormBlock as FormBlockType, Labels } from '@astroload/cms/src/payload-types'
 
-import { isPopulated } from '../../cms/types'
+import { isPopulated, type Locale } from '../../cms/types'
 import { absoluteCmsURL } from '../../cms/urls'
 import LexicalContent from '../lexical/LexicalContent.astro'
 
-type Props = Omit<FormBlockType, 'blockType'> & { labels: Labels['form'] }
+type Props = Omit<FormBlockType, 'blockType'> & { labels: Labels['form']; lang: Locale }
 
-const { form, introContent, labels } = Astro.props
+const { form, introContent, labels, lang } = Astro.props
 const populatedForm = isPopulated<Form>(form) ? form : null
 
-const submitURL = absoluteCmsURL('/api/form-submissions')
+const submitURL = absoluteCmsURL(`/api/form-submissions?locale=${lang}`)
 
 const fields = populatedForm?.fields ?? []
 const submitLabel = populatedForm?.submitButtonLabel ?? labels.submit
@@ -151,7 +151,7 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
       </form>
 
       {populatedForm.confirmationMessage && (
-        <div data-confirmation hidden>
+        <div data-confirmation tabindex="-1" hidden>
           <LexicalContent content={populatedForm.confirmationMessage} />
         </div>
       )}
@@ -282,7 +282,10 @@ const fieldId = (name: string) => `form-${populatedForm?.id ?? 0}-${instance}-${
           return
         }
         Element.prototype.setAttribute.call(form, 'hidden', '')
-        if (confirmation) confirmation.hidden = false
+        if (confirmation) {
+          confirmation.hidden = false
+          confirmation.focus()
+        }
       } catch {
         if (errorEl) {
           errorEl.textContent = errorMessage

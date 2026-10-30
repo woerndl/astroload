@@ -9,8 +9,6 @@ export type { GlobalData }
 
 async function fetchGlobalData(locale: Locale, preview: boolean): Promise<GlobalData> {
   const query = new URLSearchParams({ locale, preview: String(preview) })
-  // The global-data endpoint rejects preview reads with the read-only key. The
-  // SDK throws on a non-ok response, so there is no status check here.
   const sdk = preview ? previewPayloadSDK : payloadSDK
   const response = await sdk.request({
     method: 'GET',

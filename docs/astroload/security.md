@@ -254,7 +254,7 @@ access rules.
 The spam-guard hook caps a submission at 100 entries and 10,000
 characters per entry field name or value (constants in
 `cms/src/hooks/spamGuard.ts`). A single accepted submission can then
-store about 1 MB of text. The hook limits stored submission fields
+store about two million characters. The hook limits stored submission fields
 only. A body size limit for `/api/form-submissions` and rate limiting
 belong at the host or proxy.
 

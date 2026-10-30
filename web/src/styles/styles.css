@@ -6,6 +6,26 @@
 @import url('./tokens.css');
 @import url('./base.css');
 
+@layer components {
+  :where(.rich-text > :not(:last-child)) {
+    margin-block-end: 1.5rem;
+  }
+
+  .rich-text :is(h2, h3, h4, h5, h6) {
+    font-size: revert;
+    font-weight: 600;
+  }
+
+  .rich-text :is(ol, ul) {
+    padding-inline-start: revert;
+    list-style: revert;
+  }
+
+  .rich-text a {
+    text-decoration: underline;
+  }
+}
+
 @layer utilities {
   /* A component rule that sets display would otherwise show a hidden element. */
   [hidden] {

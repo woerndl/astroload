@@ -22,14 +22,18 @@ export const validateSubmission: CollectionBeforeChangeHook = async ({ data, ope
   if (operation !== 'create') return data
 
   const formId = (data as { form?: unknown }).form
-  if (typeof formId !== 'string' && typeof formId !== 'number') {
-    throw reject()
-  }
+  const idType = req.payload.db.defaultIDType === 'number' ? 'number' : 'string'
+  if (typeof formId !== idType) throw reject()
 
   // A forged or stale form id gets the same generic rejection as the other
   // checks. Other lookup errors keep their own status.
   const form = await req.payload
-    .findByID({ collection: 'forms', id: formId, depth: 0, overrideAccess: true })
+    .findByID({
+      collection: 'forms',
+      id: formId as string | number,
+      depth: 0,
+      overrideAccess: true,
+    })
     .catch((err) => {
       if (err instanceof NotFound) throw reject()
       throw err
