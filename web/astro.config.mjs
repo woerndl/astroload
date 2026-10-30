@@ -17,7 +17,6 @@ let devServer = false
 /** @type {import('./src/cms/types').Locale[]} */
 let homeLocales = []
 
-// getRedirects already fails a strict build without CMS_URL or PAYLOAD_READ_KEY.
 async function getBuiltHomeLocales() {
   const response = await fetch(new URL('/api/static-paths', process.env.CMS_URL), {
     headers: { Authorization: `api-keys API-Key ${process.env.PAYLOAD_READ_KEY}` },
@@ -36,8 +35,7 @@ const prerenderOverrides = {
     'astro:config:setup': async ({ command, updateConfig }) => {
       devServer = command === 'dev'
       // The on-demand root redirect reads this list, so it needs no CMS
-      // request. The prerender reads static-paths again later, and
-      // astro:build:done fails the build when a listed home was not built.
+      // request.
       if (command === 'build' && LOCALE_URL_PREFIX) {
         homeLocales = await getBuiltHomeLocales()
         if (homeLocales.length === 0) throw new Error('the CMS lists no published home page')
@@ -80,8 +78,6 @@ export default defineConfig({
   // /api/send is the only route that reads a body, and an Umami event is under 2 KB.
   adapter: node({ mode: 'standalone', bodySizeLimit: 8 * 1024 }),
   integrations: [prerenderOverrides],
-  // Two documents with the same public path fail the build instead of one
-  // page silently winning.
   prerenderConflictBehavior: 'error',
   // Astro 7 defaults compressHTML to 'jsx', which collapses inter-element
   // whitespace. Pin the Astro 6 behavior so templates render unchanged.

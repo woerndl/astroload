@@ -286,8 +286,7 @@ is folded into the server manifest. A strict build (`REDIRECTS_STRICT=1`,
 which the web `build` script sets) fails when the CMS read fails, so a
 broken read stops the deploy instead of publishing a site without
 redirects over the last good one. Dev, `astro check`, and a plain `astro build`
-fall back to the committed `redirects.fallback.json` (empty by default)
-so the run still completes. See
+fall back to the committed `redirects.fallback.json` (empty by default). See
 [`maintenance.md`](./maintenance.md) for the retry and fallback policy in
 full.
 

@@ -46,10 +46,18 @@ export async function getStaticPaths(): Promise<StaticPageParams[]> {
     throw new Error(`templates without a published page: ${missing.join(', ')}`)
   }
   const out: StaticPageParams[] = []
+  const owners = new Map<string, StaticPathItem>()
 
   for (const item of items) {
     for (const [lang, fullPath] of Object.entries(item.paths)) {
       if (!fullPath) continue
+      const owner = owners.get(fullPath)
+      if (owner) {
+        throw new Error(
+          `${owner.collection}/${owner.id} and ${item.collection}/${item.id} have the same path ${fullPath}`,
+        )
+      }
+      owners.set(fullPath, item)
       const props = {
         id: item.id,
         collection: item.collection,

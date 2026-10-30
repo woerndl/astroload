@@ -2,33 +2,8 @@ import { getGlobalData } from './getGlobalData'
 import { getPageByPath, type PageByPathResult } from './getPageByPath'
 import { getPageData } from './getPageData'
 import type { StaticPageParams } from './getStaticPaths'
-import { stripLocalePath, type Locale, type LocalePaths, type PageCollectionSlug } from './types'
+import type { Locale, LocalePaths } from './types'
 
-// Build a render result from a static-path item's id and collection. Both
-// catch-all routes need this shape for their prerendered branch, where Astro
-// carries id/collection as props rather than resolving the page by path.
-// `template` is the template that getStaticPaths listed. A document with
-// another template throws, so the build fails instead of rendering the wrong
-// body.
-export async function loadPageResult(
-  collection: PageCollectionSlug,
-  id: string | number,
-  locale: Locale,
-  template?: string,
-): Promise<PageByPathResult | null> {
-  const data = await getPageData(collection, id, locale)
-  if (!data) return null
-  const actual =
-    collection === 'pages' ? ((data as { template?: string }).template ?? 'default') : undefined
-  if (actual !== template) {
-    throw new Error(
-      `page ${collection}/${id} was enumerated with template ${template} but has ${actual}`,
-    )
-  }
-  return { collection, data } as PageByPathResult
-}
-
-// The shared body of the two catch-all routes. Returns null for a 404.
 export async function loadCatchAllPage({
   locale,
   fullPath,
@@ -43,43 +18,39 @@ export async function loadCatchAllPage({
   // Kick off global data now so it overlaps the page fetch. The layout awaits
   // the same Astro.locals memo (see getGlobalData).
   const globalData = getGlobalData({ locale, preview: false, locals })
+  // The page load can throw or end in a 404 before anything awaits globalData.
+  void globalData.catch(() => {})
 
   const { id, collection, paths, template } = props
-  let result: PageByPathResult | null = null
-  let resolvedPaths: LocalePaths | undefined = paths
-
-  if (id && collection) {
-    result = await loadPageResult(collection, id, locale, template)
-    // This branch only runs while prerendering, and Astro skips a page whose
-    // response has no body instead of failing the build. A doc that was
-    // enumerated by getStaticPaths but vanished or moved before this load
-    // must throw, so the build fails and the previous deployment stays live.
-    if (!result) {
-      throw new Error(`page ${collection}/${id} was enumerated but is no longer published`)
-    }
-    const docPath = (result.data as { path?: string }).path
-    if (docPath && stripLocalePath(docPath) !== fullPath) {
-      throw new Error(
-        `page ${collection}/${id} moved from ${fullPath} to ${stripLocalePath(docPath)} during the build`,
-      )
-    }
-  } else {
-    // Dev renders the catch-all routes on demand (see prerenderOverrides in
+  if (!id || !collection) {
+    // Dev renders these routes on demand (see prerenderOverrides in
     // astro.config.mjs) and gets no getStaticPaths props, so every dev request
     // resolves by path here, against the live CMS.
     const found = await getPageByPath(fullPath)
-    if (found) {
-      result = found
-      resolvedPaths = found.paths
-    }
+    if (!found) return null
+    await globalData
+    return { result: found, paths: found.paths }
   }
 
-  if (!result) {
-    // A 404 renders no layout, so nothing awaits the global-data fetch kicked
-    // off above. Swallow it so a globals failure can't turn this into a 500.
-    void globalData.catch(() => {})
-    return null
+  // This branch runs only while prerendering, where Astro skips a page without
+  // a body instead of failing the build, so a listed document that vanished,
+  // moved or changed its template throws.
+  const data = await getPageData(collection, id, locale)
+  if (!data) {
+    throw new Error(`page ${collection}/${id} was enumerated but is no longer published`)
+  }
+  const actual =
+    collection === 'pages' ? ((data as { template?: string }).template ?? 'default') : undefined
+  if (actual !== template) {
+    throw new Error(
+      `page ${collection}/${id} was enumerated with template ${template} but has ${actual}`,
+    )
+  }
+  if (data.path !== paths?.[locale]) {
+    throw new Error(
+      `page ${collection}/${id} moved from ${paths?.[locale]} to ${data.path} during the build`,
+    )
   }
   await globalData
-  return { result, paths: resolvedPaths }
+  return { result: { collection, data } as PageByPathResult, paths }
 }

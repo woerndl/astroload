@@ -293,7 +293,7 @@ The fetch behaves differently under the `REDIRECTS_STRICT` flag, which the
   fails the same way, since that is a configuration error that no retry
   fixes.
 - A non-strict run (dev, `astro check`, plain `astro build`) makes one
-  attempt and then returns the committed fallback so the run still completes.
+  attempt and then returns the committed fallback.
 - The CMS is trusted when it answers. An empty Redirects collection produces
   an empty table, in strict and non-strict alike, so deleting every redirect
   takes effect.

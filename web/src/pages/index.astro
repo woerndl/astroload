@@ -1,11 +1,9 @@
 ---
-import { getGlobalData } from '../cms/getGlobalData'
-import { getPageByPath, type PageByPathResult } from '../cms/getPageByPath'
 import { getHomeLocales, getStaticPathItems } from '../cms/getStaticPaths'
-import { loadPageResult } from '../cms/loadPage'
+import { loadCatchAllPage } from '../cms/loadPage'
 import { pickLocale } from '../cms/pickLocale'
 import { isTemplatedPage } from '../cms/templatedPages'
-import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type Locale, type LocalePaths } from '../cms/types'
+import { DEFAULT_LOCALE, LOCALE_URL_PREFIX, type Locale } from '../cms/types'
 import CollectionLayout from '../layout/collections/CollectionLayout.astro'
 import TemplatedBody from '../layout/routes/TemplatedBody.astro'
 
@@ -36,47 +34,25 @@ if (LOCALE_URL_PREFIX) {
   })
 }
 
-// Kick off global data now so it overlaps the page fetch. The layout awaits
-// the same Astro.locals memo (see getGlobalData).
-const globalData = getGlobalData({ locale: DEFAULT_LOCALE, preview: false, locals: Astro.locals })
+const home = import.meta.env.DEV
+  ? {}
+  : (await getStaticPathItems()).find((item) => item.paths[DEFAULT_LOCALE] === '/')
+if (!home) throw new Error('the CMS lists no published home page')
 
-let result: PageByPathResult | null
-let paths: LocalePaths | undefined
+const loaded = await loadCatchAllPage({
+  locale: DEFAULT_LOCALE,
+  fullPath: '/',
+  props: home,
+  locals: Astro.locals,
+})
 
-if (import.meta.env.DEV) {
-  // Dev resolves the home page by path and skips the full static-paths fetch.
-  const found = await getPageByPath('/')
-  result = found
-  paths = found?.paths
-} else {
-  // The build already fetched the static paths in getStaticPaths, so this read
-  // comes from the SDK cache.
-  const items = await getStaticPathItems()
-  const home = items.find((item) => item.paths[DEFAULT_LOCALE] === '/')
-  result = home
-    ? await loadPageResult(home.collection, home.id, DEFAULT_LOCALE, home.template)
-    : null
-  // A home that was enumerated but no longer loads must fail the build, because
-  // Astro skips a prerendered page without a body.
-  if (home && !result) {
-    throw new Error(
-      `home page ${home.collection}/${home.id} was enumerated but is no longer published`,
-    )
-  }
-  paths = home?.paths
-}
-
-if (!result) {
-  // A 404 renders no layout, so nothing awaits the global-data fetch kicked
-  // off above. Swallow it so a globals failure can't turn this into a 500.
-  void globalData.catch(() => {})
+if (!loaded) {
   return new Response(null, { status: 404 })
 }
-await globalData
 ---
 
-{isTemplatedPage(result) ? (
-  <TemplatedBody result={result} paths={paths} lang={DEFAULT_LOCALE} />
+{isTemplatedPage(loaded.result) ? (
+  <TemplatedBody result={loaded.result} paths={loaded.paths} lang={DEFAULT_LOCALE} />
 ) : (
-  <CollectionLayout result={result} paths={paths} lang={DEFAULT_LOCALE} />
+  <CollectionLayout result={loaded.result} paths={loaded.paths} lang={DEFAULT_LOCALE} />
 )}
