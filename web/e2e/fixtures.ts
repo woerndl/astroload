@@ -10,6 +10,8 @@ import {
 } from '@playwright/test'
 import { parse } from 'dotenv'
 
+import { DEFAULT_LOCALE, LOCALE_URL_PREFIX } from '@astroload/cms/src/site-config.ts'
+
 export const webEnv = parse(readFileSync(new URL('../.env', import.meta.url)))
 const cmsEnv = parse(readFileSync(new URL('../../cms/.env', import.meta.url)))
 
@@ -31,6 +33,9 @@ export const ADMIN = {
   email: cmsEnv.PAYLOAD_ADMIN_EMAIL ?? 'admin@example.com',
   password: cmsEnv.PAYLOAD_ADMIN_PASSWORD ?? 'admin1234',
 }
+
+export const prefix = LOCALE_URL_PREFIX ? `/${DEFAULT_LOCALE}` : ''
+export const home = prefix || '/'
 
 export const readKey = { Authorization: `api-keys API-Key ${env.readKey}` }
 export const previewKey = { Authorization: `api-keys API-Key ${env.previewKey}` }

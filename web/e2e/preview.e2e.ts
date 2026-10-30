@@ -1,3 +1,5 @@
+import { DEFAULT_LOCALE } from '@astroload/cms/src/site-config.ts'
+
 import { ADMIN, env, expect, test } from './fixtures'
 
 const TITLE = 'E2E live preview'
@@ -8,12 +10,15 @@ test('the preview route answers 403 without the right secret, and every response
 }) => {
   const secret = `previewSecret=${encodeURIComponent(env.previewSecret)}`
   const cases = [
-    ['/preview/en', 403],
-    ['/preview/en?previewSecret=wrong', 403],
-    [`/preview/en?previewSecret=${'x'.repeat(Buffer.byteLength(env.previewSecret))}`, 403],
-    [`/preview/en?${secret}`, 200],
+    [`/preview/${DEFAULT_LOCALE}`, 403],
+    [`/preview/${DEFAULT_LOCALE}?previewSecret=wrong`, 403],
+    [
+      `/preview/${DEFAULT_LOCALE}?previewSecret=${'x'.repeat(Buffer.byteLength(env.previewSecret))}`,
+      403,
+    ],
+    [`/preview/${DEFAULT_LOCALE}?${secret}`, 200],
     [`/preview/xx?${secret}`, 404],
-    [`/preview/en/e2e-does-not-exist?${secret}`, 404],
+    [`/preview/${DEFAULT_LOCALE}/e2e-does-not-exist?${secret}`, 404],
   ] as const
   for (const [path, status] of cases) {
     const res = await web.get(path)
@@ -31,7 +36,7 @@ test('live preview loads the preview route in the admin iframe and shows the edi
   admin,
   cleanup,
 }) => {
-  const created = await admin.post('/api/pages?locale=en&draft=true', {
+  const created = await admin.post(`/api/pages?locale=${DEFAULT_LOCALE}&draft=true`, {
     data: { title: TITLE, slug: 'e2e-live-preview', _status: 'draft' },
   })
   await expect(created).toBeOK()
@@ -65,7 +70,7 @@ test('live preview loads the preview route in the admin iframe and shows the edi
   const iframe = page.locator('iframe[src*="/preview/"]')
   await expect(iframe).toHaveAttribute(
     'src',
-    new RegExp(`^${env.websiteUrl}/preview/en/e2e-live-preview\\?previewSecret=`),
+    new RegExp(`^${env.websiteUrl}/preview/${DEFAULT_LOCALE}/e2e-live-preview\\?previewSecret=`),
   )
   const frame = page.frameLocator('iframe[src*="/preview/"]')
   await expect(frame.locator('h1')).toHaveText(TITLE)

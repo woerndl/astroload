@@ -1,3 +1,5 @@
+import { DEFAULT_LOCALE } from '@astroload/cms/src/site-config.ts'
+
 import { expect, test } from './fixtures'
 
 type Variant = { url: string | null; width: number; height: number; mimeType: string }
@@ -16,7 +18,7 @@ test('an upload yields every image size and a 1200x630 JPEG og variant, and the 
     canvas.getContext('2d')!.fillRect(400, 300, 1120, 680)
     return canvas.toDataURL('image/png')
   })
-  const created = await admin.post('/api/media?locale=en', {
+  const created = await admin.post(`/api/media?locale=${DEFAULT_LOCALE}`, {
     multipart: {
       file: {
         name: 'e2e-upload.png',

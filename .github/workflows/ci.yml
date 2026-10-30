@@ -116,7 +116,7 @@ jobs:
           PAYLOAD_READ_KEY=e2e-read-key
           PAYLOAD_PREVIEW_KEY=e2e-preview-key
           UMAMI_WEBSITE_ID=e2e-website
-          UMAMI_HOST_URL=http://127.0.0.1:4322
+          UMAMI_HOST_URL=http://127.0.0.1:4323
           CONTENT_BUILD_ID=e2e-build
           EOF
 

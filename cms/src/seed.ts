@@ -269,20 +269,21 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         ],
       }),
     })
-  // A page in the default locale only with an unpublished edit and an
-  // unpublished translation, which drafts.e2e.ts and routing.e2e.ts use.
+  // A page published in the default locale only, with an unpublished edit and,
+  // given a second locale, an unpublished translation. drafts.e2e.ts and
+  // routing.e2e.ts use it.
+  const untranslated = await payload.create({
+    collection: 'pages',
+    locale: DEFAULT_LOCALE,
+    data: seedData({
+      title: 'Untranslated',
+      slug: 'untranslated',
+      parent: homeDe.id,
+      _status: 'published',
+    }),
+  })
   const otherLocale = LOCALES.find((code) => code !== DEFAULT_LOCALE)
-  if (otherLocale) {
-    const untranslated = await payload.create({
-      collection: 'pages',
-      locale: DEFAULT_LOCALE,
-      data: seedData({
-        title: 'Untranslated',
-        slug: 'untranslated',
-        parent: homeDe.id,
-        _status: 'published',
-      }),
-    })
+  if (otherLocale)
     await payload.update({
       collection: 'pages',
       id: untranslated.id,
@@ -294,14 +295,13 @@ export async function seedCMS(payload: Payload, force = false): Promise<void> {
         _status: 'draft',
       }),
     })
-    await payload.update({
-      collection: 'pages',
-      id: untranslated.id,
-      locale: DEFAULT_LOCALE,
-      draft: true,
-      data: seedData({ title: 'Unpublished edit', _status: 'draft' }),
-    })
-  }
+  await payload.update({
+    collection: 'pages',
+    id: untranslated.id,
+    locale: DEFAULT_LOCALE,
+    draft: true,
+    data: seedData({ title: 'Unpublished edit', _status: 'draft' }),
+  })
 
   const contactDe = await payload.create({
     collection: 'pages',

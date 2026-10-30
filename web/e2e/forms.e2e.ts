@@ -1,3 +1,7 @@
+import type { APIRequestContext } from '@playwright/test'
+
+import { DEFAULT_LOCALE } from '@astroload/cms/src/site-config.ts'
+
 import { env, expect, login, previewKey, readKey, test } from './fixtures'
 
 const fromSite = { Origin: env.websiteUrl }
@@ -5,10 +9,39 @@ const fromSite = { Origin: env.websiteUrl }
 const FIELDS = [
   { field: 'name', value: 'E2E' },
   { field: 'email', value: 'e2e@example.com' },
-  { field: 'message', value: 'Hello from the e2e suite.' },
+  { field: 'dataset', value: 'Hello from the e2e suite.' },
 ]
 
 type Entry = { field: string; value: string }
+
+const CONFIRMATION = 'E2E: thanks for the message.'
+
+// The control named dataset replaces form.dataset, so a form script that reads
+// its settings from the form element fails here.
+const CONTACT_FORM = {
+  title: 'E2E contact',
+  submitButtonLabel: 'Send',
+  confirmationType: 'message',
+  confirmationMessage: {
+    root: {
+      type: 'root',
+      children: [{ type: 'paragraph', children: [{ type: 'text', text: CONFIRMATION }] }],
+    },
+  },
+  fields: [
+    { blockType: 'text', name: 'name', label: 'Name', required: true },
+    { blockType: 'email', name: 'email', label: 'Email', required: true },
+    { blockType: 'textarea', name: 'dataset', label: 'Message', required: true },
+  ],
+}
+
+async function createForm(admin: APIRequestContext, cleanup: (fn: () => Promise<unknown>) => void) {
+  const res = await admin.post(`/api/forms?locale=${DEFAULT_LOCALE}`, { data: CONTACT_FORM })
+  await expect(res).toBeOK()
+  const id: string = (await res.json()).doc.id
+  cleanup(() => admin.delete(`/api/forms/${id}`))
+  return id
+}
 
 // The body the public form posts. The default render stamp is older than the
 // spam guard's 1.5 s minimum.
@@ -25,24 +58,28 @@ const submission = (
   ],
 })
 
-let formId: string
-
-test.beforeAll(async ({ cms }) => {
-  const res = await cms.get('/api/forms?where[title][equals]=Contact&limit=1')
-  await expect(res).toBeOK()
-  const { docs } = await res.json()
-  expect(docs, 'the seeded Contact form').toHaveLength(1)
-  formId = docs[0].id
-})
-
-test('a visitor submits the contact form in the browser, only panel users read the stored fields, and only an admin deletes them', async ({
+test('a visitor submits a form in the browser, only panel users read the stored fields, and only an admin deletes them', async ({
   page,
   cms,
   admin,
   cleanup,
 }) => {
-  await page.goto(`${env.websiteUrl}/en/contact`)
-  const confirmation = page.getByText('Thanks. We will be in touch.')
+  const formId = await createForm(admin, cleanup)
+  const draftPage = await admin.post(`/api/pages?locale=${DEFAULT_LOCALE}&draft=true`, {
+    data: {
+      title: 'E2E form',
+      slug: 'e2e-form',
+      _status: 'draft',
+      sections: [{ blockType: 'form', form: formId }],
+    },
+  })
+  await expect(draftPage).toBeOK()
+  const pageId = (await draftPage.json()).doc.id
+  cleanup(() => admin.delete(`/api/pages/${pageId}`))
+  // The preview route renders on demand, so the draft page needs no rebuild.
+  const secret = encodeURIComponent(env.previewSecret)
+  await page.goto(`${env.websiteUrl}/preview/${DEFAULT_LOCALE}/e2e-form?previewSecret=${secret}`)
+  const confirmation = page.getByText(CONFIRMATION)
   await expect(confirmation).toBeHidden()
   await page.getByRole('textbox', { name: 'Name' }).fill('E2E')
   await page.getByRole('textbox', { name: 'Email' }).fill('e2e@example.com')
@@ -55,9 +92,9 @@ test('a visitor submits the contact form in the browser, only panel users read t
   await page.getByRole('button', { name: 'Send' }).click()
   const created = await posted
   expect(created.status()).toBe(201)
-  expect(created.headers()['access-control-allow-origin']).toBe(env.websiteUrl)
   const url = `/api/form-submissions/${(await created.json()).doc.id}`
   cleanup(() => admin.delete(url))
+  expect(created.headers()['access-control-allow-origin']).toBe(env.websiteUrl)
   await expect(confirmation).toBeVisible()
   await expect(page.locator('form[data-form-id]')).toBeHidden()
 
@@ -88,6 +125,7 @@ test('the spam guard and the submission validator reject forged POSTs with 400',
   admin,
   cleanup,
 }) => {
+  const formId = await createForm(admin, cleanup)
   const created = await admin.post('/api/forms', {
     data: {
       title: 'E2E checkbox',
@@ -106,7 +144,7 @@ test('the spam guard and the submission validator reject forged POSTs with 400',
       submissionData: { field: 'name', value: 'x' },
     }),
     'oversized value': () =>
-      submission(formId, [...FIELDS.slice(0, 2), { field: 'message', value: 'x'.repeat(10_001) }]),
+      submission(formId, [...FIELDS.slice(0, 2), { field: 'dataset', value: 'x'.repeat(10_001) }]),
     'oversized field name': () =>
       submission(formId, [...FIELDS, { field: 'x'.repeat(10_001), value: 'x' }]),
     'more than 100 entries': () =>

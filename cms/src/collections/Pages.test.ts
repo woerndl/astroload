@@ -1,6 +1,12 @@
-import type { AccessArgs, CollectionBeforeValidateHook } from 'payload'
+import type {
+  AccessArgs,
+  CollectionBeforeOperationHook,
+  CollectionBeforeValidateHook,
+} from 'payload'
 
 import { expect, it, vi } from 'vitest'
+
+import { guardDraftReads } from '../endpoints/canPreview'
 
 vi.mock('../shared', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../shared')>()),
@@ -81,9 +87,39 @@ it.each<[string, Args]>([
   await expect(validate(args)).resolves.toEqual(args.data)
 })
 
+const editor = { collection: 'users', roles: ['editor'] }
+const readKey = { collection: 'api-keys', type: 'read-only' }
+const read = (user: unknown, overrideAccess = false, context: Record<string, unknown> = {}) =>
+  guardDraftReads({
+    args: { draft: true },
+    context,
+    operation: 'read',
+    overrideAccess,
+    req: { user },
+  } as unknown as Parameters<CollectionBeforeOperationHook>[0])
+
+it('drops the draft flag of a caller without draft access', () => {
+  const preview = { collection: 'api-keys', type: 'preview' }
+  // prettier-ignore
+  for (const [user, overrideAccess, draft] of [
+    [readKey, false, false], [null, false, false],
+    [preview, false, true], [editor, false, true], [null, true, true],
+  ] as const) {
+    expect(read(user, overrideAccess), JSON.stringify(user)).toEqual({ draft })
+  }
+})
+
+it('keeps a parent cached by a draft read out of a published read', () => {
+  const context: Record<string, unknown> = {}
+  read(editor, false, context)
+  ;(context.pagesPluginAncestorCache as Map<string, unknown>).set('p1', { title: 'Draft title' })
+  read(readKey, false, context)
+  expect((context.pagesPluginAncestorCache as Map<string, unknown>).has('p1')).toBe(false)
+})
+
 it('lets editors create default pages only', () => {
   const access = (data?: Record<string, unknown>) =>
-    ({ req: { user: { collection: 'users', roles: ['editor'] } }, data }) as unknown as AccessArgs
+    ({ req: { user: editor }, data }) as unknown as AccessArgs
   expect(
     [{}, { template: 'default' }, { template: 'landing' }].map((d) =>
       Pages.access!.create!(access(d)),

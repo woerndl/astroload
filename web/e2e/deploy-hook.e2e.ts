@@ -1,3 +1,5 @@
+import { DEFAULT_LOCALE } from '@astroload/cms/src/site-config.ts'
+
 import { env, expect, test } from './fixtures'
 
 // Needs DEPLOY_HOOK_URL in cms/.env set to a loopback URL, for example
@@ -10,7 +12,7 @@ test('a draft save sends no deploy webhook POST and a publish sends one', async 
 }) => {
   test.skip(!env.deployHookUrl, 'DEPLOY_HOOK_URL is unset in cms/.env')
   const hook = await receiver(env.deployHookUrl)
-  const created = await admin.post('/api/pages?locale=en&draft=true', {
+  const created = await admin.post(`/api/pages?locale=${DEFAULT_LOCALE}&draft=true`, {
     data: { title: 'E2E deploy webhook', slug: 'e2e-deploy-webhook', _status: 'draft' },
   })
   await expect(created).toBeOK()
@@ -21,7 +23,7 @@ test('a draft save sends no deploy webhook POST and a publish sends one', async 
   await new Promise((resolve) => setTimeout(resolve, 1_000))
   expect(hook.requests, 'the draft save sent a deploy webhook POST').toHaveLength(0)
 
-  const published = await admin.patch(`/api/pages/${doc.id}?locale=en`, {
+  const published = await admin.patch(`/api/pages/${doc.id}?locale=${DEFAULT_LOCALE}`, {
     data: { _status: 'published' },
   })
   await expect(published).toBeOK()

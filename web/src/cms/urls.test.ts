@@ -1,6 +1,5 @@
 import { expect, it, vi } from 'vitest'
 
-// astro:env exists only in the Astro build.
 vi.mock('astro:env/client', () => ({
   CMS_URL: 'https://cms.example.com',
   WEBSITE_URL: 'https://site.example.com',

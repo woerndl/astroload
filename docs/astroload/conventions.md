@@ -652,12 +652,12 @@ following:
 - Mongo runs at `DATABASE_URI` from `cms/.env` and holds the demo content
   (`pnpm --filter @astroload/cms seed`). The suite logs in as the seeded
   admin: `PAYLOAD_ADMIN_EMAIL` and `PAYLOAD_ADMIN_PASSWORD` from `cms/.env`,
-  or `admin@example.com` / `admin1234` when they are unset. It uses the demo
-  pages and the Contact form. `drafts.e2e.ts` and `routing.e2e.ts` use the
-  demo seed's `/<default locale>/untranslated` page with its unpublished edit
-  and translation. They skip in a project with one locale and fail when the
-  page is missing. A project that replaces the demo seed
-  adapts those two tests. Every test deletes the documents it creates.
+  or `admin@example.com` / `admin1234` when they are unset. `drafts.e2e.ts`
+  and `routing.e2e.ts` use the demo seed's `/<default locale>/untranslated`
+  page with its unpublished edit and translation. Their translation checks
+  skip in a project with one locale, and they fail when the page is missing.
+  A project that replaces the demo seed keeps that page or adapts those two
+  tests. Every test deletes the documents it creates.
   The live preview test turns on the admin's live preview for Pages and
   restores the previous setting afterwards.
 - `web/.env` holds `PAYLOAD_READ_KEY`, `PAYLOAD_PREVIEW_KEY` and
@@ -692,7 +692,7 @@ that the web build bakes in:
   later saves keep a window open. Before a rerun, restart a CMS that the
   suite did not start.
 - Analytics relay: `UMAMI_WEBSITE_ID=<any value>` and
-  `UMAMI_HOST_URL=http://127.0.0.1:4322` in `web/.env`. With the id set,
+  `UMAMI_HOST_URL=http://127.0.0.1:4323` in `web/.env`. With the id set,
   the suite runs the relay test and a test that the preview secret
   reaches neither the pageview url nor its referrer. Without the id, both
   skip.
@@ -701,9 +701,10 @@ that the web build bakes in:
   expects the built web app to answer each one. Rebuild after you add or
   change one. Without any Redirects document the test skips.
 
-The routing test checks the `content-build-id` meta tag on `/en`. It
-expects the tag when `CONTENT_BUILD_ID` was set in `web/.env` before the
-build, and no tag otherwise. Rebuild after changing it.
+The routing test checks the `content-build-id` meta tag on the
+default-locale home page. It expects the tag when `CONTENT_BUILD_ID` was
+set in `web/.env` before the build, and no tag otherwise. Rebuild after
+changing it.
 
 Spec files end in `.e2e.ts`, so vitest does not collect them. They run one
 at a time in name order because they share one CMS. The `deploy-hook`

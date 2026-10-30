@@ -1,14 +1,16 @@
 import { randomBytes } from 'node:crypto'
 
-import { env, expect, login, previewKey, readKey, test } from './fixtures'
+import { DEFAULT_LOCALE } from '@astroload/cms/src/site-config.ts'
+
+import { env, expect, home, login, previewKey, readKey, test } from './fixtures'
 
 test('a request without a key gets 401 from the custom endpoints and 403 from /api/pages', async ({
   cms,
 }) => {
   for (const path of [
-    '/api/page-by-path?path=/en',
+    `/api/page-by-path?path=${home}`,
     '/api/static-paths',
-    '/api/global-data?locale=en',
+    `/api/global-data?locale=${DEFAULT_LOCALE}`,
   ]) {
     expect((await cms.get(path)).status(), path).toBe(401)
   }
@@ -20,11 +22,15 @@ test('neither API key can write content, forms, users or API keys', async ({ cms
   const keys = await admin.get('/api/api-keys?where[type][equals]=read-only')
   const [page, key] = [(await pages.json()).docs[0].id, (await keys.json()).docs[0].id]
   const writes = [
-    ['POST', '/api/pages?locale=en', { title: 'E2E key write', slug: 'e2e-key-write' }],
+    [
+      'POST',
+      `/api/pages?locale=${DEFAULT_LOCALE}`,
+      { title: 'E2E key write', slug: 'e2e-key-write' },
+    ],
     ['POST', '/api/forms', { title: 'E2E key write' }],
     ['POST', '/api/users', { email: 'e2e-key@example.com', password: 'e2e-key-1234' }],
     ['POST', '/api/api-keys', { name: 'E2E key write', type: 'preview' }],
-    ['PATCH', `/api/pages/${page}?locale=en`, { title: 'E2E key edit' }],
+    ['PATCH', `/api/pages/${page}?locale=${DEFAULT_LOCALE}`, { title: 'E2E key edit' }],
     ['DELETE', `/api/pages/${page}`],
     ['PATCH', `/api/api-keys/${key}`, { type: 'preview' }],
   ] as const
@@ -85,8 +91,8 @@ test('an API key document shows no key value after creation', async ({ admin, cl
 
 test('pages, the preview route and their scripts contain neither API key', async ({ web }) => {
   for (const path of [
-    '/en',
-    `/preview/en?previewSecret=${encodeURIComponent(env.previewSecret)}`,
+    home,
+    `/preview/${DEFAULT_LOCALE}?previewSecret=${encodeURIComponent(env.previewSecret)}`,
   ]) {
     const page = await web.get(path)
     await expect(page).toBeOK()
