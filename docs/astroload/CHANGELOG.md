@@ -12,6 +12,11 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 - `.gitignore` and `.dockerignore` leave out the `temp/` working folder at the repository root.
 
+### Security
+
+- The CMS uses Next 16.4.6. Next 16.4.5 fixes seven moderate advisories that affect 16.4.2: GHSA-f3mh-rxg3-f5g2, GHSA-7qx7-33qx-rqx2, GHSA-pc58-hwjq-p385, GHSA-rhh4-g77r-r9qj, GHSA-vvgp-ww4w-46vf, GHSA-vc7v-qv4w-wrv8 and GHSA-mfr8-8qww-v76h. Next 16.4.6 also compresses route handler responses that are not already compressed, so the Payload REST API answers with `Content-Encoding: gzip`. `eslint-config-next` stays at 16.4.2. None of the advisories covers it, and with `trustPolicy: no-downgrade` its 16.4.6 release fails to install on `eslint-import-resolver-typescript@3.10.1` and `semver@6.3.1`.
+  - **Upgrade notes:** A project with its own route handlers in `cms/src/app` that set `Content-Encoding` or stream responses compares `curl -sI -H 'Accept-Encoding: gzip' <cms-url>/<route>` before and after the update. A project that also updates `eslint-config-next` to 16.4.6 under `trustPolicy: no-downgrade` lists those two versions under `trustPolicyExclude` in `pnpm-workspace.yaml`. pnpm reports one failing package per run, so the install can fail on further packages after these two.
+
 ## [0.10.1] - 2026-10-30
 
 ### Fixed
