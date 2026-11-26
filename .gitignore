@@ -47,3 +47,6 @@ cms/src/scripts/scratch/*
 # Misc
 .turbo/
 .cache/
+
+# Temporary working folder
+/temp/
