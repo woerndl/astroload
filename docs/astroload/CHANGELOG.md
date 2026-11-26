@@ -8,6 +8,10 @@ Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/
 
 ## [Unreleased]
 
+### Changed
+
+- `.gitignore` and `.dockerignore` leave out the `temp/` working folder at the repository root.
+
 ## [0.10.1] - 2026-10-30
 
 ### Fixed
